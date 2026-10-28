@@ -2,6 +2,8 @@ name: Test
 
 # Apps install nex-app-kit from a pinned tag, so a broken release reaches an app only when it bumps — and then in the
 # middle of its build. Types, tests, the build and the demo build run here first.
+# On the repository's own runner on ANDROS (ICC D-009: private code never runs on GitHub's machines), started by
+# Dedo's nastroje/ci_bezec.sh from the cockpit's runner template.
 
 on:
   push:
@@ -10,7 +12,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: andros-ubuntu-nex-app-kit
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
