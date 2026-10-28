@@ -33,10 +33,20 @@ riadky tabuľky nižšie s ňou — cesta, ktorá chýba alebo pribudla len na j
 | `GET /agent-settings` | AI | Model a úsilie pre každú rolu agenta z manifestu. |
 | `GET /agent-settings/models` | AI | Modely na výber (rodina — opus, sonnet, haiku —, nikdy verzia). |
 | `PUT /agent-settings/{role}` | AI | Uloženie modelu a úsilia pre rolu: `model`, `effort`. |
-| `GET /user-layout` | vždy | Rozloženie obrazovky prihláseného používateľa: `sidebar_width`, `sidebar_collapsed`. |
-| `PUT /user-layout` | vždy | Uloženie rozloženia; posielajú sa len zmenené polia, šírka `null` = predvolená. |
+| `GET /user-layout` | vždy | Rozloženie obrazovky prihláseného používateľa: `sidebar_width`, `sidebar_collapsed` a hranice šírky `limits.sidebar_width` (`min`, `max`, `default`). |
+| `PUT /user-layout` | vždy | Uloženie rozloženia; posielajú sa len zmenené polia, šírka `null` = predvolená, šírka mimo hraníc = 422. |
 | `GET /release-notes` | vždy | Aktualizácie: zoznam verzií s textom poznámok k vydaniu (`version`, `released_at`, `markdown`). |
 | `GET /getting-started` | vždy | Ako začať: návod k aplikácii v tvare Markdown (`markdown`). |
+
+## Roly a oprávnenia
+
+Aplikácia má dve roly: `admin` (Správca) a `user` (Používateľ). Heslo má aspoň 8 znakov (`PASSWORD_MIN_LENGTH`).
+
+- **Používatelia** a nové heslo inému — len `admin`.
+- **Systémové nastavenia** vidí každý, mení len `admin`.
+- **Agenti** platia pre celú aplikáciu — vidí a mení ich len `admin`.
+- **Relácie** — `admin` vidí a ruší všetky, `user` vidí len svoje.
+- **Moje konto** a **rozloženie** patria vždy prihlásenému — v ceste nie je id, nikto nečíta ani nemení cudzie.
 
 ## Tvar odpovedí
 

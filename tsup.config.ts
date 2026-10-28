@@ -7,6 +7,6 @@ export default defineConfig({
   entry: ["src/index.ts"],
   format: ["esm"],
   dts: true,
-  external: ["react", "react-dom", "react-router-dom", "zustand", "zustand/middleware", "react-markdown", "nex-shared"],
+  external: ["react", "react-dom", "react-router-dom", "zustand", "zustand/middleware", "zustand/vanilla", "react-markdown", "remark-gfm", "nex-shared"],
   clean: true,
 });

@@ -9,6 +9,17 @@ import type {
   UserSessionRead,
 } from "nex-shared";
 
+/** The two roles of an app on a template; the server refuses everything else. */
+export const STANDARD_ROLES = [
+  { value: "admin", label: "Správca" },
+  { value: "user", label: "Používateľ" },
+] as const;
+
+export const ADMIN_ROLE = "admin";
+
+/** The shortest password the server accepts — the forms say the same before sending. */
+export const PASSWORD_MIN_LENGTH = 8;
+
 /** When an app has the endpoint: always, with its own password (users live in the app), or with AI agents. */
 export type EndpointScope = "always" | "password" | "ai";
 
@@ -84,11 +95,21 @@ export interface AgentModelOption {
   label: string;
 }
 
-/** The caller's own screen layout; a width of null returns to the default. */
+export interface LayoutLimit {
+  min: number;
+  max: number;
+  default: number;
+}
+
+/** The caller's own screen layout; a width of null is the default. The server sets the bounds. */
 export interface UserLayout {
   sidebar_width: number | null;
   sidebar_collapsed: boolean;
+  limits: { sidebar_width: LayoutLimit };
 }
+
+/** Only the fields sent change; a width of null returns to the default. */
+export type UserLayoutChanges = Partial<Pick<UserLayout, "sidebar_width" | "sidebar_collapsed">>;
 
 /** „Ako začať“ — the app's own guide, written by the agent into the project's documents. */
 export interface GettingStartedRead {
@@ -113,7 +134,7 @@ export interface StandardApi {
   listAgentModels(): Promise<AgentModelOption[]>;
   saveAgentSetting(role: string, setting: { model: string; effort: string }): Promise<AgentSettingRead>;
   getLayout(): Promise<UserLayout>;
-  saveLayout(changes: Partial<UserLayout>): Promise<UserLayout>;
+  saveLayout(changes: UserLayoutChanges): Promise<UserLayout>;
   releaseNotes(): Promise<ReleaseNote[]>;
   gettingStarted(): Promise<GettingStartedRead>;
 }

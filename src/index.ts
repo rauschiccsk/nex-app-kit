@@ -5,7 +5,7 @@ export { MODULES } from "./modules";
 export type { ModuleDefinition } from "./modules";
 export { TEMPLATE_IDS } from "./templates/ids";
 export type { TemplateId } from "./templates/ids";
-export { STANDARD_ENDPOINTS, createStandardApi } from "./standard-api";
+export { ADMIN_ROLE, PASSWORD_MIN_LENGTH, STANDARD_ENDPOINTS, STANDARD_ROLES, createStandardApi } from "./standard-api";
 export type {
   AgentModelOption,
   AgentSettingRead,
@@ -14,9 +14,18 @@ export type {
   EndpointScope,
   GettingStartedRead,
   HealthRead,
+  LayoutLimit,
   NewUser,
   ProfileChanges,
   StandardApi,
   UserChanges,
   UserLayout,
+  UserLayoutChanges,
 } from "./standard-api";
+export { TemplateApp } from "./TemplateApp";
+export type { TemplateAppProps } from "./TemplateApp";
+export { useFrame } from "./frame/FrameContext";
+export type { Frame } from "./frame/FrameContext";
+export { personName, roleLabel } from "./frame/people";
+export { TEMPLATES } from "./templates/registry";
+export type { TemplateProps } from "./templates/types";

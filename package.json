@@ -24,7 +24,8 @@
     "react-dom": "^19",
     "react-markdown": "^10",
     "react-router-dom": "^7",
-    "zustand": "^5"
+    "zustand": "^5",
+    "remark-gfm": "^4"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.0",
@@ -33,7 +34,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "jsdom": "^25.0.0",
-    "nex-shared": "github:rauschiccsk/nex-shared#v0.25.0",
+    "nex-shared": "github:rauschiccsk/nex-shared#v0.26.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.0.0",
