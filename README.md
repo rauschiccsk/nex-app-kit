@@ -92,6 +92,23 @@ ktorá ukazuje na človeka, ukazuje na `kit_users.id`. Pri spustení z NEX Manag
 
 Cesty, kto ich smie a pravidlá relácie opisuje [KONTRAKT.md](KONTRAKT.md).
 
+## Kostra nového projektu
+
+`scaffold/<šablóna>/` je to, čo kokpit zapíše do nového projektu na šablóne: frontend s rámom a náhľadom Vizuálu,
+`frontend/app.manifest.json`, server na AppKit, docker-compose a blok `.env.example`. Vypĺňa ju `scaffold/render.py`
+(len štandardná knižnica Pythonu):
+
+```
+python3 scaffold/render.py nsv-standard --values values.json --into <projekt>   # nad projektom, ktorý založil init.sh
+python3 scaffold/render.py nsv-standard --values values.json --out <prázdny priečinok>
+```
+
+Hodnoty a ich význam opisuje hlavička `render.py`. CI vyplní kostru každým commitom pre oba spôsoby prihlásenia,
+postaví ju v Dockeri, pustí skúšky frontendu aj servera a overí, že celá aplikácia odpovedá.
+
+V náhľade Vizuálu (bez servera) odpovedá rám sám: `frontend/src/preview/handlers.ts` skladá
+`previewHandlers({ manifest })` z `nex-app-kit/preview` a za ne odpovede vlastných obrazoviek aplikácie.
+
 ## Ukážka
 
 `demo/` je aplikácia na šablóne so skutočným serverom a Postgresom:

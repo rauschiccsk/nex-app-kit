@@ -1,0 +1,46 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "The server of {{APP_NAME}} — on the ICC app template (nex-app-kit)."
+requires-python = ">=3.12"
+dependencies = [
+    "{{KIT_SERVER}}",
+    "fastapi>=0.115,<1",
+    "uvicorn[standard]>=0.30",
+    "sqlalchemy>=2.0,<3",
+    "alembic>=1.13",
+    "pg8000>=1.31",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "httpx>=0.27",
+    "ruff>=0.6",
+]
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI's way of declaring a dependency.
+extend-immutable-calls = ["fastapi.Depends"]
+
+[tool.ruff.lint.isort]
+# The folder alembic/ holds the migrations; the import `alembic` is the library.
+known-first-party = ["app"]
+known-third-party = ["alembic"]

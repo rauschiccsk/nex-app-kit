@@ -61,7 +61,8 @@ nej — cesta, ktorá chýba alebo pribudla len na jednej strane, je červená.
 - Bez relácie vráti každá cesta okrem verejných 401 s kódom `KIT-AUTH-REQUIRED`; veta pri spustení z NEX Managera
   povie, že aplikáciu treba otvoriť znova z neho.
 - Požiadavku, ktorá niečo mení a prišla zo stránky inej adresy, server odmietne (403 `KIT-ORIGIN`).
-- Verejné sú len `GET /health`, `GET /release-notes` a prihlásenie či spustenie.
+- Verejné sú len `GET /health`, `GET /release-notes` a prihlásenie či spustenie. Stav servera odpovedá aj na `/health`
+  mimo predpony `/api/v1` — pýtajú sa tam sondy kokpitu a Docker.
 
 ## Roly a oprávnenia
 

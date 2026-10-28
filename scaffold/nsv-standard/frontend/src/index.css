@@ -1,0 +1,6 @@
+@import "tailwindcss";
+@import "nex-shared/tokens.css";
+@import "nex-app-kit/frame.css";
+/* Tailwind v4 must scan nex-shared's compiled output for the utility classes its components use; the frame's own
+   classes are scanned by frame.css. */
+@source "../node_modules/nex-shared/dist";

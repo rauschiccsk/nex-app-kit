@@ -400,7 +400,10 @@ def build_router(kit: AppKit) -> APIRouter:
 
         def launch(request: Request, ticket: str, db: Db) -> Response:
             link = kit.manager
-            assert link is not None
+            if link is None:
+                return launch_page(
+                    "Aplikácia ešte nie je prepojená s NEX Managerom. Povedz o tom správcovi aplikácie.", 503
+                )
             now = kit.clock()
             identity = None
             try:

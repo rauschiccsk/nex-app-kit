@@ -76,3 +76,80 @@ def test_the_database_takes_the_bounds_themselves(migrated, width):
             text("INSERT INTO kit_user_layouts (user_id, sidebar_width, sidebar_collapsed) VALUES (:u, :w, false)"),
             {"u": user_id, "w": width},
         )
+
+
+APP_ENV = """
+from alembic import context
+from nex_app_kit import upgrade_database
+
+connection = context.config.attributes["connection"]
+upgrade_database(connection)
+context.configure(connection=connection, target_metadata=None)
+with context.begin_transaction():
+    context.run_migrations()
+"""
+
+APP_MIGRATION = """
+import sqlalchemy as sa
+from alembic import op
+from sqlalchemy.dialects import postgresql
+
+revision = "app_0001"
+down_revision = None
+branch_labels = None
+depends_on = None
+
+
+def upgrade():
+    op.create_table(
+        "app_notes",
+        sa.Column("id", sa.Integer, primary_key=True),
+        sa.Column("author", postgresql.UUID(as_uuid=True), sa.ForeignKey("kit_users.id"), nullable=False),
+    )
+
+
+def downgrade():
+    op.drop_table("app_notes")
+"""
+
+
+def test_the_kit_migrates_first_from_inside_the_app_s_own_alembic(tmp_path, migrated):
+    from alembic import command
+    from alembic.config import Config
+
+    with migrated.begin() as connection:
+        connection.execute(text("DROP TABLE IF EXISTS app_notes"))
+        connection.execute(text("DROP TABLE IF EXISTS alembic_version"))
+        for table in (
+            "kit_user_layouts",
+            "kit_agent_settings",
+            "kit_system_settings",
+            "kit_used_launch_tokens",
+            "kit_sessions",
+            "kit_users",
+            "kit_alembic_version",
+        ):
+            connection.execute(text(f"DROP TABLE {table} CASCADE"))
+    (tmp_path / "versions").mkdir()
+    (tmp_path / "env.py").write_text(APP_ENV, encoding="utf-8")
+    (tmp_path / "versions" / "app_0001.py").write_text(APP_MIGRATION, encoding="utf-8")
+    config = Config()
+    config.set_main_option("script_location", str(tmp_path))
+    try:
+        with migrated.begin() as connection:
+            config.attributes["connection"] = connection
+            command.upgrade(config, "head")
+
+        with migrated.connect() as connection:
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalars().all() == ["app_0001"]
+            assert connection.execute(text("SELECT version_num FROM kit_alembic_version")).scalars().all() == [
+                "kit_0001"
+            ]
+            assert "app_notes" in inspect(connection).get_table_names()
+    finally:
+        with migrated.begin() as connection:
+            connection.execute(text("DROP TABLE IF EXISTS app_notes"))
+            connection.execute(text("DROP TABLE IF EXISTS alembic_version"))
+        from nex_app_kit import upgrade_database
+
+        upgrade_database(migrated)

@@ -5,6 +5,7 @@ from .kit import ADMIN_USERNAME, AgentChoice, AppKit
 from .layout import SIDEBAR_WIDTH, Limit
 from .manager import Identity, ManagerLink, ManagerLinkError, ManagerUnavailable
 from .manifest import AgentRole, Manifest, ManifestError, load_manifest, manifest_from_data
+from .migrate import upgrade_database
 from .models import KitBase, User
 from .passwords import PASSWORD_MIN_LENGTH
 from .system_settings import KIT_SETTINGS, SettingDefinition, SystemSettings
@@ -31,4 +32,5 @@ __all__ = [
     "User",
     "load_manifest",
     "manifest_from_data",
+    "upgrade_database",
 ]

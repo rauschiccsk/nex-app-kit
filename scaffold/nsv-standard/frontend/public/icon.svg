@@ -1,0 +1,11 @@
+<!-- Značka appky pre plochu a ponuku Štart (ICCINT-83).
+     Iniciály a farby sú tie isté, aké appka nosí v hlavičke (nex-shared `Brand`, tokens.css:
+     tmavé plátno #0f172a, indigo #6366f1) — ikona na ploche tak vyzerá ako appka, do ktorej vedie.
+     Štvorec s rezervou po okrajoch znesie aj orezanie do kruhu, ktoré si systémy robia samy. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="{{APP_NAME}}">
+  <rect width="512" height="512" rx="96" fill="#0f172a"/>
+  <rect x="40" y="40" width="432" height="432" rx="72" fill="#6366f1" fill-opacity="0.14"/>
+  <text x="256" y="256" fill="#818cf8" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif"
+        font-size="184" font-weight="700" letter-spacing="4"
+        text-anchor="middle" dominant-baseline="central">{{APP_INITIALS}}</text>
+</svg>

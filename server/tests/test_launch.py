@@ -309,12 +309,21 @@ def test_a_missing_part_of_the_link_is_named():
     )
 
 
-def test_a_launched_app_without_the_link_does_not_start(factory):
-    with pytest.raises(ValueError) as caught:
-        AppKit(manifest=manifest("manager"), version="1", session_factory=factory)
-    assert "Aplikácia sa spúšťa z NEX Managera (auth: manager), ale AppKit nedostal prepojenie (manager)." in str(
-        caught.value
+def test_a_launched_app_not_yet_paired_starts_and_says_so_at_launch(factory):
+    from fastapi.testclient import TestClient
+
+    from .conftest import build_app
+
+    kit = AppKit(manifest=manifest("manager"), version="1", session_factory=factory)
+    client = TestClient(build_app(kit), base_url="https://testserver")
+
+    page_says(
+        client.get("/api/v1/launch", params={"lt": ticket("eva")}, follow_redirects=False),
+        503,
+        "Aplikácia ešte nie je prepojená s NEX Managerom. Povedz o tom správcovi aplikácie.",
     )
+    assert client.get("/api/v1/health").status_code == 200
+    assert client.get("/api/v1/areas").json()["detail"] == "Prihlásenie vypršalo. Aplikáciu otvor znova z NEX Managera."
 
 
 # ── asking NEX Manager over HTTP ────────────────────────────────────────────────────────────────────

@@ -1,0 +1,23 @@
+<!doctype html>
+<!-- Unified NEX design: dark by default (nex-shared html.dark tokens apply). -->
+<html lang="sk" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{APP_NAME}}</title>
+
+    <!-- Aby sa appka dala nainštalovať a otvárať vo vlastnom okne ako program (ICCINT-83).
+         Manifest je len POPIS — nič neukladá do pamäte prehliadača a nič nemení na správaní appky
+         v prehliadači. Zvyšok (service worker a kontrola, či na serveri nie je novšia verzia) patrí
+         k ICCINT-76 a robí sa až tam; zapnúť service worker skôr, než tá kontrola existuje, by
+         znamenalo, že sa používateľovi môže dni ukazovať stará verzia. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="apple-touch-icon" href="/icon.svg" />
+    <meta name="theme-color" content="#0f172a" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

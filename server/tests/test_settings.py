@@ -360,3 +360,10 @@ def test_health_without_the_database_is_503(make_app):
 
     assert response.status_code == 503
     assert response.json()["checks"] == {"database": "error"}
+
+
+def test_health_answers_at_the_root_too_for_probes(make_app):
+    client = make_app().client
+
+    assert client.get("/health").json() == client.get("/api/v1/health").json()
+    assert "/health" not in client.app.openapi()["paths"]

@@ -7,6 +7,20 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.3.0
+- `[nové]` **Kostra šablóny** (`scaffold/nsv-standard/`, `scaffold/render.py`): frontend s rámom a náhľadom Vizuálu,
+  `app.manifest.json`, server na AppKit (FastAPI, SQLAlchemy, Alembic — tabuľky šablóny pred tabuľkami aplikácie,
+  skúšky na Postgrese), docker-compose (db, migrate, backend, frontend, test), blok `.env.example` podľa spôsobu
+  prihlásenia a `docs/AKO_ZACAT.md`. Kokpit ju vyplní pri zakladaní projektu; CI ju vyplní každým commitom, postaví
+  a pustí jej skúšky (DEV-253).
+- `[nové]` **Odpovede pre náhľad Vizuálu** (`nex-app-kit/preview`, `previewHandlers`): rám sa v náhľade bez servera
+  otvorí prihlásený, s celým ľavým panelom a Nastaveniami; agent píše odpovede len pre vlastné obrazovky (DEV-253).
+- `[nové]` **Migrácie šablóny zvnútra migrácií aplikácie** (`upgrade_database`) — jeden príkaz `alembic upgrade head`
+  pripraví tabuľky šablóny aj aplikácie (DEV-253).
+- `[nové]` Aplikácia spúšťaná z NEX Managera naštartuje aj bez prepojenia; spustenie vtedy povie, že prepojenie chýba.
+  Stav servera odpovedá aj na `/health` (sondy kokpitu a Docker) (DEV-253).
+- `[oprava]` Nastavenia prihlásenia šablóny sú opísané raz (`kit_settings.json`) pre server aj náhľad (DEV-253).
+
 ## v0.2.0
 - `[nové]` **Server šablóny** (`server/`, Python balík `nex_app_kit`): celé štandardné rozhranie z KONTRAKT.md —
   prihlásenie vlastným heslom aj spustením z NEX Managera, moje konto, používatelia, relácie, systémové nastavenia,

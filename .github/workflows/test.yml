@@ -51,3 +51,72 @@ jobs:
       - name: Remove what the run left
         if: ${{ always() }}
         run: docker compose -f server/docker-compose.test.yml down -v --rmi local || true
+
+  # What the cockpit writes into a new project on the template — filled with THIS commit of the kit, built and run as
+  # the project's own CI and deploy would: frontend checks, images, the server's tests on Postgres, the whole stack up.
+  scaffold:
+    runs-on: andros-ubuntu-nex-app-kit
+    needs: [test, server]
+    strategy:
+      max-parallel: 1
+      matrix:
+        auth: [password, manager]
+    env:
+      COMPOSE_PROJECT_NAME: scaffold-${{ matrix.auth }}-${{ github.run_id }}-${{ github.run_attempt }}
+      AUTH: ${{ matrix.auth }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: The renderer's own tests and style
+        run: |
+          set -euo pipefail
+          APP="$RUNNER_TEMP/app-$AUTH"
+          python -m pip install pytest ruff
+          python -m pytest scaffold/tests -q -p no:cacheprovider
+          ruff check --no-cache --config server/pyproject.toml scaffold/render.py scaffold/tests
+          ruff format --no-cache --check --config server/pyproject.toml scaffold/render.py scaffold/tests
+      - name: Fill the scaffold as the cockpit does, with this commit of the kit
+        run: |
+          set -euo pipefail
+          APP="$RUNNER_TEMP/app-$AUTH"
+          cat > "$RUNNER_TEMP/values.json" <<JSON
+          {"app_name": "NEX Skúška", "app_initials": "NS", "slug": "nex-skuska", "auth": "${{ matrix.auth }}", "ai": true,
+           "backend_port": 18000, "frontend_port": 18001, "db_port": 18002,
+           "kit_frontend": "github:rauschiccsk/nex-app-kit#${GITHUB_SHA}",
+           "kit_server": "nex-app-kit @ https://github.com/rauschiccsk/nex-app-kit/archive/${GITHUB_SHA}.tar.gz#subdirectory=server"}
+          JSON
+          python scaffold/render.py nsv-standard --values "$RUNNER_TEMP/values.json" --out "$APP"
+          # init.sh's part of a founded project: the first version's release notes.
+          mkdir -p "$APP/docs/specs/versions/v0.1.0"
+          echo "Prvá verzia." > "$APP/docs/specs/versions/v0.1.0/RELEASE_NOTES.md"
+      - name: Frontend of the filled app — install, types, lint, tests, build
+        run: |
+          set -euo pipefail
+          APP="$RUNNER_TEMP/app-$AUTH"
+          cd "$APP/frontend"
+          npm install --no-audit --no-fund
+          npm run type-check
+          npm run lint
+          npx vitest run
+          npm run build
+      - name: Server of the filled app — style, images, tests on Postgres, the whole stack answers
+        run: |
+          set -euo pipefail
+          APP="$RUNNER_TEMP/app-$AUTH"
+          cd "$APP"
+          docker compose build
+          docker compose run --rm --no-deps --entrypoint "" test ruff check --no-cache .
+          docker compose run --rm --no-deps --entrypoint "" test ruff format --no-cache --check .
+          docker compose up -d db
+          docker compose run --rm test
+          docker compose up -d --wait backend frontend
+          docker compose exec -T backend python -c "import json, urllib.request; h = json.load(urllib.request.urlopen('http://127.0.0.1:8000/health')); print(h); assert h['checks']['database'] == 'ok'"
+      - name: Remove what the run left
+        if: ${{ always() }}
+        run: |
+          cd "$RUNNER_TEMP/app-$AUTH" 2>/dev/null && docker compose down -v --rmi local || true

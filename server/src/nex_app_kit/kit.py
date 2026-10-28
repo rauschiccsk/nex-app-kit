@@ -24,8 +24,6 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
-from alembic import command
-from alembic.config import Config
 from fastapi import Depends, FastAPI, Request
 from sqlalchemy import select
 from sqlalchemy.engine import Connection, Engine
@@ -34,6 +32,7 @@ from sqlalchemy.orm import Session as Db
 from .errors import KitError, forbidden, kit_error_handler, not_signed_in
 from .manager import ManagerLink
 from .manifest import Manifest
+from .migrate import upgrade_database
 from .models import AgentSetting, User
 from .passwords import hash_password
 from .sessions import SAFE_METHODS, Sessions, same_origin
@@ -43,7 +42,6 @@ logger = logging.getLogger("nex_app_kit")
 
 ADMIN_USERNAME = "admin"
 ADMIN_ROLE = "admin"
-MIGRATIONS = Path(__file__).resolve().parent / "migrations"
 
 
 @dataclass(frozen=True)
@@ -75,16 +73,16 @@ class AppKit:
     ) -> None:
         definitions = list(settings)
         problems = check_definitions(definitions)
-        if manifest.auth == "manager" and manager is None:
-            problems.append(
-                "Aplikácia sa spúšťa z NEX Managera (auth: manager), ale AppKit nedostal prepojenie (manager)."
-            )
         if manifest.auth == "password" and manager is not None:
             problems.append(
                 "Aplikácia má vlastné heslo (auth: password), prepojenie s NEX Managerom (manager) nepatrí k nej."
             )
         if problems:
             raise ValueError("AppKit nie je nastavený správne:\n- " + "\n- ".join(problems))
+        if manifest.auth == "manager" and manager is None:
+            # The first deploy of a launched app often comes before its NEX Manager is paired (the cockpit says so as
+            # a warning). The app starts; the launch says the pairing is missing.
+            logger.warning("Launched from NEX Manager, but not paired with it: the launch answers 503")
         self.manifest = manifest
         self.version = version
         self.docs_dir = docs_dir
@@ -149,18 +147,13 @@ class AppKit:
     def install(self, app: FastAPI, prefix: str = "/api/v1") -> None:
         app.include_router(self.router, prefix=prefix)
         app.add_exception_handler(KitError, kit_error_handler)
+        # The same health answer at /health too — the cockpit's probes and the Docker healthcheck ask there.
+        health = next(r for r in self.router.routes if getattr(r, "path", None) == "/health")
+        app.add_api_route("/health", health.endpoint, methods=["GET"], include_in_schema=False)
 
     def upgrade_database(self, bind: Engine | Connection) -> None:
         """Create or bring up to date the kit's own tables (its own record ``kit_alembic_version``)."""
-        config = Config()
-        config.set_main_option("script_location", str(MIGRATIONS))
-        if isinstance(bind, Connection):
-            config.attributes["connection"] = bind
-            command.upgrade(config, "head")
-            return
-        with bind.begin() as connection:
-            config.attributes["connection"] = connection
-            command.upgrade(config, "head")
+        upgrade_database(bind)
 
     def bootstrap_admin(self, initial_password: str | None) -> bool:
         """Own password: the first admin, ``admin`` with the initial password and a password change due at the first

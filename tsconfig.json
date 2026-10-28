@@ -21,7 +21,8 @@
       "vitest/globals",
       "@testing-library/jest-dom",
       "node"
-    ]
+    ],
+    "resolveJsonModule": true
   },
   "include": [
     "src",

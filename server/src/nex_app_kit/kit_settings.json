@@ -1,0 +1,22 @@
+[
+  {
+    "key": "auth_session_idle_minutes",
+    "default": "480",
+    "value_type": "int",
+    "label": "Odhlásenie po nečinnosti",
+    "description": "Po koľkých minútach bez práce aplikácia človeka odhlási.",
+    "unit": "minút",
+    "min": 5,
+    "max": 1440
+  },
+  {
+    "key": "auth_session_max_hours",
+    "default": "24",
+    "value_type": "int",
+    "label": "Najdlhšie prihlásenie",
+    "description": "Najneskôr po koľkých hodinách sa treba prihlásiť znova, aj keď človek pracuje.",
+    "unit": "hodín",
+    "min": 1,
+    "max": 720
+  }
+]

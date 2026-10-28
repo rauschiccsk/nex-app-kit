@@ -1,6 +1,6 @@
 [project]
 name = "nex-app-kit"
-version = "0.2.0"
+version = "0.3.0"
 description = "Server of the ICC app template: login, own account, users, sessions, system and agent settings, release notes, getting started and per-user layout (nex-app-kit)."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -30,7 +30,7 @@ build-backend = "setuptools.build_meta"
 where = ["src"]
 
 [tool.setuptools.package-data]
-nex_app_kit = ["migrations/*.py", "migrations/versions/*.py"]
+nex_app_kit = ["migrations/*.py", "migrations/versions/*.py", "kit_settings.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

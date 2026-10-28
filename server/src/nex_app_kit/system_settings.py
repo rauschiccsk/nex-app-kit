@@ -4,10 +4,12 @@ bounds); the database holds only a value someone changed. Reads go through a 30-
 
 from __future__ import annotations
 
+import json
 import time
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import Literal
 
 from sqlalchemy import select
@@ -39,27 +41,9 @@ class SettingDefinition:
     allow_empty: bool = False
 
 
-KIT_SETTINGS = (
-    SettingDefinition(
-        key="auth_session_idle_minutes",
-        default="480",
-        value_type="int",
-        label="Odhlásenie po nečinnosti",
-        description="Po koľkých minútach bez práce aplikácia človeka odhlási.",
-        unit="minút",
-        min=5,
-        max=1440,
-    ),
-    SettingDefinition(
-        key="auth_session_max_hours",
-        default="24",
-        value_type="int",
-        label="Najdlhšie prihlásenie",
-        description="Najneskôr po koľkých hodinách sa treba prihlásiť znova, aj keď človek pracuje.",
-        unit="hodín",
-        min=1,
-        max=720,
-    ),
+#: The kit's own settings — one file, read here and by the frontend's preview answers (src/preview.ts).
+KIT_SETTINGS = tuple(
+    SettingDefinition(**d) for d in json.loads((Path(__file__).parent / "kit_settings.json").read_text("utf-8"))
 )
 
 
