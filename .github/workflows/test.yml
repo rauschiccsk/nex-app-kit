@@ -116,6 +116,10 @@ jobs:
           docker compose run --rm test
           docker compose up -d --wait backend frontend
           docker compose exec -T backend python -c "import json, urllib.request; h = json.load(urllib.request.urlopen('http://127.0.0.1:8000/health')); print(h); assert h['checks']['database'] == 'ok'"
+      - name: What the filled app's services said (only when the run failed)
+        if: ${{ failure() }}
+        run: |
+          cd "$RUNNER_TEMP/app-$AUTH" 2>/dev/null && docker compose logs --no-color --tail 100 migrate backend frontend || true
       - name: Remove what the run left
         if: ${{ always() }}
         run: |
