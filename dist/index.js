@@ -263,6 +263,7 @@ function errorText(error, fallback) {
 // src/templates/nsv-standard/pages/GettingStartedPage.tsx
 import { jsx as jsx2, jsxs } from "react/jsx-runtime";
 var PROSE = `prose prose-base dark:prose-invert max-w-none prose-headings:font-semibold
+  prose-h1:text-lg prose-h2:text-base prose-h2:text-primary-500 prose-h2:mt-6 prose-h2:mb-2 prose-h3:text-base
   prose-p:text-[var(--color-text-secondary)] prose-p:leading-relaxed prose-strong:text-[var(--color-text-primary)]
   prose-li:text-[var(--color-text-secondary)] prose-li:marker:text-primary-500`;
 function GettingStartedPage() {

@@ -43,7 +43,7 @@ riadky tabuľky nižšie s ňou — cesta, ktorá chýba alebo pribudla len na j
 Aplikácia má dve roly: `admin` (Správca) a `user` (Používateľ). Heslo má aspoň 8 znakov (`PASSWORD_MIN_LENGTH`).
 
 - **Používatelia** a nové heslo inému — len `admin`.
-- **Systémové nastavenia** vidí každý, mení len `admin`.
+- **Systémové nastavenia** vidí každý, mení len `admin`; zmena platí najneskôr do 30 sekúnd (tak to hovorí aj panel Systém).
 - **Agenti** platia pre celú aplikáciu — vidí a mení ich len `admin`.
 - **Relácie** — `admin` vidí a ruší všetky, `user` vidí len svoje.
 - **Moje konto** a **rozloženie** patria vždy prihlásenému — v ceste nie je id, nikto nečíta ani nemení cudzie.

@@ -1,0 +1,32 @@
+/* nex-app-kit — the page-wide look of an app on a template, as the cockpit has it (index.css of nex-studio-visual).
+ * The app's stylesheet imports it after nex-shared:
+ *
+ *   @import "tailwindcss";
+ *   @import "nex-shared/tokens.css";
+ *   @import "nex-app-kit/frame.css";
+ *   @source "../node_modules/nex-shared/dist";
+ *
+ * The kit's own components are scanned from here (the @source below is relative to this file), and the markdown of
+ * Ako začať uses @tailwindcss/typography, which the app installs. */
+@source "./index.js";
+@plugin "@tailwindcss/typography";
+
+/* Body text at 450 and 13/15 px instead of 12/14 — the cockpit's tokens (Director 2026-07-27: thin small text on a
+ * dark background read badly). Overriding the token moves every use at once, the library's components included. */
+@theme {
+  --font-weight-normal: 450;
+  --text-xs: 0.8125rem;
+  --text-sm: 0.9375rem;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    @apply h-full;
+  }
+  body {
+    /* No `antialiased`: off macOS it turns subpixel rendering off and the text reads thinner. */
+    @apply bg-[var(--color-canvas)] text-[var(--color-text-primary)] font-sans font-normal;
+  }
+}

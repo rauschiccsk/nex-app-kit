@@ -1,0 +1,31 @@
+name: Test
+
+# Apps install nex-app-kit from a pinned tag, so a broken release reaches an app only when it bumps — and then in the
+# middle of its build. Types, tests, the build and the demo build run here first.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - name: The committed dist matches the source
+        run: |
+          npm run build
+          git diff --exit-code -- dist
+      - name: The demo app builds from dist
+        run: npm run demo:build
+      - name: The version has its changelog entry
+        run: |
+          version=$(node -p "require('./package.json').version")
+          grep -q "^## v${version}$" CHANGELOG.md || { echo "CHANGELOG.md has no section for v${version}"; exit 1; }

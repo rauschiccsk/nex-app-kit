@@ -8,7 +8,9 @@ import { Page } from "nex-shared";
 import { useFrame } from "../../../frame/FrameContext";
 import { errorText } from "../../../frame/people";
 
+// Headings stay under the page's own title (text-xl): a guide's „## Prvé kroky“ is a section, not a second title.
 const PROSE = `prose prose-base dark:prose-invert max-w-none prose-headings:font-semibold
+  prose-h1:text-lg prose-h2:text-base prose-h2:text-primary-500 prose-h2:mt-6 prose-h2:mb-2 prose-h3:text-base
   prose-p:text-[var(--color-text-secondary)] prose-p:leading-relaxed prose-strong:text-[var(--color-text-primary)]
   prose-li:text-[var(--color-text-secondary)] prose-li:marker:text-primary-500`;
 
