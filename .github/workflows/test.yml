@@ -2,13 +2,15 @@ name: Test
 
 # Apps install nex-app-kit from a pinned tag, so a broken release reaches an app only when it bumps — and then in the
 # middle of its build. Types, tests, the build and the demo build run here first.
-# On the repository's own runner on ANDROS (ICC D-009: private code never runs on GitHub's machines), started by
+# On the repository's own runner on ANDROS (ICC D-009: all CI runs on our own runners), started by
 # Dedo's nastroje/ci_bezec.sh from the cockpit's runner template.
 
+# Only what reaches main runs, and a run by hand: the repository is public and its runner stands on ANDROS — a pull
+# request from somebody's fork must never run its code there.
 on:
   push:
     branches: [main]
-  pull_request:
+  workflow_dispatch:
 
 jobs:
   test:
