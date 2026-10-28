@@ -1,0 +1,12 @@
+# The server package's tests, as CI runs them: the package installed with its test extras, pytest against the
+# Postgres of docker-compose.test.yml. Built from the repository root — the contract test reads KONTRAKT.md there.
+# Files come in by COPY: a bind mount arrives empty in a Docker-in-Docker runner.
+FROM python:3.12-slim
+WORKDIR /repo/server
+# Dependencies first, against an empty package, so a change in the code does not reinstall them.
+COPY server/pyproject.toml server/README.md ./
+RUN mkdir -p src/nex_app_kit && touch src/nex_app_kit/__init__.py && pip install --no-cache-dir -e ".[dev]"
+COPY KONTRAKT.md /repo/KONTRAKT.md
+COPY server/src ./src
+COPY server/tests ./tests
+CMD ["pytest", "-q", "-p", "no:cacheprovider"]

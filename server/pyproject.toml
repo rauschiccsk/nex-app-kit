@@ -1,0 +1,47 @@
+[project]
+name = "nex-app-kit"
+version = "0.2.0"
+description = "Server of the ICC app template: login, own account, users, sessions, system and agent settings, release notes, getting started and per-user layout (nex-app-kit)."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115,<1",
+    "sqlalchemy>=2.0,<3",
+    "alembic>=1.13",
+    "pydantic>=2.9",
+    "email-validator>=2.1",
+    "pyjwt>=2.9",
+    "bcrypt>=4.2",
+    "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "psycopg[binary]>=3.2",
+    "ruff>=0.6",
+]
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+nex_app_kit = ["migrations/*.py", "migrations/versions/*.py"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI's way of declaring a dependency.
+extend-immutable-calls = ["fastapi.Depends"]

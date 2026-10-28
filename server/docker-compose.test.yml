@@ -1,0 +1,30 @@
+# Tests of the server package against a real Postgres — the database every ICC app runs on. Nothing is published
+# to the host and the database lives in memory (tmpfs), so a run leaves nothing behind once `down -v` ran:
+#   docker compose -p <unique> -f server/docker-compose.test.yml run --rm --build test
+#   docker compose -p <unique> -f server/docker-compose.test.yml down -v
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: kit
+      POSTGRES_PASSWORD: kit
+      POSTGRES_DB: kit
+    tmpfs:
+      - /var/lib/postgresql/data:size=512m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kit -d kit"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  test:
+    build:
+      context: ..
+      dockerfile: server/Dockerfile.test
+    environment:
+      KIT_TEST_DATABASE_URL: postgresql+psycopg://kit:kit@db:5432/kit
+    depends_on:
+      db:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m
