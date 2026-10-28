@@ -1,7 +1,7 @@
-import { StrictMode } from "react";
+import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { HashRouter, Route } from "react-router-dom";
-import { Card, Page } from "nex-shared";
+import { MemoryRouter, Route } from "react-router-dom";
+import { Button, Card, Page } from "nex-shared";
 import { TemplateApp } from "nex-app-kit";
 
 import "./demo.css";
@@ -39,14 +39,35 @@ function Simple({ title, text }: { title: string; text: string }) {
   );
 }
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <HashRouter>
-      <TemplateApp manifest={manifest} client={demoClient} user={ME} onLogout={() => window.alert("Odhlásenie robí aplikácia.")} overview={<Overview />}>
+// Login and logout are the app's (here: a screen that lets you back in). The router keeps the place in memory, so the
+// demo also runs in a frame that has no address of its own.
+function Demo() {
+  const [signedIn, setSignedIn] = useState(true);
+  if (!signedIn) {
+    return (
+      <div className="flex h-full items-center justify-center p-6">
+        <Card className="max-w-sm text-center">
+          <p className="mb-4 text-sm text-[var(--color-text-secondary)]">
+            Odhlásil si sa. Prihlásenie a odhlásenie robí aplikácia, nie šablóna.
+          </p>
+          <Button onClick={() => setSignedIn(true)}>Prihlásiť späť</Button>
+        </Card>
+      </div>
+    );
+  }
+  return (
+    <MemoryRouter>
+      <TemplateApp manifest={manifest} client={demoClient} user={ME} onLogout={() => setSignedIn(false)} overview={<Overview />}>
         <Route path="/areas" element={<Simple title="Oblasti" text="Vlastná stránka aplikácie — šablóna jej dala len miesto v ráme." />} />
         <Route path="/search" element={<Simple title="Hľadanie" text="Vlastná stránka aplikácie." />} />
         <Route path="/audit" element={<Simple title="Audit" text="Položka len pre správcu." />} />
       </TemplateApp>
-    </HashRouter>
+    </MemoryRouter>
+  );
+}
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <Demo />
   </StrictMode>,
 );
