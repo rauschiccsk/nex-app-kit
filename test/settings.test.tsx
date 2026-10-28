@@ -181,3 +181,57 @@ describe("the frame asks only what the app has (KONTRAKT.md, column „kedy“)"
     expect(new Set(calls.map((c) => endpointOf(c)?.scope))).toEqual(new Set(["always", "password", "ai"]));
   });
 });
+
+describe("the kit's own settings and sessions (DEV-252)", () => {
+  it("the session's times stand under „Prihlásenie“", async () => {
+    renderApp({
+      path: "/settings",
+      answers: {
+        "GET /system-settings": [
+          {
+            key: "auth_session_idle_minutes",
+            value: "480",
+            value_type: "int",
+            description: "Po koľkých minútach bez práce aplikácia človeka odhlási.",
+            label: "Odhlásenie po nečinnosti",
+            unit: "minút",
+            updated_at: null,
+            updated_by: null,
+            updated_by_username: null,
+            is_default: true,
+          },
+        ],
+      },
+    });
+
+    expect(await screen.findByText("Odhlásenie po nečinnosti")).toBeInTheDocument();
+    expect(screen.getByText("Prihlásenie")).toBeInTheDocument();
+    expect(screen.queryByText("Ostatné")).not.toBeInTheDocument();
+  });
+
+  it("Relácie name each person as the server's row does", async () => {
+    renderApp({
+      path: "/settings",
+      answers: {
+        "GET /sessions": [
+          {
+            id: "s1",
+            user_id: "u9",
+            username: "eva",
+            created_at: "2026-10-28T08:00:00Z",
+            last_seen_at: "2026-10-28T12:00:00Z",
+            updated_at: "2026-10-28T12:00:00Z",
+            expires_at: "2026-10-29T08:00:00Z",
+            user_agent: "Firefox",
+            current: false,
+          },
+        ],
+      },
+    });
+    fireEvent.click(await screen.findByRole("tab", { name: "Relácie" }));
+
+    expect(await screen.findByText("eva")).toBeInTheDocument();
+    expect(screen.queryByText("u9")).not.toBeInTheDocument();
+    expect(screen.getByText("Kto je prihlásený a odkedy. Zrušená relácia prestane platiť hneď.")).toBeInTheDocument();
+  });
+});

@@ -1,0 +1,30 @@
+# The demo app with its database. Nothing is published to the host — open it at the app container's address on
+# this network (docker inspect), or publish a port of your own when running it on a workstation.
+#   docker compose -f demo/docker-compose.yml up -d --build
+#   docker compose -f demo/docker-compose.yml down -v
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ukazka
+      POSTGRES_PASSWORD: ukazka
+      POSTGRES_DB: ukazka
+    tmpfs:
+      - /var/lib/postgresql/data:size=256m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ukazka -d ukazka"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  app:
+    build:
+      context: ..
+      dockerfile: demo/Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg://ukazka:ukazka@db:5432/ukazka
+      ADMIN_INITIAL_PASSWORD: ukazka-start
+      SECURE_COOKIES: "0"
+      DEMO_SEED: "1"
+    depends_on:
+      db:
+        condition: service_healthy

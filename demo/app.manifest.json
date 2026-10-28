@@ -1,0 +1,18 @@
+{
+  "template": "nsv-standard",
+  "name": "NEX Ukážka",
+  "initials": "NU",
+  "auth": "password",
+  "ai": { "roles": [{ "id": "assistant", "label": "Asistent" }] },
+  "nav": [
+    { "label": "Oblasti", "path": "/areas", "icon": "🗂️" },
+    { "label": "Hľadanie", "path": "/search", "icon": "🔎" },
+    { "label": "Audit", "path": "/audit", "icon": "🧾", "adminOnly": true }
+  ],
+  "settings": {
+    "categories": [
+      { "id": "search", "label": "Hľadanie", "description": "Ako hľadanie vyberá a zoraďuje výsledky.", "prefixes": ["search_"] },
+      { "id": "retention", "label": "Uchovávanie", "description": "Ako dlho aplikácia drží záznamy.", "prefixes": ["retention_"] }
+    ]
+  }
+}

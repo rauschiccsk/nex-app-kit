@@ -1,6 +1,6 @@
 node_modules
-dist
-demo
+demo/dist
+**/node_modules
 server/.venv
 **/__pycache__
 .git

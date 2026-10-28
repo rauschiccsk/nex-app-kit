@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pytest
-from sqlalchemy import text
+from sqlalchemy import select, text
 
 from nex_app_kit.passwords import verify_password
 
@@ -134,6 +134,10 @@ def test_switching_a_user_off_signs_them_out(make_app):
         json={"email": "eva@firma.sk", "role": "user", "first_name": "", "last_name": "", "is_active": False},
     )
 
+    with app.db() as db:
+        from nex_app_kit.models import Session
+
+        assert db.scalars(select(Session).where(Session.user_id == eva.id)).all() == []
     assert browser.get("/api/v1/areas").status_code == 401
     assert app.login("eva", client=browser).status_code == 403
 

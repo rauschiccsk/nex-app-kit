@@ -3,7 +3,7 @@
 // vodorovná čiara, Nastavenia majú byť v každej aplikáciu“.
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 
-import { ADMIN, LAYOUT, PLAIN_USER, panelEntries, renderApp } from "./helpers";
+import { ADMIN, LAYOUT, PLAIN_USER, frame, panelEntries, renderApp } from "./helpers";
 
 const AREAS = { label: "Oblasti", path: "/areas", icon: "🗂️" };
 const SEARCH = { label: "Hľadanie", path: "/search", icon: "🔎" };
@@ -73,7 +73,7 @@ describe("footer", () => {
   it("names the person and their role", async () => {
     renderApp({ user: ADMIN });
 
-    const aside = document.querySelector("aside") as HTMLElement;
+    const { aside } = await frame();
     expect(await within(aside).findByText("Ján Novák")).toBeInTheDocument();
     expect(within(aside).getByText("Správca")).toBeInTheDocument();
   });
@@ -81,25 +81,28 @@ describe("footer", () => {
   it("a person without a name is named by the login", async () => {
     renderApp({ user: { ...PLAIN_USER, first_name: "", last_name: null } });
 
-    const aside = document.querySelector("aside") as HTMLElement;
+    const { aside } = await frame();
     expect(await within(aside).findByText("eva")).toBeInTheDocument();
     expect(within(aside).getByText("Používateľ")).toBeInTheDocument();
   });
 
-  it("logging out is the app's", async () => {
-    const onLogout = vi.fn();
-    renderApp({ onLogout });
+  it("logging out ends the session and leads to signing in", async () => {
+    const { calls } = renderApp();
 
     fireEvent.click(await screen.findByTitle("Odhlásiť sa"));
 
-    expect(onLogout).toHaveBeenCalledTimes(1);
+    expect(await screen.findByRole("button", { name: "Prihlásiť sa" })).toBeInTheDocument();
+    expect(calls).toContainEqual({ method: "POST", path: "/auth/logout" });
+    expect(document.querySelector("aside")).toBeNull();
   });
 
-  it("an app that passes no logout (launched from NEX Manager) has no logout button", async () => {
+  it("launched from NEX Manager, logging out says the way back is NEX Manager", async () => {
     renderApp({ manifest: { auth: "manager" } });
 
-    await screen.findByText("v0.1.0");
-    expect(screen.queryByTitle("Odhlásiť sa")).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByTitle("Odhlásiť sa"));
+
+    expect(await screen.findByText("Odhlásenie prebehlo. Aplikáciu otvoríš znova z NEX Managera.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Prihlásiť sa" })).not.toBeInTheDocument();
   });
 });
 
@@ -144,7 +147,7 @@ describe("top bar", () => {
   ])("on %s says %s", async (path, label) => {
     renderApp({ path, manifest: { nav: [AREAS] } });
 
-    const header = document.querySelector("header") as HTMLElement;
+    const { header } = await frame();
     expect(await within(header).findByText(label)).toBeInTheDocument();
   });
 

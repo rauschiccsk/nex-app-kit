@@ -1,12 +1,14 @@
 // A fake server for the frame's tests: answers the standard interface (KONTRAKT.md) from a table and records every
 // call, so a test can say both what the screen shows and what the frame asked the server.
-import { render } from "@testing-library/react";
+import { render, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
-import type { ApiClient } from "nex-shared";
+import { ApiError, type ApiClient } from "nex-shared";
 
 import { defineApp, type AppManifestInput } from "../src/manifest";
 import type { CurrentUser, UserLayout } from "../src/standard-api";
+
+export type { Answer };
 import { TemplateApp } from "../src/TemplateApp";
 
 export interface Call {
@@ -77,27 +79,24 @@ export const BASE: AppManifestInput = { template: "nsv-standard", name: "NEX Kno
 
 export interface RenderOptions {
   manifest?: Partial<AppManifestInput>;
+  /** Who GET /auth/me says is signed in; null = nobody (401). */
   user?: CurrentUser | null;
   path?: string;
   answers?: Record<string, Answer>;
-  onLogout?: () => void;
   routes?: ReactNode;
   frontendVersion?: string;
 }
 
+/** What the server answers when nobody is signed in. */
+export const UNAUTHORIZED = new ApiError(401, "Nie si prihlásený.", { detail: "Nie si prihlásený.", code: "KIT-AUTH-REQUIRED" });
+
 export function renderApp(options: RenderOptions = {}) {
-  const { client, calls } = fakeClient(options.answers);
+  const user = options.user === undefined ? ADMIN : options.user;
+  const { client, calls } = fakeClient({ "GET /auth/me": user ?? UNAUTHORIZED, ...options.answers });
   const manifest = defineApp({ ...BASE, ...options.manifest });
   const utils = render(
     <MemoryRouter initialEntries={[options.path ?? "/"]}>
-      <TemplateApp
-        manifest={manifest}
-        client={client}
-        user={options.user === undefined ? ADMIN : options.user}
-        onLogout={options.onLogout}
-        frontendVersion={options.frontendVersion}
-        overview={<p>Obsah prehľadu</p>}
-      >
+      <TemplateApp manifest={manifest} client={client} frontendVersion={options.frontendVersion} overview={<p>Obsah prehľadu</p>}>
         {options.routes}
       </TemplateApp>
     </MemoryRouter>,
@@ -114,4 +113,12 @@ export function panelEntries(): string[] {
     const icon = el.querySelector('[aria-hidden="true"]')?.textContent ?? "";
     return (el.textContent ?? "").replace(icon, "").trim();
   });
+}
+
+/** The frame once the session is known: the left panel and the top bar. */
+export async function frame(): Promise<{ aside: HTMLElement; header: HTMLElement }> {
+  await waitFor(() => {
+    if (!document.querySelector("aside") || !document.querySelector("header")) throw new Error("no frame yet");
+  });
+  return { aside: document.querySelector("aside") as HTMLElement, header: document.querySelector("header") as HTMLElement };
 }

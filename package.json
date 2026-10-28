@@ -1,6 +1,6 @@
 {
   "name": "nex-app-kit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "NEX app templates — the frame of an ICC app (left panel, top bar, Getting started, Updates, Settings) on top of nex-shared, and the standard server interface it uses.",
@@ -18,7 +18,6 @@
     "build": "tsup && cp src/frame.css dist/frame.css",
     "lint": "tsc --noEmit",
     "test": "vitest run",
-    "demo": "vite --config demo/vite.config.ts",
     "demo:build": "vite build --config demo/vite.config.ts"
   },
   "peerDependencies": {
@@ -42,7 +41,7 @@
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.7.0",
     "jsdom": "^25.0.0",
-    "nex-shared": "github:rauschiccsk/nex-shared#v0.26.1",
+    "nex-shared": "github:rauschiccsk/nex-shared#v0.28.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.0.0",

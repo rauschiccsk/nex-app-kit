@@ -1,6 +1,7 @@
 // DEV-251 — the manifest: everything the template needs to know about an app, in one file the app owns
-// (src/app.manifest.ts). The frame reads it, the server will read the same (phase 2). A wrong value stops the app
-// before it starts, with every problem named in one sentence each — the agent fixes them all in one go.
+// (app.manifest.json). The frame reads it through defineApp, the server through load_manifest (DEV-252). A wrong value
+// stops the app before it starts, with every problem named in one sentence each — the agent fixes them all in one go.
+// The rules both sides check run on the same cases (server/tests/manifest_cases.json).
 import type { SettingsCategory } from "nex-shared";
 
 import { MODULES } from "./modules";
@@ -36,7 +37,8 @@ export interface AppManifestInput {
   template: string;
   name: string;
   initials: string;
-  auth: AppAuthMode;
+  /** "password" or "manager" — a string here, since app.manifest.json gives a string; checked when the app starts. */
+  auth: AppAuthMode | (string & {});
   ai?: AiConfig | false;
   modules?: string[];
   nav?: NavEntry[];
@@ -60,6 +62,11 @@ export const TEMPLATE_PATHS = ["/", "/getting-started", "/updates", "/settings"]
 /** A left-panel label longer than this does not fit on one line at the default width (ICC layout standard). */
 export const NAV_LABEL_MAX = 22;
 
+/** What JSON cannot hold: the hook that counts what waits behind an entry, by the entry's path. */
+export interface AppExtras {
+  counts?: Record<string, () => number | null | undefined>;
+}
+
 export class ManifestError extends Error {
   readonly problems: string[];
 
@@ -72,11 +79,12 @@ export class ManifestError extends Error {
 
 const AUTH_MODES: readonly string[] = ["password", "manager"];
 
-export function defineApp(input: AppManifestInput): AppManifest {
+export function defineApp(input: AppManifestInput, extras: AppExtras = {}): AppManifest {
   const problems: string[] = [];
   const ai = input.ai ?? false;
   const modules = input.modules ?? [];
-  const nav = input.nav ?? [];
+  const counts = extras.counts ?? {};
+  const nav = (input.nav ?? []).map((entry) => (counts[entry.path] ? { ...entry, useCount: counts[entry.path] } : entry));
 
   if (!(TEMPLATE_IDS as readonly string[]).includes(input.template)) {
     problems.push(`Šablóna „${input.template}“ neexistuje — sú tieto: ${TEMPLATE_IDS.join(", ")}.`);
@@ -120,6 +128,9 @@ export function defineApp(input: AppManifestInput): AppManifest {
   }
   for (const label of duplicates(nav.map((n) => n.label))) problems.push(`Položka „${label}“ je v ľavom paneli dvakrát.`);
   for (const path of duplicates(nav.map((n) => n.path))) problems.push(`Cesta „${path}“ je v ľavom paneli dvakrát.`);
+  for (const path of Object.keys(counts)) {
+    if (!nav.some((n) => n.path === path)) problems.push(`Počet pre „${path}“ nepatrí žiadnej položke ľavého panela.`);
+  }
 
   if (problems.length) throw new ManifestError(problems);
 
@@ -127,7 +138,7 @@ export function defineApp(input: AppManifestInput): AppManifest {
     template: input.template as TemplateId,
     name: input.name,
     initials: input.initials,
-    auth: input.auth,
+    auth: input.auth as AppAuthMode,
     ai: ai ? Object.freeze({ roles: Object.freeze([...ai.roles]) as AgentRole[] }) : false,
     modules: Object.freeze([...modules]),
     nav: Object.freeze([...nav]),

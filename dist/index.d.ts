@@ -32,7 +32,8 @@ interface AppManifestInput {
     template: string;
     name: string;
     initials: string;
-    auth: AppAuthMode;
+    /** "password" or "manager" — a string here, since app.manifest.json gives a string; checked when the app starts. */
+    auth: AppAuthMode | (string & {});
     ai?: AiConfig | false;
     modules?: string[];
     nav?: NavEntry[];
@@ -56,11 +57,15 @@ interface AppManifest {
 declare const TEMPLATE_PATHS: readonly ["/", "/getting-started", "/updates", "/settings"];
 /** A left-panel label longer than this does not fit on one line at the default width (ICC layout standard). */
 declare const NAV_LABEL_MAX = 22;
+/** What JSON cannot hold: the hook that counts what waits behind an entry, by the entry's path. */
+interface AppExtras {
+    counts?: Record<string, () => number | null | undefined>;
+}
 declare class ManifestError extends Error {
     readonly problems: string[];
     constructor(problems: string[]);
 }
-declare function defineApp(input: AppManifestInput): AppManifest;
+declare function defineApp(input: AppManifestInput, extras?: AppExtras): AppManifest;
 
 interface ModuleDefinition {
     id: string;
@@ -83,9 +88,30 @@ declare const STANDARD_ROLES: readonly [{
 declare const ADMIN_ROLE = "admin";
 /** The shortest password the server accepts — the forms say the same before sending. */
 declare const PASSWORD_MIN_LENGTH = 8;
-/** When an app has the endpoint: always, with its own password (users live in the app), or with AI agents. */
-type EndpointScope = "always" | "password" | "ai";
+/** When an app has the endpoint: always, with its own password (users live in the app), launched from NEX Manager,
+ *  or with AI agents — the column „kedy“ of KONTRAKT.md. */
+type EndpointScope = "always" | "password" | "manager" | "ai";
 declare const STANDARD_ENDPOINTS: readonly [{
+    readonly id: "login";
+    readonly method: "POST";
+    readonly path: "/auth/login";
+    readonly scope: "password";
+}, {
+    readonly id: "logout";
+    readonly method: "POST";
+    readonly path: "/auth/logout";
+    readonly scope: "always";
+}, {
+    readonly id: "launch";
+    readonly method: "GET";
+    readonly path: "/launch";
+    readonly scope: "manager";
+}, {
+    readonly id: "launchPost";
+    readonly method: "POST";
+    readonly path: "/launch";
+    readonly scope: "manager";
+}, {
     readonly id: "health";
     readonly method: "GET";
     readonly path: "/health";
@@ -217,6 +243,14 @@ interface UserChanges {
     last_name: string;
     is_active: boolean;
 }
+/** A signed-in browser — the server keeps sessions in its database, without a token version. */
+interface SessionRead extends UserSessionRead {
+    username: string | null;
+    expires_at: string;
+    user_agent: string | null;
+    /** The session of the browser asking. */
+    current: boolean;
+}
 interface AgentSettingRead {
     role: string;
     /** A model family (opus, sonnet, haiku), never a version; empty = the app's default. */
@@ -247,6 +281,8 @@ interface GettingStartedRead {
     markdown: string;
 }
 interface StandardApi {
+    login(username: string, password: string): Promise<CurrentUser>;
+    logout(): Promise<void>;
     health(): Promise<HealthRead>;
     me(): Promise<CurrentUser>;
     updateMe(changes: ProfileChanges): Promise<CurrentUser>;
@@ -256,7 +292,7 @@ interface StandardApi {
     updateUser(id: string, changes: UserChanges): Promise<UserRead>;
     deleteUser(id: string): Promise<void>;
     setUserPassword(id: string, newPassword: string): Promise<void>;
-    listSessions(): Promise<UserSessionRead[]>;
+    listSessions(): Promise<SessionRead[]>;
     revokeSession(id: string): Promise<void>;
     listSystemSettings(): Promise<SystemSettingRead[]>;
     updateSystemSetting(key: string, value: string): Promise<SystemSettingRead>;
@@ -276,12 +312,8 @@ declare function createStandardApi(client: ApiClient): StandardApi;
 
 interface TemplateAppProps {
     manifest: AppManifest;
-    /** The app's configured client (nex-shared createApiClient, prefix /api/v1). */
-    client: ApiClient;
-    /** The signed-in person, from the app's login. */
-    user: CurrentUser | null;
-    /** Leave out for an app without a logout (launched from NEX Manager). */
-    onLogout?: () => void;
+    /** The app's API client; by default one for the same address, prefix /api/v1, with the session cookie. */
+    client?: ApiClient;
     /** The frontend's build version (e.g. import.meta.env.VITE_APP_VERSION). */
     frontendVersion?: string;
     /** Prehľad — the app's own overview. */
@@ -289,7 +321,7 @@ interface TemplateAppProps {
     /** The app's own pages as <Route> elements. */
     children?: ReactNode;
 }
-declare function TemplateApp({ manifest, client, user, onLogout, frontendVersion, overview, children }: TemplateAppProps): react.JSX.Element;
+declare function TemplateApp({ manifest, client, frontendVersion, overview, children }: TemplateAppProps): react.JSX.Element;
 
 interface LayoutState {
     /** `null` until read from the server; the screen keeps its defaults meanwhile. */

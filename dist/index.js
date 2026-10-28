@@ -17,11 +17,12 @@ var ManifestError = class extends Error {
   }
 };
 var AUTH_MODES = ["password", "manager"];
-function defineApp(input) {
+function defineApp(input, extras = {}) {
   const problems = [];
   const ai = input.ai ?? false;
   const modules = input.modules ?? [];
-  const nav = input.nav ?? [];
+  const counts = extras.counts ?? {};
+  const nav = (input.nav ?? []).map((entry) => counts[entry.path] ? { ...entry, useCount: counts[entry.path] } : entry);
   if (!TEMPLATE_IDS.includes(input.template)) {
     problems.push(`\u0160abl\xF3na \u201E${input.template}\u201C neexistuje \u2014 s\xFA tieto: ${TEMPLATE_IDS.join(", ")}.`);
   }
@@ -64,6 +65,9 @@ function defineApp(input) {
   }
   for (const label of duplicates(nav.map((n) => n.label))) problems.push(`Polo\u017Eka \u201E${label}\u201C je v \u013Eavom paneli dvakr\xE1t.`);
   for (const path of duplicates(nav.map((n) => n.path))) problems.push(`Cesta \u201E${path}\u201C je v \u013Eavom paneli dvakr\xE1t.`);
+  for (const path of Object.keys(counts)) {
+    if (!nav.some((n) => n.path === path)) problems.push(`Po\u010Det pre \u201E${path}\u201C nepatr\xED \u017Eiadnej polo\u017Eke \u013Eav\xE9ho panela.`);
+  }
   if (problems.length) throw new ManifestError(problems);
   return Object.freeze({
     template: input.template,
@@ -91,6 +95,11 @@ var STANDARD_ROLES = [
 var ADMIN_ROLE = "admin";
 var PASSWORD_MIN_LENGTH = 8;
 var STANDARD_ENDPOINTS = [
+  { id: "login", method: "POST", path: "/auth/login", scope: "password" },
+  { id: "logout", method: "POST", path: "/auth/logout", scope: "always" },
+  // The browser comes here from NEX Manager with the launch ticket — the frame never calls these.
+  { id: "launch", method: "GET", path: "/launch", scope: "manager" },
+  { id: "launchPost", method: "POST", path: "/launch", scope: "manager" },
   { id: "health", method: "GET", path: "/health", scope: "always" },
   { id: "me", method: "GET", path: "/auth/me", scope: "always" },
   { id: "updateMe", method: "PATCH", path: "/auth/me", scope: "password" },
@@ -135,6 +144,8 @@ function createStandardApi(client) {
     }
   }
   return {
+    login: (username, password) => call("login", {}, { username, password }),
+    logout: () => call("logout"),
     health: () => call("health"),
     me: () => call("me"),
     updateMe: (changes) => call("updateMe", {}, changes),
@@ -159,7 +170,8 @@ function createStandardApi(client) {
 }
 
 // src/TemplateApp.tsx
-import { useEffect as useEffect7, useMemo as useMemo3, useState as useState6 } from "react";
+import { useCallback as useCallback4, useEffect as useEffect7, useMemo as useMemo3, useState as useState7 } from "react";
+import { ApiError, createApiClient, registerAuthCallback } from "nex-shared";
 
 // src/frame/FrameContext.ts
 import { createContext, useContext } from "react";
@@ -194,9 +206,146 @@ function createLayoutStore(api) {
   }));
 }
 
+// src/frame/screens.tsx
+import { useState } from "react";
+import { Brand, Button, Card, Input, LoginForm } from "nex-shared";
+
+// src/frame/people.ts
+function personName(person) {
+  if (!person) return "";
+  const full = [person.first_name, person.last_name].map((part) => (part ?? "").trim()).filter(Boolean).join(" ");
+  return full || person.username;
+}
+function roleLabel(role) {
+  if (!role) return "\u2014";
+  return STANDARD_ROLES.find((r) => r.value === role)?.label ?? role;
+}
+function errorText(error, fallback) {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
+// src/frame/screens.tsx
+import { jsx, jsxs } from "react/jsx-runtime";
+function Centered({ manifest, children }) {
+  return /* @__PURE__ */ jsx("div", { className: "flex min-h-full items-center justify-center bg-[var(--color-canvas)] p-6", children: /* @__PURE__ */ jsxs(Card, { className: "w-full max-w-sm", children: [
+    /* @__PURE__ */ jsx("div", { className: "mb-5", children: /* @__PURE__ */ jsx(Brand, { initials: manifest.initials, name: manifest.name }) }),
+    children
+  ] }) });
+}
+function LoadingScreen() {
+  return /* @__PURE__ */ jsx("div", { className: "flex min-h-full items-center justify-center bg-[var(--color-canvas)] text-sm text-[var(--color-text-muted)]", children: "Na\u010D\xEDtavam\u2026" });
+}
+function LoginScreen({
+  manifest,
+  api,
+  note,
+  onSignedIn
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  async function signIn({ username, password }) {
+    setBusy(true);
+    setError(null);
+    try {
+      onSignedIn(await api.login(username, password));
+    } catch (e) {
+      setError(errorText(e, "Prihl\xE1senie sa nepodarilo."));
+      setBusy(false);
+    }
+  }
+  return /* @__PURE__ */ jsxs(Centered, { manifest, children: [
+    note && /* @__PURE__ */ jsx("p", { className: "mb-4 text-sm text-[var(--color-text-secondary)]", children: note }),
+    /* @__PURE__ */ jsx(
+      LoginForm,
+      {
+        onSubmit: signIn,
+        loading: busy,
+        error,
+        onChange: () => setError(null),
+        autoFocus: true,
+        identityLabel: "Prihlasovacie meno",
+        passwordLabel: "Heslo",
+        submitLabel: "Prihl\xE1si\u0165 sa",
+        loadingLabel: "Prihlasujem\u2026"
+      }
+    )
+  ] });
+}
+function ClosedScreen({ manifest, sentence }) {
+  return /* @__PURE__ */ jsx(Centered, { manifest, children: /* @__PURE__ */ jsx("p", { className: "text-sm text-[var(--color-text-secondary)]", children: sentence }) });
+}
+function UnavailableScreen({ manifest, onRetry }) {
+  return /* @__PURE__ */ jsxs(Centered, { manifest, children: [
+    /* @__PURE__ */ jsx("p", { className: "mb-4 text-sm text-[var(--color-text-secondary)]", children: "Aplik\xE1cia teraz neodpoved\xE1. Sk\xFAs to o chv\xED\u013Eu znova." }),
+    /* @__PURE__ */ jsx(Button, { onClick: onRetry, children: "Sk\xFAsi\u0165 znova" })
+  ] });
+}
+function ChangePasswordScreen({
+  manifest,
+  api,
+  onChanged,
+  onLogout
+}) {
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [again, setAgain] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  async function submit(e) {
+    e.preventDefault();
+    setError("");
+    if (next !== again) {
+      setError("Nov\xE9 hesl\xE1 sa nezhoduj\xFA.");
+      return;
+    }
+    setBusy(true);
+    try {
+      await api.changePassword(current, next);
+      onChanged();
+    } catch (err) {
+      setError(errorText(err, "Zmena hesla sa nepodarila."));
+      setBusy(false);
+    }
+  }
+  const label = "mb-1 block text-xs text-[var(--color-text-muted)]";
+  return /* @__PURE__ */ jsxs(Centered, { manifest, children: [
+    /* @__PURE__ */ jsx("h1", { className: "mb-1 text-base font-semibold text-[var(--color-text-primary)]", children: "Nastav si vlastn\xE9 heslo" }),
+    /* @__PURE__ */ jsx("p", { className: "mb-4 text-sm text-[var(--color-text-secondary)]", children: "Heslo na prv\xE9 prihl\xE1senie ti nastavil niekto in\xFD. K\xFDm si nastav\xED\u0161 vlastn\xE9, aplik\xE1cia sa neotvor\xED." }),
+    /* @__PURE__ */ jsxs("form", { onSubmit: submit, className: "space-y-3", children: [
+      /* @__PURE__ */ jsxs("div", { children: [
+        /* @__PURE__ */ jsx("label", { htmlFor: "kit-current", className: label, children: "S\xFA\u010Dasn\xE9 heslo" }),
+        /* @__PURE__ */ jsx(Input, { id: "kit-current", type: "password", autoComplete: "current-password", value: current, onChange: (e) => setCurrent(e.target.value) })
+      ] }),
+      /* @__PURE__ */ jsxs("div", { children: [
+        /* @__PURE__ */ jsx("label", { htmlFor: "kit-new", className: label, children: "Nov\xE9 heslo" }),
+        /* @__PURE__ */ jsx(
+          Input,
+          {
+            id: "kit-new",
+            type: "password",
+            autoComplete: "new-password",
+            placeholder: `aspo\u0148 ${PASSWORD_MIN_LENGTH} znakov`,
+            value: next,
+            onChange: (e) => setNext(e.target.value)
+          }
+        )
+      ] }),
+      /* @__PURE__ */ jsxs("div", { children: [
+        /* @__PURE__ */ jsx("label", { htmlFor: "kit-again", className: label, children: "Zopakuj nov\xE9 heslo" }),
+        /* @__PURE__ */ jsx(Input, { id: "kit-again", type: "password", autoComplete: "new-password", value: again, onChange: (e) => setAgain(e.target.value) })
+      ] }),
+      error && /* @__PURE__ */ jsx("p", { role: "alert", className: "text-sm text-[var(--color-status-error)]", children: error }),
+      /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between gap-3 pt-1", children: [
+        /* @__PURE__ */ jsx("button", { type: "button", onClick: onLogout, className: "text-xs text-[var(--color-text-muted)] hover:underline", children: "Odhl\xE1si\u0165 sa" }),
+        /* @__PURE__ */ jsx(Button, { type: "submit", disabled: busy || !current || !next || !again, children: busy ? "Uklad\xE1m\u2026" : "Nastavi\u0165 heslo" })
+      ] })
+    ] })
+  ] });
+}
+
 // src/frame/theme.tsx
-import { createContext as createContext2, useCallback, useContext as useContext2, useEffect, useMemo, useState } from "react";
-import { jsx } from "react/jsx-runtime";
+import { createContext as createContext2, useCallback, useContext as useContext2, useEffect, useMemo, useState as useState2 } from "react";
+import { jsx as jsx2 } from "react/jsx-runtime";
 var ThemeContext = createContext2(null);
 function darkModeKey(username) {
   return `nex_dark_${username}`;
@@ -211,7 +360,7 @@ function readDark(username) {
   }
 }
 function ThemeProvider({ username, children }) {
-  const [isDark, setIsDark] = useState(() => readDark(username));
+  const [isDark, setIsDark] = useState2(() => readDark(username));
   useEffect(() => setIsDark(readDark(username)), [username]);
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
@@ -229,7 +378,7 @@ function ThemeProvider({ username, children }) {
     });
   }, [username]);
   const value = useMemo(() => ({ isDark, toggleDark }), [isDark, toggleDark]);
-  return /* @__PURE__ */ jsx(ThemeContext.Provider, { value, children });
+  return /* @__PURE__ */ jsx2(ThemeContext.Provider, { value, children });
 }
 function useTheme() {
   const value = useContext2(ThemeContext);
@@ -241,35 +390,19 @@ function useTheme() {
 import { Outlet as Outlet2, Route, Routes } from "react-router-dom";
 
 // src/templates/nsv-standard/pages/GettingStartedPage.tsx
-import { useEffect as useEffect2, useState as useState2 } from "react";
+import { useEffect as useEffect2, useState as useState3 } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Page } from "nex-shared";
-
-// src/frame/people.ts
-function personName(person) {
-  if (!person) return "";
-  const full = [person.first_name, person.last_name].map((part) => (part ?? "").trim()).filter(Boolean).join(" ");
-  return full || person.username;
-}
-function roleLabel(role) {
-  if (!role) return "\u2014";
-  return STANDARD_ROLES.find((r) => r.value === role)?.label ?? role;
-}
-function errorText(error, fallback) {
-  return error instanceof Error && error.message ? error.message : fallback;
-}
-
-// src/templates/nsv-standard/pages/GettingStartedPage.tsx
-import { jsx as jsx2, jsxs } from "react/jsx-runtime";
+import { jsx as jsx3, jsxs as jsxs2 } from "react/jsx-runtime";
 var PROSE = `prose prose-base dark:prose-invert max-w-none prose-headings:font-semibold
   prose-h1:text-lg prose-h2:text-base prose-h2:text-primary-500 prose-h2:mt-6 prose-h2:mb-2 prose-h3:text-base
   prose-p:text-[var(--color-text-secondary)] prose-p:leading-relaxed prose-strong:text-[var(--color-text-primary)]
   prose-li:text-[var(--color-text-secondary)] prose-li:marker:text-primary-500`;
 function GettingStartedPage() {
   const { api } = useFrame();
-  const [markdown, setMarkdown] = useState2(null);
-  const [error, setError] = useState2("");
+  const [markdown, setMarkdown] = useState3(null);
+  const [error, setError] = useState3("");
   useEffect2(() => {
     let live = true;
     api.gettingStarted().then((g) => live && setMarkdown(g.markdown ?? "")).catch((e) => live && setError(errorText(e, "server neodpoved\xE1")));
@@ -277,35 +410,35 @@ function GettingStartedPage() {
       live = false;
     };
   }, [api]);
-  return /* @__PURE__ */ jsx2(Page, { title: "Ako za\u010Da\u0165", width: "narrow", children: error ? /* @__PURE__ */ jsxs("p", { className: "text-sm text-[var(--color-status-error)]", children: [
+  return /* @__PURE__ */ jsx3(Page, { title: "Ako za\u010Da\u0165", width: "narrow", children: error ? /* @__PURE__ */ jsxs2("p", { className: "text-sm text-[var(--color-status-error)]", children: [
     "N\xE1vod sa nepodarilo na\u010D\xEDta\u0165: ",
     error
-  ] }) : markdown === null ? /* @__PURE__ */ jsx2("p", { className: "text-sm text-[var(--color-text-muted)]", children: "Na\u010D\xEDtavam\u2026" }) : markdown.trim() === "" ? /* @__PURE__ */ jsx2("p", { className: "text-sm text-[var(--color-text-muted)]", children: "N\xE1vod k aplik\xE1cii e\u0161te nie je nap\xEDsan\xFD." }) : /* @__PURE__ */ jsx2("div", { className: PROSE, children: /* @__PURE__ */ jsx2(ReactMarkdown, { remarkPlugins: [remarkGfm], children: markdown }) }) });
+  ] }) : markdown === null ? /* @__PURE__ */ jsx3("p", { className: "text-sm text-[var(--color-text-muted)]", children: "Na\u010D\xEDtavam\u2026" }) : markdown.trim() === "" ? /* @__PURE__ */ jsx3("p", { className: "text-sm text-[var(--color-text-muted)]", children: "N\xE1vod k aplik\xE1cii e\u0161te nie je nap\xEDsan\xFD." }) : /* @__PURE__ */ jsx3("div", { className: PROSE, children: /* @__PURE__ */ jsx3(ReactMarkdown, { remarkPlugins: [remarkGfm], children: markdown }) }) });
 }
 
 // src/templates/nsv-standard/pages/NotFoundPage.tsx
 import { Link } from "react-router-dom";
 import { Page as Page2 } from "nex-shared";
-import { jsx as jsx3, jsxs as jsxs2 } from "react/jsx-runtime";
+import { jsx as jsx4, jsxs as jsxs3 } from "react/jsx-runtime";
 function NotFoundPage() {
-  return /* @__PURE__ */ jsxs2(Page2, { title: "Str\xE1nka neexistuje", width: "narrow", children: [
-    /* @__PURE__ */ jsx3("p", { className: "text-sm text-[var(--color-text-secondary)]", children: "Na tejto adrese ni\u010D nie je. Mo\u017Eno sa zmenila, alebo bola zle nap\xEDsan\xE1." }),
-    /* @__PURE__ */ jsx3(Link, { to: "/", className: "mt-3 inline-block text-sm text-[var(--color-accent-primary)] hover:underline", children: "Sp\xE4\u0165 na Preh\u013Ead" })
+  return /* @__PURE__ */ jsxs3(Page2, { title: "Str\xE1nka neexistuje", width: "narrow", children: [
+    /* @__PURE__ */ jsx4("p", { className: "text-sm text-[var(--color-text-secondary)]", children: "Na tejto adrese ni\u010D nie je. Mo\u017Eno sa zmenila, alebo bola zle nap\xEDsan\xE1." }),
+    /* @__PURE__ */ jsx4(Link, { to: "/", className: "mt-3 inline-block text-sm text-[var(--color-accent-primary)] hover:underline", children: "Sp\xE4\u0165 na Preh\u013Ead" })
   ] });
 }
 
 // src/templates/nsv-standard/pages/SettingsPage.tsx
-import { useCallback as useCallback2, useEffect as useEffect3, useMemo as useMemo2, useState as useState3 } from "react";
+import { useCallback as useCallback2, useEffect as useEffect3, useMemo as useMemo2, useState as useState4 } from "react";
 import {
   AgentsPanel,
-  Card,
+  Card as Card2,
   MyAccountPanel,
   SessionsPanel,
   SettingsShell,
   SystemSettingsPanel,
   UsersPanel
 } from "nex-shared";
-import { jsx as jsx4, jsxs as jsxs3 } from "react/jsx-runtime";
+import { jsx as jsx5, jsxs as jsxs4 } from "react/jsx-runtime";
 var LABELS = {
   system: "Syst\xE9m",
   agents: "Agenti",
@@ -316,6 +449,14 @@ var LABELS = {
 var EFFORTS = ["low", "medium", "high", "xhigh", "max"];
 var ROLE_OPTIONS = STANDARD_ROLES.map((r) => ({ value: r.value, label: r.label }));
 var USER_FIELDS = { username: true, names: true, telegram: false, passwordMinLength: PASSWORD_MIN_LENGTH };
+var KIT_SETTINGS_CATEGORIES = [
+  {
+    id: "kit-auth",
+    label: "Prihl\xE1senie",
+    description: "Ako dlho ost\xE1va \u010Dlovek prihl\xE1sen\xFD.",
+    prefixes: ["auth_"]
+  }
+];
 function settingsConfig(manifest) {
   const tabs = ["system"];
   if (manifest.ai) tabs.push("agents");
@@ -330,9 +471,9 @@ function settingsConfig(manifest) {
 }
 function SystemTab() {
   const { api, manifest, isAdmin } = useFrame();
-  const [settings, setSettings] = useState3([]);
-  const [loading, setLoading] = useState3(true);
-  const [loadError, setLoadError] = useState3("");
+  const [settings, setSettings] = useState4([]);
+  const [loading, setLoading] = useState4(true);
+  const [loadError, setLoadError] = useState4("");
   useEffect3(() => {
     api.listSystemSettings().then(setSettings).catch((e) => setLoadError(errorText(e, "Nepodarilo sa na\u010D\xEDta\u0165 nastavenia."))).finally(() => setLoading(false));
   }, [api]);
@@ -344,11 +485,11 @@ function SystemTab() {
     },
     [api]
   );
-  return /* @__PURE__ */ jsx4(
+  return /* @__PURE__ */ jsx5(
     SystemSettingsPanel,
     {
       settings,
-      categories: [...manifest.settings.categories],
+      categories: [...manifest.settings.categories, ...KIT_SETTINGS_CATEGORIES],
       canEdit: isAdmin,
       onSave: save,
       loading,
@@ -359,10 +500,10 @@ function SystemTab() {
 function AgentsTab() {
   const { api, manifest } = useFrame();
   const roles = manifest.ai ? [...manifest.ai.roles] : [];
-  const [models, setModels] = useState3([]);
-  const [drafts, setDrafts] = useState3(null);
-  const [loadError, setLoadError] = useState3("");
-  const [saveErrors, setSaveErrors] = useState3({});
+  const [models, setModels] = useState4([]);
+  const [drafts, setDrafts] = useState4(null);
+  const [loadError, setLoadError] = useState4("");
+  const [saveErrors, setSaveErrors] = useState4({});
   useEffect3(() => {
     Promise.all([api.listAgentSettings(), api.listAgentModels()]).then(([rows, options]) => {
       const initial = {};
@@ -384,7 +525,7 @@ function AgentsTab() {
     },
     [api]
   );
-  return /* @__PURE__ */ jsx4(
+  return /* @__PURE__ */ jsx5(
     AgentsPanel,
     {
       roles,
@@ -399,26 +540,26 @@ function AgentsTab() {
   );
 }
 function ReadOnlyField({ label, value }) {
-  return /* @__PURE__ */ jsxs3("div", { children: [
-    /* @__PURE__ */ jsx4("div", { className: "mb-1 text-xs text-[var(--color-text-muted)]", children: label }),
-    /* @__PURE__ */ jsx4("div", { className: "text-sm text-[var(--color-text-secondary)]", children: value || "\u2014" })
+  return /* @__PURE__ */ jsxs4("div", { children: [
+    /* @__PURE__ */ jsx5("div", { className: "mb-1 text-xs text-[var(--color-text-muted)]", children: label }),
+    /* @__PURE__ */ jsx5("div", { className: "text-sm text-[var(--color-text-secondary)]", children: value || "\u2014" })
   ] });
 }
 function AccountTab() {
   const { api, manifest, user, setUser } = useFrame();
   if (!user) return null;
   if (manifest.auth === "manager") {
-    return /* @__PURE__ */ jsx4("div", { className: "p-6", children: /* @__PURE__ */ jsxs3(Card, { className: "max-w-3xl", children: [
-      /* @__PURE__ */ jsx4("p", { className: "mb-4 text-sm text-[var(--color-text-secondary)]", children: "Tvoj \xFA\u010Det spravuje NEX Manager \u2014 meno, e-mail aj heslo sa menia tam." }),
-      /* @__PURE__ */ jsxs3("div", { className: "grid grid-cols-2 gap-3", children: [
-        /* @__PURE__ */ jsx4(ReadOnlyField, { label: "Meno a priezvisko", value: personName(user) }),
-        /* @__PURE__ */ jsx4(ReadOnlyField, { label: "E-mail", value: user.email }),
-        /* @__PURE__ */ jsx4(ReadOnlyField, { label: "Pou\u017E\xEDvate\u013Esk\xE9 meno", value: user.username }),
-        /* @__PURE__ */ jsx4(ReadOnlyField, { label: "Rola", value: roleLabel(user.role) })
+    return /* @__PURE__ */ jsx5("div", { className: "p-6", children: /* @__PURE__ */ jsxs4(Card2, { className: "max-w-3xl", children: [
+      /* @__PURE__ */ jsx5("p", { className: "mb-4 text-sm text-[var(--color-text-secondary)]", children: "Tvoj \xFA\u010Det spravuje NEX Manager \u2014 meno, e-mail aj heslo sa menia tam." }),
+      /* @__PURE__ */ jsxs4("div", { className: "grid grid-cols-2 gap-3", children: [
+        /* @__PURE__ */ jsx5(ReadOnlyField, { label: "Meno a priezvisko", value: personName(user) }),
+        /* @__PURE__ */ jsx5(ReadOnlyField, { label: "E-mail", value: user.email }),
+        /* @__PURE__ */ jsx5(ReadOnlyField, { label: "Pou\u017E\xEDvate\u013Esk\xE9 meno", value: user.username }),
+        /* @__PURE__ */ jsx5(ReadOnlyField, { label: "Rola", value: roleLabel(user.role) })
       ] })
     ] }) });
   }
-  return /* @__PURE__ */ jsx4(
+  return /* @__PURE__ */ jsx5(
     MyAccountPanel,
     {
       user: {
@@ -440,12 +581,12 @@ function AccountTab() {
 }
 function UsersTab() {
   const { api, isAdmin } = useFrame();
-  const [users, setUsers] = useState3([]);
+  const [users, setUsers] = useState4([]);
   useEffect3(() => {
     api.listUsers().then(setUsers).catch(() => setUsers([]));
   }, [api]);
   const replace = (row) => setUsers((prev) => prev.map((u) => u.id === row.id ? row : u));
-  return /* @__PURE__ */ jsx4(
+  return /* @__PURE__ */ jsx5(
     UsersPanel,
     {
       users,
@@ -496,24 +637,15 @@ function UsersTab() {
   );
 }
 function SessionsTab() {
-  const { api, manifest, user, isAdmin } = useFrame();
-  const [sessions, setSessions] = useState3([]);
-  const [users, setUsers] = useState3([]);
-  const [loading, setLoading] = useState3(true);
-  const [loadError, setLoadError] = useState3("");
+  const { api, isAdmin } = useFrame();
+  const [sessions, setSessions] = useState4([]);
+  const [loading, setLoading] = useState4(true);
+  const [loadError, setLoadError] = useState4("");
   useEffect3(() => {
     api.listSessions().then(setSessions).catch((e) => setLoadError(errorText(e, "Nepodarilo sa na\u010D\xEDta\u0165 rel\xE1cie."))).finally(() => setLoading(false));
-    if (isAdmin && manifest.auth === "password") {
-      api.listUsers().then(setUsers).catch(() => setUsers([]));
-    }
-  }, [api, isAdmin, manifest.auth]);
-  const names = useMemo2(() => {
-    const index = {};
-    for (const u of users) index[u.id] = personName(u);
-    if (user) index[user.id] = personName(user);
-    return index;
-  }, [users, user]);
-  return /* @__PURE__ */ jsx4(
+  }, [api]);
+  const names = useMemo2(() => Object.fromEntries(sessions.map((s) => [s.user_id, s.username ?? s.user_id])), [sessions]);
+  return /* @__PURE__ */ jsx5(
     SessionsPanel,
     {
       sessions,
@@ -524,20 +656,21 @@ function SessionsTab() {
         setSessions((prev) => prev.filter((s) => s.id !== id));
       },
       loading,
-      loadError
+      loadError,
+      description: "Kto je prihl\xE1sen\xFD a odkedy. Zru\u0161en\xE1 rel\xE1cia prestane plati\u0165 hne\u010F."
     }
   );
 }
 function SettingsPage() {
   const { manifest, user } = useFrame();
   const config = useMemo2(() => settingsConfig(manifest), [manifest]);
-  const headerRight = user ? /* @__PURE__ */ jsxs3("span", { className: "text-xs text-[var(--color-text-muted)]", children: [
+  const headerRight = user ? /* @__PURE__ */ jsxs4("span", { className: "text-xs text-[var(--color-text-muted)]", children: [
     "Prihl\xE1sen\xFD ako ",
-    /* @__PURE__ */ jsx4("span", { className: "font-medium text-[var(--color-text-secondary)]", children: user.username }),
+    /* @__PURE__ */ jsx5("span", { className: "font-medium text-[var(--color-text-secondary)]", children: user.username }),
     " \xB7 ",
-    /* @__PURE__ */ jsx4("span", { className: "text-[11px] font-medium", children: roleLabel(user.role) })
+    /* @__PURE__ */ jsx5("span", { className: "text-[11px] font-medium", children: roleLabel(user.role) })
   ] }) : void 0;
-  return /* @__PURE__ */ jsx4(
+  return /* @__PURE__ */ jsx5(
     SettingsShell,
     {
       config,
@@ -545,25 +678,25 @@ function SettingsPage() {
       title: "Nastavenia",
       headerRight,
       panels: {
-        system: /* @__PURE__ */ jsx4(SystemTab, {}),
-        agents: /* @__PURE__ */ jsx4(AgentsTab, {}),
-        konto: /* @__PURE__ */ jsx4(AccountTab, {}),
-        users: /* @__PURE__ */ jsx4(UsersTab, {}),
-        sessions: /* @__PURE__ */ jsx4(SessionsTab, {})
+        system: /* @__PURE__ */ jsx5(SystemTab, {}),
+        agents: /* @__PURE__ */ jsx5(AgentsTab, {}),
+        konto: /* @__PURE__ */ jsx5(AccountTab, {}),
+        users: /* @__PURE__ */ jsx5(UsersTab, {}),
+        sessions: /* @__PURE__ */ jsx5(SessionsTab, {})
       }
     }
   );
 }
 
 // src/templates/nsv-standard/pages/UpdatesPage.tsx
-import { useCallback as useCallback3, useEffect as useEffect4, useState as useState4 } from "react";
+import { useCallback as useCallback3, useEffect as useEffect4, useState as useState5 } from "react";
 import { ReleaseNotes } from "nex-shared";
-import { jsx as jsx5 } from "react/jsx-runtime";
+import { jsx as jsx6 } from "react/jsx-runtime";
 function UpdatesPage() {
   const { api, manifest } = useFrame();
-  const [notes, setNotes] = useState4([]);
-  const [loading, setLoading] = useState4(true);
-  const [error, setError] = useState4("");
+  const [notes, setNotes] = useState5([]);
+  const [loading, setLoading] = useState5(true);
+  const [error, setError] = useState5("");
   const refresh = useCallback3(async () => {
     setLoading(true);
     setError("");
@@ -578,7 +711,7 @@ function UpdatesPage() {
   useEffect4(() => {
     void refresh();
   }, [refresh]);
-  return /* @__PURE__ */ jsx5(
+  return /* @__PURE__ */ jsx6(
     ReleaseNotes,
     {
       notes,
@@ -607,7 +740,7 @@ import { AppShell } from "nex-shared";
 // src/templates/nsv-standard/PageErrorBoundary.tsx
 import { Component } from "react";
 import { useLocation } from "react-router-dom";
-import { jsx as jsx6, jsxs as jsxs4 } from "react/jsx-runtime";
+import { jsx as jsx7, jsxs as jsxs5 } from "react/jsx-runtime";
 var Boundary = class extends Component {
   state = { error: null };
   static getDerivedStateFromError(error) {
@@ -616,11 +749,11 @@ var Boundary = class extends Component {
   render() {
     const { error } = this.state;
     if (!error) return this.props.children;
-    return /* @__PURE__ */ jsxs4("div", { role: "alert", className: "m-4 rounded-xl border border-[var(--color-state-error-fg)]/40 bg-[var(--color-state-error-bg)] p-4", children: [
-      /* @__PURE__ */ jsx6("h2", { className: "text-sm font-semibold text-[var(--color-state-error-fg)]", children: "\u26A0\uFE0F Str\xE1nka narazila na chybu" }),
-      /* @__PURE__ */ jsx6("p", { className: "mt-2 text-sm text-[var(--color-text-primary)]", children: "T\xFAto str\xE1nku sa nepodarilo zobrazi\u0165. Sk\xFAs ju obnovi\u0165; ak sa to opakuje, povedz o tom spr\xE1vcovi aplik\xE1cie." }),
-      /* @__PURE__ */ jsx6("p", { className: "mt-1 font-mono text-[11px] text-[var(--color-text-muted)]", children: error.message }),
-      /* @__PURE__ */ jsx6(
+    return /* @__PURE__ */ jsxs5("div", { role: "alert", className: "m-4 rounded-xl border border-[var(--color-state-error-fg)]/40 bg-[var(--color-state-error-bg)] p-4", children: [
+      /* @__PURE__ */ jsx7("h2", { className: "text-sm font-semibold text-[var(--color-state-error-fg)]", children: "\u26A0\uFE0F Str\xE1nka narazila na chybu" }),
+      /* @__PURE__ */ jsx7("p", { className: "mt-2 text-sm text-[var(--color-text-primary)]", children: "T\xFAto str\xE1nku sa nepodarilo zobrazi\u0165. Sk\xFAs ju obnovi\u0165; ak sa to opakuje, povedz o tom spr\xE1vcovi aplik\xE1cie." }),
+      /* @__PURE__ */ jsx7("p", { className: "mt-1 font-mono text-[11px] text-[var(--color-text-muted)]", children: error.message }),
+      /* @__PURE__ */ jsx7(
         "button",
         {
           type: "button",
@@ -634,16 +767,16 @@ var Boundary = class extends Component {
 };
 function PageErrorBoundary({ children }) {
   const { pathname } = useLocation();
-  return /* @__PURE__ */ jsx6(Boundary, { children }, pathname);
+  return /* @__PURE__ */ jsx7(Boundary, { children }, pathname);
 }
 
 // src/templates/nsv-standard/Sidebar.tsx
 import { useLocation as useLocation2, useNavigate } from "react-router-dom";
 import { useStore } from "zustand";
-import { Brand, NavIcon, NavItem, SectionDivider, Sidebar, UserCard, useShell } from "nex-shared";
+import { Brand as Brand2, NavIcon, NavItem, SectionDivider, Sidebar, UserCard, useShell } from "nex-shared";
 
 // src/frame/version.ts
-import { useEffect as useEffect5, useState as useState5 } from "react";
+import { useEffect as useEffect5, useState as useState6 } from "react";
 function versionLine(backend, frontend) {
   const be = (backend ?? "").trim();
   const fe = (frontend ?? "").trim();
@@ -652,7 +785,7 @@ function versionLine(backend, frontend) {
   return `backend v${be} \xB7 frontend v${fe}`;
 }
 function useBackendVersion(api) {
-  const [version, setVersion] = useState5();
+  const [version, setVersion] = useState6();
   useEffect5(() => {
     let live = true;
     api.health().then((h) => live && setVersion(h.version)).catch(() => void 0);
@@ -664,14 +797,14 @@ function useBackendVersion(api) {
 }
 
 // src/templates/nsv-standard/Sidebar.tsx
-import { jsx as jsx7, jsxs as jsxs5 } from "react/jsx-runtime";
+import { jsx as jsx8, jsxs as jsxs6 } from "react/jsx-runtime";
 function useIsActive() {
   const { pathname } = useLocation2();
   return (path) => path === "/" ? pathname === "/" : pathname === path || pathname.startsWith(`${path}/`);
 }
 function CountedEntry({ entry, active, onClick }) {
   const count = entry.useCount?.() ?? void 0;
-  return /* @__PURE__ */ jsx7(NavItem, { icon: /* @__PURE__ */ jsx7(NavIcon, { glyph: entry.icon }), label: entry.label, active, onClick, count: count ?? void 0 });
+  return /* @__PURE__ */ jsx8(NavItem, { icon: /* @__PURE__ */ jsx8(NavIcon, { glyph: entry.icon }), label: entry.label, active, onClick, count: count ?? void 0 });
 }
 function NsvSidebar() {
   const { manifest, api, user, isAdmin, onLogout, frontendVersion, layout: store } = useFrame();
@@ -684,7 +817,7 @@ function NsvSidebar() {
   const railCollapsed = layout?.sidebar_collapsed ?? false;
   const limit = layout?.limits.sidebar_width;
   const name = personName(user) || user?.email || "";
-  const footer = /* @__PURE__ */ jsx7(
+  const footer = /* @__PURE__ */ jsx8(
     UserCard,
     {
       initials: name ? name.slice(0, 1).toUpperCase() : "?",
@@ -693,10 +826,10 @@ function NsvSidebar() {
       onLogout
     }
   );
-  const entry = (place) => /* @__PURE__ */ jsx7(
+  const entry = (place) => /* @__PURE__ */ jsx8(
     NavItem,
     {
-      icon: /* @__PURE__ */ jsx7(NavIcon, { glyph: place.icon }),
+      icon: /* @__PURE__ */ jsx8(NavIcon, { glyph: place.icon }),
       label: place.label,
       active: isActive(place.path),
       onClick: () => navigate(place.path)
@@ -705,12 +838,12 @@ function NsvSidebar() {
   );
   const modules = manifest.modules.flatMap((id) => MODULES[id] ? [MODULES[id]] : []);
   const ownEntries = manifest.nav.filter((e) => !e.adminOnly || isAdmin);
-  return /* @__PURE__ */ jsxs5(
+  return /* @__PURE__ */ jsxs6(
     Sidebar,
     {
       collapsed: railCollapsed && !narrow,
       onToggleCollapse: () => void saveLayout({ sidebar_collapsed: !railCollapsed }),
-      logo: /* @__PURE__ */ jsx7(Brand, { initials: manifest.initials, name: manifest.name, version: versionLine(backendVersion, frontendVersion) }),
+      logo: /* @__PURE__ */ jsx8(Brand2, { initials: manifest.initials, name: manifest.name, version: versionLine(backendVersion, frontendVersion) }),
       footer,
       dense: true,
       width: layout?.sidebar_width ?? void 0,
@@ -723,10 +856,10 @@ function NsvSidebar() {
         entry(TEMPLATE_PLACES.gettingStarted),
         modules.map((m) => entry(m)),
         ownEntries.map(
-          (e) => e.useCount ? /* @__PURE__ */ jsx7(CountedEntry, { entry: e, active: isActive(e.path), onClick: () => navigate(e.path) }, e.path) : entry(e)
+          (e) => e.useCount ? /* @__PURE__ */ jsx8(CountedEntry, { entry: e, active: isActive(e.path), onClick: () => navigate(e.path) }, e.path) : entry(e)
         ),
         entry(TEMPLATE_PLACES.updates),
-        /* @__PURE__ */ jsx7(SectionDivider, {}),
+        /* @__PURE__ */ jsx8(SectionDivider, {}),
         entry(TEMPLATE_PLACES.settings)
       ]
     }
@@ -736,7 +869,7 @@ function NsvSidebar() {
 // src/templates/nsv-standard/Topbar.tsx
 import { useLocation as useLocation3 } from "react-router-dom";
 import { Header, ThemeToggle } from "nex-shared";
-import { jsx as jsx8, jsxs as jsxs6 } from "react/jsx-runtime";
+import { jsx as jsx9, jsxs as jsxs7 } from "react/jsx-runtime";
 function placeLabel(pathname, manifest) {
   const places = [
     ...Object.values(TEMPLATE_PLACES),
@@ -752,20 +885,20 @@ function NsvTopbar() {
   const { manifest } = useFrame();
   const { pathname } = useLocation3();
   const { isDark, toggleDark } = useTheme();
-  return /* @__PURE__ */ jsx8(
+  return /* @__PURE__ */ jsx9(
     Header,
     {
-      left: /* @__PURE__ */ jsxs6("div", { className: "flex items-center gap-1.5 flex-1 min-w-0 overflow-hidden text-xs text-[var(--color-text-muted)]", children: [
-        /* @__PURE__ */ jsx8("span", { className: "text-[var(--color-text-muted)]", children: "/" }),
-        /* @__PURE__ */ jsx8("span", { className: "text-[var(--color-text-secondary)] truncate", children: placeLabel(pathname, manifest) })
+      left: /* @__PURE__ */ jsxs7("div", { className: "flex items-center gap-1.5 flex-1 min-w-0 overflow-hidden text-xs text-[var(--color-text-muted)]", children: [
+        /* @__PURE__ */ jsx9("span", { className: "text-[var(--color-text-muted)]", children: "/" }),
+        /* @__PURE__ */ jsx9("span", { className: "text-[var(--color-text-secondary)] truncate", children: placeLabel(pathname, manifest) })
       ] }),
-      right: /* @__PURE__ */ jsx8(ThemeToggle, { theme: isDark ? "dark" : "light", onToggle: toggleDark })
+      right: /* @__PURE__ */ jsx9(ThemeToggle, { theme: isDark ? "dark" : "light", onToggle: toggleDark })
     }
   );
 }
 
 // src/templates/nsv-standard/Shell.tsx
-import { jsx as jsx9 } from "react/jsx-runtime";
+import { jsx as jsx10 } from "react/jsx-runtime";
 function NsvShell() {
   const { user, layout } = useFrame();
   const load = useStore2(layout, (s) => s.load);
@@ -775,26 +908,26 @@ function NsvShell() {
     reset();
     if (userId) void load();
   }, [userId, load, reset]);
-  return /* @__PURE__ */ jsx9(AppShell, { sidebar: /* @__PURE__ */ jsx9(NsvSidebar, {}), header: /* @__PURE__ */ jsx9(NsvTopbar, {}), children: /* @__PURE__ */ jsx9(PageErrorBoundary, { children: /* @__PURE__ */ jsx9(Outlet, {}) }) });
+  return /* @__PURE__ */ jsx10(AppShell, { sidebar: /* @__PURE__ */ jsx10(NsvSidebar, {}), header: /* @__PURE__ */ jsx10(NsvTopbar, {}), children: /* @__PURE__ */ jsx10(PageErrorBoundary, { children: /* @__PURE__ */ jsx10(Outlet, {}) }) });
 }
 
 // src/templates/nsv-standard/NsvStandard.tsx
-import { jsx as jsx10, jsxs as jsxs7 } from "react/jsx-runtime";
+import { jsx as jsx11, jsxs as jsxs8 } from "react/jsx-runtime";
 function Padded({ children }) {
-  return /* @__PURE__ */ jsx10("div", { className: "p-6", children: children ?? /* @__PURE__ */ jsx10(Outlet2, {}) });
+  return /* @__PURE__ */ jsx11("div", { className: "p-6", children: children ?? /* @__PURE__ */ jsx11(Outlet2, {}) });
 }
 function NsvStandard({ overview, children }) {
   const { manifest } = useFrame();
   const modules = manifest.modules.flatMap((id) => MODULES[id] ? [MODULES[id]] : []);
-  return /* @__PURE__ */ jsx10(Routes, { children: /* @__PURE__ */ jsxs7(Route, { element: /* @__PURE__ */ jsx10(NsvShell, {}), children: [
-    /* @__PURE__ */ jsx10(Route, { path: TEMPLATE_PLACES.updates.path, element: /* @__PURE__ */ jsx10(UpdatesPage, {}) }),
-    /* @__PURE__ */ jsx10(Route, { path: TEMPLATE_PLACES.settings.path, element: /* @__PURE__ */ jsx10(SettingsPage, {}) }),
-    /* @__PURE__ */ jsxs7(Route, { element: /* @__PURE__ */ jsx10(Padded, {}), children: [
-      /* @__PURE__ */ jsx10(Route, { index: true, element: overview }),
-      /* @__PURE__ */ jsx10(Route, { path: TEMPLATE_PLACES.gettingStarted.path, element: /* @__PURE__ */ jsx10(GettingStartedPage, {}) }),
-      modules.map((m) => /* @__PURE__ */ jsx10(Route, { path: `${m.path}/*`, element: m.page() }, m.id)),
+  return /* @__PURE__ */ jsx11(Routes, { children: /* @__PURE__ */ jsxs8(Route, { element: /* @__PURE__ */ jsx11(NsvShell, {}), children: [
+    /* @__PURE__ */ jsx11(Route, { path: TEMPLATE_PLACES.updates.path, element: /* @__PURE__ */ jsx11(UpdatesPage, {}) }),
+    /* @__PURE__ */ jsx11(Route, { path: TEMPLATE_PLACES.settings.path, element: /* @__PURE__ */ jsx11(SettingsPage, {}) }),
+    /* @__PURE__ */ jsxs8(Route, { element: /* @__PURE__ */ jsx11(Padded, {}), children: [
+      /* @__PURE__ */ jsx11(Route, { index: true, element: overview }),
+      /* @__PURE__ */ jsx11(Route, { path: TEMPLATE_PLACES.gettingStarted.path, element: /* @__PURE__ */ jsx11(GettingStartedPage, {}) }),
+      modules.map((m) => /* @__PURE__ */ jsx11(Route, { path: `${m.path}/*`, element: m.page() }, m.id)),
       children,
-      /* @__PURE__ */ jsx10(Route, { path: "*", element: /* @__PURE__ */ jsx10(NotFoundPage, {}) })
+      /* @__PURE__ */ jsx11(Route, { path: "*", element: /* @__PURE__ */ jsx11(NotFoundPage, {}) })
     ] })
   ] }) });
 }
@@ -805,27 +938,92 @@ var TEMPLATES = Object.freeze({
 });
 
 // src/TemplateApp.tsx
-import { jsx as jsx11 } from "react/jsx-runtime";
-function TemplateApp({ manifest, client, user, onLogout, frontendVersion, overview, children }) {
-  const api = useMemo3(() => createStandardApi(client), [client]);
-  const [layout] = useState6(() => createLayoutStore(api));
-  const [current, setCurrent] = useState6(user);
-  useEffect7(() => setCurrent(user), [user]);
+import { jsx as jsx12 } from "react/jsx-runtime";
+var SIGNED_OUT_SENTENCES = {
+  managerExpired: "Prihl\xE1senie vypr\u0161alo. Aplik\xE1ciu otvor znova z NEX Managera.",
+  managerLogout: "Odhl\xE1senie prebehlo. Aplik\xE1ciu otvor\xED\u0161 znova z NEX Managera.",
+  passwordExpired: "Prihl\xE1senie vypr\u0161alo. Prihl\xE1s sa znova."
+};
+function sameOriginClient() {
+  return createApiClient({ baseUrl: "", apiPrefix: "/api/v1", getToken: () => null });
+}
+function TemplateApp({ manifest, client, frontendVersion, overview, children }) {
+  const api = useMemo3(() => createStandardApi(client ?? sameOriginClient()), [client]);
+  const [layout] = useState7(() => createLayoutStore(api));
+  const [session, setSession] = useState7({ kind: "loading" });
+  const ask = useCallback4(() => {
+    let live = true;
+    setSession({ kind: "loading" });
+    api.me().then((user2) => live && setSession({ kind: "in", user: user2 })).catch((e) => {
+      if (!live) return;
+      setSession(e instanceof ApiError && e.status === 401 ? { kind: "out", why: "start" } : { kind: "unavailable" });
+    });
+    return () => {
+      live = false;
+    };
+  }, [api]);
+  useEffect7(ask, [ask]);
+  useEffect7(() => {
+    registerAuthCallback(() => setSession((s) => s.kind === "in" ? { kind: "out", why: "expired" } : s));
+  }, []);
+  const logout = useCallback4(async () => {
+    try {
+      await api.logout();
+    } finally {
+      setSession({ kind: "out", why: "logout" });
+    }
+  }, [api]);
+  const user = session.kind === "in" ? session.user : null;
+  const setUser = useCallback4((next) => setSession({ kind: "in", user: next }), []);
   const frame = useMemo3(
-    () => ({
+    () => user && {
       manifest,
       api,
-      user: current,
-      setUser: setCurrent,
-      isAdmin: current?.role === ADMIN_ROLE,
-      onLogout,
+      user,
+      setUser,
+      isAdmin: user.role === ADMIN_ROLE,
+      onLogout: () => void logout(),
       frontendVersion,
       layout
-    }),
-    [manifest, api, current, onLogout, frontendVersion, layout]
+    },
+    [manifest, api, user, setUser, logout, frontendVersion, layout]
   );
   const Template = TEMPLATES[manifest.template];
-  return /* @__PURE__ */ jsx11(FrameContext.Provider, { value: frame, children: /* @__PURE__ */ jsx11(ThemeProvider, { username: current?.username, children: /* @__PURE__ */ jsx11(Template, { overview, children }) }) });
+  let screen;
+  if (session.kind === "loading") {
+    screen = /* @__PURE__ */ jsx12(LoadingScreen, {});
+  } else if (session.kind === "unavailable") {
+    screen = /* @__PURE__ */ jsx12(UnavailableScreen, { manifest, onRetry: ask });
+  } else if (session.kind === "out") {
+    screen = manifest.auth === "manager" ? /* @__PURE__ */ jsx12(
+      ClosedScreen,
+      {
+        manifest,
+        sentence: session.why === "logout" ? SIGNED_OUT_SENTENCES.managerLogout : SIGNED_OUT_SENTENCES.managerExpired
+      }
+    ) : /* @__PURE__ */ jsx12(
+      LoginScreen,
+      {
+        manifest,
+        api,
+        note: session.why === "expired" ? SIGNED_OUT_SENTENCES.passwordExpired : void 0,
+        onSignedIn: setUser
+      }
+    );
+  } else if (session.user.must_change_password && manifest.auth === "password") {
+    screen = /* @__PURE__ */ jsx12(
+      ChangePasswordScreen,
+      {
+        manifest,
+        api,
+        onChanged: () => setUser({ ...session.user, must_change_password: false }),
+        onLogout: () => void logout()
+      }
+    );
+  } else {
+    screen = /* @__PURE__ */ jsx12(FrameContext.Provider, { value: frame, children: /* @__PURE__ */ jsx12(Template, { overview, children }) });
+  }
+  return /* @__PURE__ */ jsx12(ThemeProvider, { username: user?.username, children: screen });
 }
 export {
   ADMIN_ROLE,

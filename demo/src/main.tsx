@@ -1,12 +1,14 @@
-import { StrictMode, useState } from "react";
+import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter, Route } from "react-router-dom";
-import { Button, Card, Page } from "nex-shared";
+import { Card, createApiClient, Page } from "nex-shared";
 import { TemplateApp } from "nex-app-kit";
 
 import "./demo.css";
 import manifest from "./app.manifest";
-import { ME, demoClient } from "./fakeServer";
+
+// The app's own pages call its own routes with their own client — the session cookie goes along by itself.
+const api = createApiClient({ baseUrl: "", apiPrefix: "/api/v1", getToken: () => null });
 
 function Overview() {
   return (
@@ -29,6 +31,24 @@ function Overview() {
   );
 }
 
+function Areas() {
+  const [areas, setAreas] = useState<string[]>([]);
+  useEffect(() => {
+    api.get<{ areas: string[] }>("/areas").then((r) => setAreas(r.areas), () => setAreas([]));
+  }, []);
+  return (
+    <Page title="Oblasti" subtitle="Vlastná stránka aplikácie — volá vlastnú cestu servera, ktorá sa pýta šablóny, kto je prihlásený.">
+      <Card>
+        <ul className="list-disc pl-5 text-sm text-[var(--color-text-secondary)]">
+          {areas.map((a) => (
+            <li key={a}>{a}</li>
+          ))}
+        </ul>
+      </Card>
+    </Page>
+  );
+}
+
 function Simple({ title, text }: { title: string; text: string }) {
   return (
     <Page title={title}>
@@ -39,35 +59,14 @@ function Simple({ title, text }: { title: string; text: string }) {
   );
 }
 
-// Login and logout are the app's (here: a screen that lets you back in). The router keeps the place in memory, so the
-// demo also runs in a frame that has no address of its own.
-function Demo() {
-  const [signedIn, setSignedIn] = useState(true);
-  if (!signedIn) {
-    return (
-      <div className="flex h-full items-center justify-center p-6">
-        <Card className="max-w-sm text-center">
-          <p className="mb-4 text-sm text-[var(--color-text-secondary)]">
-            Odhlásil si sa. Prihlásenie a odhlásenie robí aplikácia, nie šablóna.
-          </p>
-          <Button onClick={() => setSignedIn(true)}>Prihlásiť späť</Button>
-        </Card>
-      </div>
-    );
-  }
-  return (
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
     <MemoryRouter>
-      <TemplateApp manifest={manifest} client={demoClient} user={ME} onLogout={() => setSignedIn(false)} overview={<Overview />}>
-        <Route path="/areas" element={<Simple title="Oblasti" text="Vlastná stránka aplikácie — šablóna jej dala len miesto v ráme." />} />
+      <TemplateApp manifest={manifest} frontendVersion="0.2.0" overview={<Overview />}>
+        <Route path="/areas" element={<Areas />} />
         <Route path="/search" element={<Simple title="Hľadanie" text="Vlastná stránka aplikácie." />} />
         <Route path="/audit" element={<Simple title="Audit" text="Položka len pre správcu." />} />
       </TemplateApp>
     </MemoryRouter>
-  );
-}
-
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <Demo />
   </StrictMode>,
 );

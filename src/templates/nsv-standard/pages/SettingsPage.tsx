@@ -16,18 +16,24 @@ import {
   SystemSettingsPanel,
   UsersPanel,
   type AgentDraft,
+  type SettingsCategory,
   type SettingsKitConfig,
   type SettingsTabId,
   type SystemSettingRead,
   type UserFieldSchema,
   type UserRead,
-  type UserSessionRead,
 } from "nex-shared";
 
 import { useFrame } from "../../../frame/FrameContext";
 import { errorText, personName, roleLabel } from "../../../frame/people";
 import type { AppManifest } from "../../../manifest";
-import { ADMIN_ROLE, PASSWORD_MIN_LENGTH, STANDARD_ROLES, type AgentModelOption } from "../../../standard-api";
+import {
+  ADMIN_ROLE,
+  PASSWORD_MIN_LENGTH,
+  STANDARD_ROLES,
+  type AgentModelOption,
+  type SessionRead,
+} from "../../../standard-api";
 
 const LABELS: Record<SettingsTabId, string> = {
   system: "Systém",
@@ -43,6 +49,16 @@ const EFFORTS = ["low", "medium", "high", "xhigh", "max"];
 const ROLE_OPTIONS = STANDARD_ROLES.map((r) => ({ value: r.value, label: r.label }));
 
 const USER_FIELDS: UserFieldSchema = { username: true, names: true, telegram: false, passwordMinLength: PASSWORD_MIN_LENGTH };
+
+/** The kit's own settings (KONTRAKT.md → Prihlásenie a relácia), beside the app's categories. */
+export const KIT_SETTINGS_CATEGORIES: SettingsCategory[] = [
+  {
+    id: "kit-auth",
+    label: "Prihlásenie",
+    description: "Ako dlho ostáva človek prihlásený.",
+    prefixes: ["auth_"],
+  },
+];
 
 export function settingsConfig(manifest: AppManifest): SettingsKitConfig {
   const tabs: SettingsTabId[] = ["system"];
@@ -83,7 +99,7 @@ function SystemTab() {
   return (
     <SystemSettingsPanel
       settings={settings}
-      categories={[...manifest.settings.categories]}
+      categories={[...manifest.settings.categories, ...KIT_SETTINGS_CATEGORIES]}
       canEdit={isAdmin}
       onSave={save}
       loading={loading}
@@ -254,9 +270,8 @@ function UsersTab() {
 }
 
 function SessionsTab() {
-  const { api, manifest, user, isAdmin } = useFrame();
-  const [sessions, setSessions] = useState<UserSessionRead[]>([]);
-  const [users, setUsers] = useState<UserRead[]>([]);
+  const { api, isAdmin } = useFrame();
+  const [sessions, setSessions] = useState<SessionRead[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
@@ -266,21 +281,10 @@ function SessionsTab() {
       .then(setSessions)
       .catch((e: unknown) => setLoadError(errorText(e, "Nepodarilo sa načítať relácie.")))
       .finally(() => setLoading(false));
-    // Names of the people behind the sessions: the app's users, where the app keeps them and the person may read them.
-    if (isAdmin && manifest.auth === "password") {
-      api
-        .listUsers()
-        .then(setUsers)
-        .catch(() => setUsers([]));
-    }
-  }, [api, isAdmin, manifest.auth]);
+  }, [api]);
 
-  const names = useMemo(() => {
-    const index: Record<string, string> = {};
-    for (const u of users) index[u.id] = personName(u);
-    if (user) index[user.id] = personName(user);
-    return index;
-  }, [users, user]);
+  // Every row names its person — the server joins them, so nobody needs the users list to read this tab.
+  const names = useMemo(() => Object.fromEntries(sessions.map((s) => [s.user_id, s.username ?? s.user_id])), [sessions]);
 
   return (
     <SessionsPanel
@@ -293,6 +297,7 @@ function SessionsTab() {
       }}
       loading={loading}
       loadError={loadError}
+      description="Kto je prihlásený a odkedy. Zrušená relácia prestane platiť hneď."
     />
   );
 }

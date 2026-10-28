@@ -31,3 +31,21 @@ jobs:
         run: |
           version=$(node -p "require('./package.json').version")
           grep -q "^## v${version}$" CHANGELOG.md || { echo "CHANGELOG.md has no section for v${version}"; exit 1; }
+
+  server:
+    runs-on: andros-ubuntu-nex-app-kit
+    env:
+      COMPOSE_PROJECT_NAME: kit-test-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Server — style, then the tests on Postgres
+        run: |
+          set -euo pipefail
+          C="docker compose -f server/docker-compose.test.yml"
+          $C build test
+          $C run --rm test ruff check --no-cache src tests
+          $C run --rm test ruff format --no-cache --check src tests
+          $C run --rm test
+      - name: Remove what the run left
+        if: ${{ always() }}
+        run: docker compose -f server/docker-compose.test.yml down -v --rmi local || true

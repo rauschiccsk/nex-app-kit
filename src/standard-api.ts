@@ -1,13 +1,7 @@
 // DEV-251 — the standard server interface every app on a template answers (KONTRAKT.md). The table below is the one
 // source: the frame calls only what it names, the contract document must list exactly these rows (a test compares
 // them), and the server package (phase 2) implements the same table.
-import type {
-  ApiClient,
-  ReleaseNote,
-  SystemSettingRead,
-  UserRead,
-  UserSessionRead,
-} from "nex-shared";
+import type { ApiClient, ReleaseNote, SystemSettingRead, UserRead, UserSessionRead } from "nex-shared";
 
 /** The two roles of an app on a template; the server refuses everything else. */
 export const STANDARD_ROLES = [
@@ -20,10 +14,16 @@ export const ADMIN_ROLE = "admin";
 /** The shortest password the server accepts — the forms say the same before sending. */
 export const PASSWORD_MIN_LENGTH = 8;
 
-/** When an app has the endpoint: always, with its own password (users live in the app), or with AI agents. */
-export type EndpointScope = "always" | "password" | "ai";
+/** When an app has the endpoint: always, with its own password (users live in the app), launched from NEX Manager,
+ *  or with AI agents — the column „kedy“ of KONTRAKT.md. */
+export type EndpointScope = "always" | "password" | "manager" | "ai";
 
 export const STANDARD_ENDPOINTS = [
+  { id: "login", method: "POST", path: "/auth/login", scope: "password" },
+  { id: "logout", method: "POST", path: "/auth/logout", scope: "always" },
+  // The browser comes here from NEX Manager with the launch ticket — the frame never calls these.
+  { id: "launch", method: "GET", path: "/launch", scope: "manager" },
+  { id: "launchPost", method: "POST", path: "/launch", scope: "manager" },
   { id: "health", method: "GET", path: "/health", scope: "always" },
   { id: "me", method: "GET", path: "/auth/me", scope: "always" },
   { id: "updateMe", method: "PATCH", path: "/auth/me", scope: "password" },
@@ -83,6 +83,15 @@ export interface UserChanges {
   is_active: boolean;
 }
 
+/** A signed-in browser — the server keeps sessions in its database, without a token version. */
+export interface SessionRead extends UserSessionRead {
+  username: string | null;
+  expires_at: string;
+  user_agent: string | null;
+  /** The session of the browser asking. */
+  current: boolean;
+}
+
 export interface AgentSettingRead {
   role: string;
   /** A model family (opus, sonnet, haiku), never a version; empty = the app's default. */
@@ -117,6 +126,8 @@ export interface GettingStartedRead {
 }
 
 export interface StandardApi {
+  login(username: string, password: string): Promise<CurrentUser>;
+  logout(): Promise<void>;
   health(): Promise<HealthRead>;
   me(): Promise<CurrentUser>;
   updateMe(changes: ProfileChanges): Promise<CurrentUser>;
@@ -126,7 +137,7 @@ export interface StandardApi {
   updateUser(id: string, changes: UserChanges): Promise<UserRead>;
   deleteUser(id: string): Promise<void>;
   setUserPassword(id: string, newPassword: string): Promise<void>;
-  listSessions(): Promise<UserSessionRead[]>;
+  listSessions(): Promise<SessionRead[]>;
   revokeSession(id: string): Promise<void>;
   listSystemSettings(): Promise<SystemSettingRead[]>;
   updateSystemSetting(key: string, value: string): Promise<SystemSettingRead>;
@@ -164,6 +175,8 @@ export function createStandardApi(client: ApiClient): StandardApi {
   }
 
   return {
+    login: (username, password) => call("login", {}, { username, password }),
+    logout: () => call("logout"),
     health: () => call("health"),
     me: () => call("me"),
     updateMe: (changes) => call("updateMe", {}, changes),

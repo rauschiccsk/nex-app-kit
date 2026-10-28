@@ -29,6 +29,8 @@ describe("createStandardApi", () => {
     const { client, calls } = recordingClient();
     const api = createStandardApi(client);
 
+    await api.login("jan", "heslo-123");
+    await api.logout();
     await api.health();
     await api.me();
     await api.updateMe({ email: "a@b.sk", first_name: "Ján", last_name: "Novák" });
@@ -51,6 +53,8 @@ describe("createStandardApi", () => {
     await api.gettingStarted();
 
     expect(calls).toEqual([
+      'POST /auth/login {"username":"jan","password":"heslo-123"}',
+      "POST /auth/logout",
       "GET /health",
       "GET /auth/me",
       'PATCH /auth/me {"email":"a@b.sk","first_name":"Ján","last_name":"Novák"}',

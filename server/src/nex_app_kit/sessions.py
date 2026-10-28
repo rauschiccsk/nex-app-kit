@@ -47,8 +47,7 @@ def same_origin(request: Request) -> bool:
     origin = request.headers.get("origin")
     if origin is None:
         return True
-    if origin == "null":
-        return False
+    # „null“ (a sandboxed or file page) has no address, so it never matches this app's.
     return urlsplit(origin).netloc.lower() == request.headers.get("host", "").lower()
 
 
