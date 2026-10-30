@@ -8,7 +8,7 @@ from .manifest import AgentRole, Manifest, ManifestError, load_manifest, manifes
 from .migrate import upgrade_database
 from .models import KitBase, User
 from .passwords import PASSWORD_MIN_LENGTH
-from .system_settings import KIT_SETTINGS, SettingDefinition, SystemSettings
+from .system_settings import KIT_SETTINGS, SettingChanged, SettingDefinition, SystemSettings
 
 __all__ = [
     "ADMIN_USERNAME",
@@ -27,6 +27,7 @@ __all__ = [
     "ManagerUnavailable",
     "Manifest",
     "ManifestError",
+    "SettingChanged",
     "SettingDefinition",
     "SystemSettings",
     "User",

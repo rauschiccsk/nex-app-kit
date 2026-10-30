@@ -16,6 +16,10 @@ interface NavEntry {
     adminOnly?: boolean;
     /** A hook the panel calls for the count shown beside the label („(3)“); nothing for 0 or none. */
     useCount?: () => number | null | undefined;
+    /** DEV-257: a hook the panel calls whether to show the entry at all — for an entry only some people have (NEX
+     *  Knowledge's Uchovávanie for its statutory persons). Shown only when it says `true`; while it does not know yet,
+     *  the entry stays hidden. The app still guards the page itself on its server. */
+    useVisible?: () => boolean | null | undefined;
 }
 interface AgentRole {
     id: string;
@@ -54,9 +58,11 @@ interface AppManifest {
 declare const TEMPLATE_PATHS: readonly ["/", "/getting-started", "/updates", "/settings"];
 /** A left-panel label longer than this does not fit on one line at the default width (ICC layout standard). */
 declare const NAV_LABEL_MAX = 22;
-/** What JSON cannot hold: the hook that counts what waits behind an entry, by the entry's path. */
+/** What JSON cannot hold, by the entry's path: the hook that counts what waits behind it, and the one that says
+ *  whether the person sees it (DEV-257). */
 interface AppExtras {
     counts?: Record<string, () => number | null | undefined>;
+    visible?: Record<string, () => boolean | null | undefined>;
 }
 declare class ManifestError extends Error {
     readonly problems: string[];

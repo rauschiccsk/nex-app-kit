@@ -36,7 +36,7 @@ from .migrate import upgrade_database
 from .models import AgentSetting, User
 from .passwords import hash_password
 from .sessions import SAFE_METHODS, Sessions, same_origin
-from .system_settings import SettingDefinition, SystemSettings, check_definitions
+from .system_settings import SettingChanged, SettingDefinition, SystemSettings, check_definitions
 
 logger = logging.getLogger("nex_app_kit")
 
@@ -70,6 +70,7 @@ class AppKit:
         clock: Callable[[], datetime] = _utcnow,
         bcrypt_rounds: int = 12,
         after_launch: str = "/",
+        on_setting_change: SettingChanged | None = None,
     ) -> None:
         definitions = list(settings)
         problems = check_definitions(definitions)
@@ -91,7 +92,7 @@ class AppKit:
         self.bcrypt_rounds = bcrypt_rounds
         self.after_launch = after_launch
         self._session_factory = session_factory
-        self.settings = SystemSettings(definitions, session_factory, clock)
+        self.settings = SystemSettings(definitions, session_factory, clock, on_change=on_setting_change)
         self.sessions = Sessions(self.settings, clock, secure_cookies, manager)
 
         def db() -> Iterator[Db]:

@@ -1,5 +1,5 @@
-import { A as AppManifest, U as UserLayout, a as UserLayoutChanges, S as StandardApi, C as CurrentUser, T as TemplateId } from './standard-api-UGWSWukk.js';
-export { b as ADMIN_ROLE, c as AgentModelOption, d as AgentRole, e as AgentSettingRead, f as AiConfig, g as AppAuthMode, h as AppManifestInput, E as EndpointId, i as EndpointScope, G as GettingStartedRead, H as HealthRead, L as LayoutLimit, M as ManifestError, N as NAV_LABEL_MAX, j as NavEntry, k as NewUser, P as PASSWORD_MIN_LENGTH, l as ProfileChanges, m as STANDARD_ENDPOINTS, n as STANDARD_ROLES, o as TEMPLATE_IDS, p as TEMPLATE_PATHS, q as UserChanges, r as createStandardApi, s as defineApp } from './standard-api-UGWSWukk.js';
+import { A as AppManifest, U as UserLayout, a as UserLayoutChanges, S as StandardApi, C as CurrentUser, T as TemplateId } from './standard-api-BV9y5xYB.js';
+export { b as ADMIN_ROLE, c as AgentModelOption, d as AgentRole, e as AgentSettingRead, f as AiConfig, g as AppAuthMode, h as AppManifestInput, E as EndpointId, i as EndpointScope, G as GettingStartedRead, H as HealthRead, L as LayoutLimit, M as ManifestError, N as NAV_LABEL_MAX, j as NavEntry, k as NewUser, P as PASSWORD_MIN_LENGTH, l as ProfileChanges, m as STANDARD_ENDPOINTS, n as STANDARD_ROLES, o as TEMPLATE_IDS, p as TEMPLATE_PATHS, q as UserChanges, r as createStandardApi, s as defineApp } from './standard-api-BV9y5xYB.js';
 import * as react from 'react';
 import { ReactNode, ComponentType } from 'react';
 import { ApiClient } from 'nex-shared';

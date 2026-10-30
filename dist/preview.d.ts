@@ -1,6 +1,6 @@
 import { HttpHandler } from 'msw';
 import { SystemSettingRead, ReleaseNote } from 'nex-shared';
-import { A as AppManifest, C as CurrentUser } from './standard-api-UGWSWukk.js';
+import { A as AppManifest, C as CurrentUser } from './standard-api-BV9y5xYB.js';
 
 interface PreviewOptions {
     manifest: AppManifest;

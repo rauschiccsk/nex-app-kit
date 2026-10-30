@@ -1,6 +1,7 @@
 // The left panel of „NSV štandard“, as the cockpit has it (Sidebar.tsx of nex-studio-visual): Prehľad, Ako začať,
 // the optional modules and the app's own entries, Aktualizácie, a line, Nastavenia; the person in the footer; the
 // width and the collapsed state kept on the server for each person.
+import type { ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useStore } from "zustand";
 import { Brand, NavIcon, NavItem, SectionDivider, Sidebar, UserCard, useShell } from "nex-shared";
@@ -20,6 +21,11 @@ function useIsActive() {
 function CountedEntry({ entry, active, onClick }: { entry: NavEntry; active: boolean; onClick: () => void }) {
   const count = entry.useCount?.() ?? undefined;
   return <NavItem icon={<NavIcon glyph={entry.icon} />} label={entry.label} active={active} onClick={onClick} count={count ?? undefined} />;
+}
+
+/** DEV-257: an entry only some people have — its hook decides; not shown until it says yes. */
+function VisibleEntry({ entry, children }: { entry: NavEntry & { useVisible: () => boolean | null | undefined }; children: ReactNode }) {
+  return entry.useVisible() === true ? <>{children}</> : null;
 }
 
 export function NsvSidebar() {
@@ -73,13 +79,21 @@ export function NsvSidebar() {
       {entry(TEMPLATE_PLACES.overview)}
       {entry(TEMPLATE_PLACES.gettingStarted)}
       {modules.map((m) => entry(m))}
-      {ownEntries.map((e) =>
-        e.useCount ? (
+      {ownEntries.map((e) => {
+        const shown = e.useCount ? (
           <CountedEntry key={e.path} entry={e} active={isActive(e.path)} onClick={() => navigate(e.path)} />
         ) : (
           entry(e)
-        ),
-      )}
+        );
+        const { useVisible } = e;
+        return useVisible ? (
+          <VisibleEntry key={e.path} entry={{ ...e, useVisible }}>
+            {shown}
+          </VisibleEntry>
+        ) : (
+          shown
+        );
+      })}
       {entry(TEMPLATE_PLACES.updates)}
       <SectionDivider />
       {entry(TEMPLATE_PLACES.settings)}

@@ -7,6 +7,17 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.4.0
+- `[nové]` **Položka ľavého panela len pre niektorých ľudí** (`defineApp(data, { visible: { "/statutory": useIsStatutory } })`).
+  Háčik aplikácie rozhodne; položka sa ukáže, až keď povie áno. NEX Knowledge tak drží Uchovávanie len pre konateľov
+  (DEV-257).
+- `[nové]` **Systémové nastavenie s výberom z ponuky aplikácie** (`SettingDefinition(choices=…)`, nex-shared v0.29.0).
+  Server pošle ponuku pri zozname nastavení, hodnotu mimo nej odmietne a keď sa ponuka nedá načítať, povie to
+  (`503 KIT-UNAVAILABLE`) (DEV-257).
+- `[nové]` **Aplikácia sa dozvie o zmene nastavenia** (`AppKit(on_setting_change=…)`) v tej istej transakcii — zápis do
+  jej denníka stojí a padá so zmenou (DEV-257).
+- `[API]` Riadok systémového nastavenia nesie pole `choices` (KONTRAKT.md); šablóna stojí na nex-shared v0.29.0.
+
 ## v0.3.0
 - `[nové]` **Kostra šablóny** (`scaffold/nsv-standard/`, `scaffold/render.py`): frontend s rámom a náhľadom Vizuálu,
   `app.manifest.json`, server na AppKit (FastAPI, SQLAlchemy, Alembic — tabuľky šablóny pred tabuľkami aplikácie,

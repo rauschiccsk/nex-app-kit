@@ -1,6 +1,6 @@
 {
   "name": "nex-app-kit",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "description": "NEX app templates — the frame of an ICC app (left panel, top bar, Getting started, Updates, Settings) on top of nex-shared, and the standard server interface it uses.",
@@ -26,6 +26,7 @@
   },
   "peerDependencies": {
     "@tailwindcss/typography": "^0.5",
+    "msw": "^2",
     "nex-shared": "*",
     "react": "^19",
     "react-dom": "^19",
@@ -33,8 +34,7 @@
     "react-router-dom": "^7",
     "remark-gfm": "^4",
     "tailwindcss": "^4.3",
-    "zustand": "^5",
-    "msw": "^2"
+    "zustand": "^5"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.20",
@@ -47,7 +47,7 @@
     "@vitejs/plugin-react": "^4.7.0",
     "jsdom": "^25.0.0",
     "msw": "^2.15.0",
-    "nex-shared": "github:rauschiccsk/nex-shared#v0.28.0",
+    "nex-shared": "github:rauschiccsk/nex-shared#v0.29.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.0.0",

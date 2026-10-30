@@ -21,6 +21,10 @@ export interface NavEntry {
   adminOnly?: boolean;
   /** A hook the panel calls for the count shown beside the label („(3)“); nothing for 0 or none. */
   useCount?: () => number | null | undefined;
+  /** DEV-257: a hook the panel calls whether to show the entry at all — for an entry only some people have (NEX
+   *  Knowledge's Uchovávanie for its statutory persons). Shown only when it says `true`; while it does not know yet,
+   *  the entry stays hidden. The app still guards the page itself on its server. */
+  useVisible?: () => boolean | null | undefined;
 }
 
 export interface AgentRole {
@@ -62,9 +66,11 @@ export const TEMPLATE_PATHS = ["/", "/getting-started", "/updates", "/settings"]
 /** A left-panel label longer than this does not fit on one line at the default width (ICC layout standard). */
 export const NAV_LABEL_MAX = 22;
 
-/** What JSON cannot hold: the hook that counts what waits behind an entry, by the entry's path. */
+/** What JSON cannot hold, by the entry's path: the hook that counts what waits behind it, and the one that says
+ *  whether the person sees it (DEV-257). */
 export interface AppExtras {
   counts?: Record<string, () => number | null | undefined>;
+  visible?: Record<string, () => boolean | null | undefined>;
 }
 
 export class ManifestError extends Error {
@@ -84,7 +90,12 @@ export function defineApp(input: AppManifestInput, extras: AppExtras = {}): AppM
   const ai = input.ai ?? false;
   const modules = input.modules ?? [];
   const counts = extras.counts ?? {};
-  const nav = (input.nav ?? []).map((entry) => (counts[entry.path] ? { ...entry, useCount: counts[entry.path] } : entry));
+  const visible = extras.visible ?? {};
+  const nav = (input.nav ?? []).map((entry) => ({
+    ...entry,
+    ...(counts[entry.path] ? { useCount: counts[entry.path] } : {}),
+    ...(visible[entry.path] ? { useVisible: visible[entry.path] } : {}),
+  }));
 
   if (!(TEMPLATE_IDS as readonly string[]).includes(input.template)) {
     problems.push(`Šablóna „${input.template}“ neexistuje — sú tieto: ${TEMPLATE_IDS.join(", ")}.`);
@@ -128,6 +139,11 @@ export function defineApp(input: AppManifestInput, extras: AppExtras = {}): AppM
   }
   for (const label of duplicates(nav.map((n) => n.label))) problems.push(`Položka „${label}“ je v ľavom paneli dvakrát.`);
   for (const path of duplicates(nav.map((n) => n.path))) problems.push(`Cesta „${path}“ je v ľavom paneli dvakrát.`);
+  for (const path of Object.keys(visible)) {
+    if (!nav.some((n) => n.path === path)) {
+      problems.push(`Viditeľnosť pre „${path}“ nepatrí žiadnej položke ľavého panela.`);
+    }
+  }
   for (const path of Object.keys(counts)) {
     if (!nav.some((n) => n.path === path)) problems.push(`Počet pre „${path}“ nepatrí žiadnej položke ľavého panela.`);
   }

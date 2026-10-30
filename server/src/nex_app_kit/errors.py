@@ -38,6 +38,10 @@ def conflict(message: str, code: str = "KIT-CONFLICT") -> KitError:
     return KitError(409, code, message)
 
 
+def unavailable(message: str, code: str = "KIT-UNAVAILABLE") -> KitError:
+    return KitError(503, code, message)
+
+
 async def kit_error_handler(_request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, KitError)
     return JSONResponse({"detail": exc.message, "code": exc.code}, status_code=exc.status, headers=exc.headers)

@@ -56,6 +56,7 @@ def test_the_list_has_the_app_s_settings_and_the_kit_s_own(make_app):
         "updated_by": None,
         "updated_by_username": None,
         "is_default": True,
+        "choices": None,
     }
     assert rows[0]["unit"] == "minút"
 
@@ -367,3 +368,87 @@ def test_health_answers_at_the_root_too_for_probes(make_app):
 
     assert client.get("/health").json() == client.get("/api/v1/health").json()
     assert "/health" not in client.app.openapi()["paths"]
+
+
+# ── DEV-257: a value chosen from the app's own offer, and the app told of every change ───────────────────────────
+GROUPS = [("g-1", "Vedenie"), ("g-2", "Konatelia")]
+
+
+def group_setting(offer):
+    return SettingDefinition(
+        key="statutory_group_id",
+        default="",
+        value_type="string",
+        label="Skupina konateľov",
+        description="Kto schvaľuje uchovávanie.",
+        allow_empty=True,
+        choices=offer,
+    )
+
+
+def test_a_setting_with_an_offer_lists_it(make_app):
+    app = as_admin(make_app, settings=(group_setting(lambda: GROUPS),))
+
+    [row] = [r for r in app.client.get("/api/v1/system-settings").json() if r["key"] == "statutory_group_id"]
+
+    assert row["choices"] == [{"value": "g-1", "label": "Vedenie"}, {"value": "g-2", "label": "Konatelia"}]
+
+
+def test_a_value_from_the_offer_is_kept_and_one_outside_it_refused(make_app):
+    app = as_admin(make_app, settings=(group_setting(lambda: GROUPS),))
+
+    kept = app.client.patch("/api/v1/system-settings/statutory_group_id", json={"value": "g-2"})
+    refused = app.client.patch("/api/v1/system-settings/statutory_group_id", json={"value": "g-9"})
+
+    assert kept.status_code == 200 and kept.json()["value"] == "g-2"
+    assert refused.status_code == 422
+    assert refused.json() == {
+        "detail": "„Skupina konateľov“ musí byť z ponuky — „g-9“ v nej nie je.",
+        "code": "KIT-INVALID",
+    }
+    assert app.kit.settings.get_str("statutory_group_id") == "g-2"
+
+
+def test_an_offer_that_cannot_be_read_lists_empty_and_refuses_a_change(make_app):
+    def down():
+        raise ConnectionError("NEX Manager neodpovedá")
+
+    app = as_admin(make_app, settings=(group_setting(down),))
+
+    [row] = [r for r in app.client.get("/api/v1/system-settings").json() if r["key"] == "statutory_group_id"]
+    refused = app.client.patch("/api/v1/system-settings/statutory_group_id", json={"value": "g-1"})
+
+    assert row["choices"] == []
+    assert refused.status_code == 503
+    assert refused.json() == {
+        "detail": "Ponuka pre „Skupina konateľov“ sa teraz nedá načítať — skús to o chvíľu.",
+        "code": "KIT-UNAVAILABLE",
+    }
+
+
+def test_the_app_is_told_of_a_change_in_the_same_transaction(make_app):
+    told = []
+
+    def record(db, key, old, new, user):
+        told.append((key, old, new, user.username))
+        db.execute(text("SELECT 1"))  # the app writes its diary on the same session
+
+    app = as_admin(make_app, settings=(LIMIT,), on_setting_change=record)
+
+    app.client.patch("/api/v1/system-settings/search_limit", json={"value": "50"})
+    app.client.patch("/api/v1/system-settings/search_limit", json={"value": "50"})  # unchanged → not told
+
+    assert told == [("search_limit", "20", "50", "spravca")]
+
+
+def test_a_change_the_app_cannot_record_is_not_kept(make_app):
+    def refuse(db, key, old, new, user):
+        raise RuntimeError("denník sa nedá zapísať")
+
+    app = as_admin(make_app, settings=(LIMIT,), on_setting_change=refuse)
+
+    with pytest.raises(RuntimeError):
+        app.client.patch("/api/v1/system-settings/search_limit", json={"value": "50"})
+
+    app.kit.settings.invalidate()
+    assert app.kit.settings.get_int("search_limit") == 20

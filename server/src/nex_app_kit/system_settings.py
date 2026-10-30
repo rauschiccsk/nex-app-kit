@@ -5,8 +5,9 @@ bounds); the database holds only a value someone changed. Reads go through a 30-
 from __future__ import annotations
 
 import json
+import logging
 import time
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -15,8 +16,10 @@ from typing import Literal
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .errors import invalid, not_found
+from .errors import invalid, not_found, unavailable
 from .models import SystemSetting, User
+
+logger = logging.getLogger(__name__)
 
 ValueType = Literal["string", "int", "float", "bool"]
 VALUE_TYPES = ("string", "int", "float", "bool")
@@ -26,6 +29,14 @@ CACHE_SECONDS = 30.0
 
 #: The kit's own settings start with this; an app's key may not.
 KIT_PREFIX = "auth_"
+
+
+#: The values a setting may take, as the app offers them now: ``[(value, label), …]`` (DEV-257).
+Choices = Callable[[], Sequence[tuple[str, str]]]
+
+#: What the app is told when a setting changed — ``(db, key, old, new, person)``, inside the same transaction, so the
+#: app's own record of the change (its diary) stands or falls with the change (DEV-257).
+SettingChanged = Callable[[Session, str, str, str, User], None]
 
 
 @dataclass(frozen=True)
@@ -39,6 +50,9 @@ class SettingDefinition:
     min: float | None = None
     max: float | None = None
     allow_empty: bool = False
+    #: DEV-257: the app's own offer (e.g. the groups of NEX Manager) — the panel shows a choice among it and a value
+    #: outside it is refused. Asked whenever the settings are listed or this one is changed.
+    choices: Choices | None = None
 
 
 #: The kit's own settings — one file, read here and by the frontend's preview answers (src/preview.ts).
@@ -107,8 +121,11 @@ class SystemSettings:
         session_factory: Callable[[], Session],
         clock: Callable[[], datetime],
         monotonic: Callable[[], float] = time.monotonic,
+        *,
+        on_change: SettingChanged | None = None,
     ) -> None:
         self.definitions = {d.key: d for d in (*KIT_SETTINGS, *definitions)}
+        self._on_change = on_change
         self._session_factory = session_factory
         self._clock = clock
         self._monotonic = monotonic
@@ -160,7 +177,14 @@ class SystemSettings:
     def update(self, db: Session, key: str, value: str, user: User) -> dict:
         definition = self.definition(key)
         stored = normalize(definition, value)
+        if definition.choices is not None and stored != "":
+            offer = _offer(definition)
+            if not offer:
+                raise unavailable(f"Ponuka pre „{definition.label}“ sa teraz nedá načítať — skús to o chvíľu.")
+            if stored not in {c["value"] for c in offer}:
+                raise invalid(f"„{definition.label}“ musí byť z ponuky — „{stored}“ v nej nie je.")
         row = db.get(SystemSetting, key)
+        old = row.value if row else definition.default
         if row is None:
             row = SystemSetting(key=key, value=stored)
             db.add(row)
@@ -169,6 +193,8 @@ class SystemSettings:
         row.updated_at = self._clock()
         db.flush()
         self.invalidate(key)
+        if self._on_change is not None and old != stored:
+            self._on_change(db, key, old, stored, user)
         return self._read(definition, row, {user.id: user.username})
 
     @staticmethod
@@ -184,7 +210,20 @@ class SystemSettings:
             "updated_by": str(row.updated_by) if row and row.updated_by else None,
             "updated_by_username": names.get(row.updated_by) if row and row.updated_by else None,
             "is_default": row is None,
+            "choices": _offer(definition),
         }
+
+
+def _offer(definition: SettingDefinition) -> list[dict] | None:
+    """The setting's offer as the panel reads it — ``None`` for a setting without one, ``[]`` when the app cannot
+    read its offer now (the panel says so and keeps the setting as it is)."""
+    if definition.choices is None:
+        return None
+    try:
+        return [{"value": str(value), "label": str(label)} for value, label in definition.choices()]
+    except Exception:  # noqa: BLE001 — the app's own source (NEX Manager…) may be down; the panel must still open
+        logger.warning("The offer of setting %s could not be read", definition.key, exc_info=True)
+        return []
 
 
 def _usernames(db: Session, ids: list) -> dict:

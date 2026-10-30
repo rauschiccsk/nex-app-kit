@@ -14,7 +14,7 @@
   "dependencies": {
     "@tailwindcss/typography": "^0.5",
     "nex-app-kit": "{{KIT_FRONTEND}}",
-    "nex-shared": "github:rauschiccsk/nex-shared#v0.28.0",
+    "nex-shared": "github:rauschiccsk/nex-shared#v0.29.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10",

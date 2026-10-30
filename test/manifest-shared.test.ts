@@ -53,4 +53,27 @@ describe("what JSON cannot hold", () => {
     }
     expect(problems).toEqual(["Počet pre „/areas“ nepatrí žiadnej položke ľavého panela."]);
   });
+
+  // DEV-257: an entry only some people have (NEX Knowledge's Uchovávanie for its statutory persons).
+  it("a visibility hook joins its entry by path, beside a count", () => {
+    const useIsStatutory = () => true;
+    const useWaiting = () => 2;
+    const app = defineApp(
+      { ...BASE, nav: [{ label: "Uchovávanie", path: "/statutory", icon: "🗄️" }] },
+      { counts: { "/statutory": useWaiting }, visible: { "/statutory": useIsStatutory } },
+    );
+
+    expect(app.nav[0]?.useVisible).toBe(useIsStatutory);
+    expect(app.nav[0]?.useCount).toBe(useWaiting);
+  });
+
+  it("a visibility hook without its entry is said", () => {
+    let problems: string[] = [];
+    try {
+      defineApp({ ...BASE, nav: [] }, { visible: { "/statutory": () => true } });
+    } catch (e) {
+      problems = (e as ManifestError).problems;
+    }
+    expect(problems).toEqual(["Viditeľnosť pre „/statutory“ nepatrí žiadnej položke ľavého panela."]);
+  });
 });

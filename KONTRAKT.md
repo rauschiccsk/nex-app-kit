@@ -34,8 +34,8 @@ nej — cesta, ktorá chýba alebo pribudla len na jednej strane, je červená.
 | `POST /users/{id}/password` | heslo | Nové heslo inému používateľovi (admin): `new_password`. |
 | `GET /sessions` | vždy | Relácie — kto je prihlásený, odkedy, naposledy aktívny, prehliadač; `current` = táto. |
 | `DELETE /sessions/{id}` | vždy | Zrušenie relácie — prestane platiť hneď. |
-| `GET /system-settings` | vždy | Systémové nastavenia aplikácie: kľúč, hodnota, typ, popis, predvolená hodnota. |
-| `PATCH /system-settings/{key}` | vždy | Zmena jedného nastavenia: `value`. |
+| `GET /system-settings` | vždy | Systémové nastavenia aplikácie: kľúč, hodnota, typ, popis, predvolená hodnota, ponuka (`choices`). |
+| `PATCH /system-settings/{key}` | vždy | Zmena jedného nastavenia: `value`; pri nastavení s ponukou len hodnota z nej. |
 | `GET /agent-settings` | AI | Model a úsilie pre každú rolu agenta z manifestu. |
 | `GET /agent-settings/models` | AI | Modely na výber (rodina — opus, sonnet, haiku —, nikdy verzia). |
 | `PUT /agent-settings/{role}` | AI | Uloženie modelu a úsilia pre rolu: `model`, `effort`. |
@@ -81,6 +81,10 @@ Polia používateľa, relácie a systémového nastavenia sú tie, ktoré zobraz
 (`UserRead`, `UserSessionRead`, `SystemSettingRead`); ostatné tvary opisujú typy v `src/standard-api.ts`.
 Chyba prichádza v tvare `{"detail": "…", "code": "KIT-…"}`: `detail` je veta pre človeka po slovensky, `code` pre
 záznamy a skúšky. Neúspešné spustenie z NEX Managera skončí v prehliadači stránkou s tou istou vetou.
+
+Systémové nastavenie nesie `choices`: `null` bez ponuky, inak zoznam `{value, label}` z ponuky aplikácie (napríklad
+skupiny z NEX Managera); prázdny zoznam znamená, že aplikácia ponuku teraz nevie načítať. Zmena na hodnotu mimo ponuky
+je `422 KIT-INVALID`, zmena, keď sa ponuka nedá načítať, `503 KIT-UNAVAILABLE`.
 
 ## Dokumenty aplikácie
 

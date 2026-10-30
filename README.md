@@ -40,7 +40,10 @@ aplikácii s AI. Používateľov a Agentov vidí len správca.
 
 ```tsx
 import data from "../app.manifest.json";
-const manifest = defineApp(data, { counts: { "/areas": useAreaCount } });   // počet pri položke (voliteľné)
+const manifest = defineApp(data, {
+  counts: { "/areas": useAreaCount },        // počet pri položke (voliteľné)
+  visible: { "/statutory": useIsStatutory }, // kto položku vidí — ukáže sa, keď háčik povie áno (voliteľné)
+});
 
 <BrowserRouter>
   <TemplateApp manifest={manifest} frontendVersion={import.meta.env.VITE_APP_VERSION} overview={<OverviewPage />}>
@@ -85,7 +88,10 @@ kit.bootstrap_admin(os.environ.get("ADMIN_INITIAL_PASSWORD"))  # vlastné heslo:
 ```
 
 Vlastné cesty aplikácie sa pýtajú na prihláseného `Depends(kit.current_user)` (alebo `kit.require_admin`), nastavenia
-čítajú `kit.settings.get_int("search_limit")` a model agenta `kit.agent_choice("assistant")`. Tabuľka aplikácie,
+čítajú `kit.settings.get_int("search_limit")` a model agenta `kit.agent_choice("assistant")`. Nastavenie s výberom
+z ponuky aplikácie dostane `SettingDefinition(..., choices=lambda: [("g-1", "Vedenie"), …])`; o každej zmene nastavenia
+sa aplikácia dozvie cez `AppKit(..., on_setting_change=lambda db, key, old, new, user: …)` v tej istej transakcii, aby
+si ju zapísala do svojho denníka. Tabuľka aplikácie,
 ktorá ukazuje na človeka, ukazuje na `kit_users.id`. Pri spustení z NEX Managera berie balík nastavenia
 `MANAGER_LAUNCH_SIGNING_KEY`, `MANAGER_MODULE_SLUG`, `MANAGER_DEPLOY_SLUG`, `NEX_MANAGER_BASE_URL`,
 `NEX_MANAGER_API_KEY` — tie, ktoré kokpit zapisuje.

@@ -45,6 +45,35 @@ describe("left panel", () => {
     expect(panelEntries()).toContain("Hľadanie");
   });
 
+  // DEV-257: the app decides who sees an entry — shown only when its hook says yes.
+  it.each([
+    [true, true],
+    [false, false],
+    [undefined, false],
+    [null, false],
+  ])("an entry whose hook says %s is shown: %s", async (answer, shown) => {
+    const statutory = { label: "Uchovávanie", path: "/statutory", icon: "🗄️", useVisible: () => answer };
+    renderApp({ manifest: { nav: [AREAS, statutory] }, user: ADMIN });
+
+    await screen.findByText("v0.1.0");
+    expect(panelEntries().includes("Uchovávanie")).toBe(shown);
+    expect(panelEntries()).toContain("Oblasti");
+  });
+
+  it("a shown entry still counts and an admin-only one still asks for the admin", async () => {
+    const statutory = {
+      label: "Uchovávanie",
+      path: "/statutory",
+      icon: "🗄️",
+      useVisible: () => true,
+      useCount: () => 2,
+      adminOnly: true,
+    };
+    renderApp({ manifest: { nav: [statutory] }, user: ADMIN });
+    await screen.findByText("v0.1.0");
+    expect(panelEntries()).toContain("Uchovávanie(2)");
+  });
+
   it("an entry opens its page and is marked as the current one", async () => {
     renderApp({ manifest: { nav: [AREAS] } });
 

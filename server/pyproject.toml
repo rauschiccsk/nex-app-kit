@@ -1,6 +1,6 @@
 [project]
 name = "nex-app-kit"
-version = "0.3.0"
+version = "0.4.0"
 description = "Server of the ICC app template: login, own account, users, sessions, system and agent settings, release notes, getting started and per-user layout (nex-app-kit)."
 readme = "README.md"
 requires-python = ">=3.12"

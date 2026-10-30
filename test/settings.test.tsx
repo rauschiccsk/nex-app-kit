@@ -64,6 +64,32 @@ describe("Systém", () => {
     expect(await screen.findByText("Počet výsledkov")).toBeInTheDocument();
     expect(screen.getByText("Hľadanie")).toBeInTheDocument();
   });
+
+  // DEV-257: a setting the server offers choices for is a choice — NEX Knowledge's group of statutory persons.
+  it("a setting with the server's offer is a choice among it", async () => {
+    renderApp({
+      path: "/settings",
+      answers: {
+        "GET /system-settings": [
+          {
+            ...SETTING,
+            key: "statutory_group_id",
+            value: "g-2",
+            value_type: "string",
+            label: "Skupina konateľov",
+            choices: [
+              { value: "g-1", label: "Vedenie" },
+              { value: "g-2", label: "Konatelia" },
+            ],
+          },
+        ],
+      },
+    });
+
+    const choice = await screen.findByRole("combobox");
+    expect(choice).toHaveValue("g-2");
+    expect(screen.getByRole("option", { name: "Vedenie" })).toBeInTheDocument();
+  });
 });
 
 describe("Moje konto", () => {

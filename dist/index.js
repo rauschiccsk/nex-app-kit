@@ -30,7 +30,12 @@ function defineApp(input, extras = {}) {
   const ai = input.ai ?? false;
   const modules = input.modules ?? [];
   const counts = extras.counts ?? {};
-  const nav = (input.nav ?? []).map((entry) => counts[entry.path] ? { ...entry, useCount: counts[entry.path] } : entry);
+  const visible = extras.visible ?? {};
+  const nav = (input.nav ?? []).map((entry) => ({
+    ...entry,
+    ...counts[entry.path] ? { useCount: counts[entry.path] } : {},
+    ...visible[entry.path] ? { useVisible: visible[entry.path] } : {}
+  }));
   if (!TEMPLATE_IDS.includes(input.template)) {
     problems.push(`\u0160abl\xF3na \u201E${input.template}\u201C neexistuje \u2014 s\xFA tieto: ${TEMPLATE_IDS.join(", ")}.`);
   }
@@ -73,6 +78,11 @@ function defineApp(input, extras = {}) {
   }
   for (const label of duplicates(nav.map((n) => n.label))) problems.push(`Polo\u017Eka \u201E${label}\u201C je v \u013Eavom paneli dvakr\xE1t.`);
   for (const path of duplicates(nav.map((n) => n.path))) problems.push(`Cesta \u201E${path}\u201C je v \u013Eavom paneli dvakr\xE1t.`);
+  for (const path of Object.keys(visible)) {
+    if (!nav.some((n) => n.path === path)) {
+      problems.push(`Vidite\u013Enos\u0165 pre \u201E${path}\u201C nepatr\xED \u017Eiadnej polo\u017Eke \u013Eav\xE9ho panela.`);
+    }
+  }
   for (const path of Object.keys(counts)) {
     if (!nav.some((n) => n.path === path)) problems.push(`Po\u010Det pre \u201E${path}\u201C nepatr\xED \u017Eiadnej polo\u017Eke \u013Eav\xE9ho panela.`);
   }
@@ -723,7 +733,7 @@ function useBackendVersion(api) {
 }
 
 // src/templates/nsv-standard/Sidebar.tsx
-import { jsx as jsx8, jsxs as jsxs6 } from "react/jsx-runtime";
+import { Fragment, jsx as jsx8, jsxs as jsxs6 } from "react/jsx-runtime";
 function useIsActive() {
   const { pathname } = useLocation2();
   return (path) => path === "/" ? pathname === "/" : pathname === path || pathname.startsWith(`${path}/`);
@@ -731,6 +741,9 @@ function useIsActive() {
 function CountedEntry({ entry, active, onClick }) {
   const count = entry.useCount?.() ?? void 0;
   return /* @__PURE__ */ jsx8(NavItem, { icon: /* @__PURE__ */ jsx8(NavIcon, { glyph: entry.icon }), label: entry.label, active, onClick, count: count ?? void 0 });
+}
+function VisibleEntry({ entry, children }) {
+  return entry.useVisible() === true ? /* @__PURE__ */ jsx8(Fragment, { children }) : null;
 }
 function NsvSidebar() {
   const { manifest, api, user, isAdmin, onLogout, frontendVersion, layout: store } = useFrame();
@@ -781,9 +794,11 @@ function NsvSidebar() {
         entry(TEMPLATE_PLACES.overview),
         entry(TEMPLATE_PLACES.gettingStarted),
         modules.map((m) => entry(m)),
-        ownEntries.map(
-          (e) => e.useCount ? /* @__PURE__ */ jsx8(CountedEntry, { entry: e, active: isActive(e.path), onClick: () => navigate(e.path) }, e.path) : entry(e)
-        ),
+        ownEntries.map((e) => {
+          const shown = e.useCount ? /* @__PURE__ */ jsx8(CountedEntry, { entry: e, active: isActive(e.path), onClick: () => navigate(e.path) }, e.path) : entry(e);
+          const { useVisible } = e;
+          return useVisible ? /* @__PURE__ */ jsx8(VisibleEntry, { entry: { ...e, useVisible }, children: shown }, e.path) : shown;
+        }),
         entry(TEMPLATE_PLACES.updates),
         /* @__PURE__ */ jsx8(SectionDivider, {}),
         entry(TEMPLATE_PLACES.settings)

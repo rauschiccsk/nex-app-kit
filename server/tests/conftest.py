@@ -191,6 +191,7 @@ def make_app(factory: sessionmaker) -> Callable[..., App]:
         settings: tuple[SettingDefinition, ...] = (),
         docs_dir: Path | None = None,
         deploy: str | None = DEPLOY,
+        on_setting_change=None,
     ) -> App:
         clock = Clock()
         fake = FakeManager() if auth == "manager" else None
@@ -215,6 +216,7 @@ def make_app(factory: sessionmaker) -> Callable[..., App]:
             manager=link,
             clock=clock,
             bcrypt_rounds=TEST_ROUNDS,
+            on_setting_change=on_setting_change,
         )
         client = TestClient(build_app(kit), base_url="https://testserver")
         return App(client=client, kit=kit, clock=clock, factory=factory, manager=fake)
