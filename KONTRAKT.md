@@ -51,6 +51,11 @@ nej — cesta, ktorá chýba alebo pribudla len na jednej strane, je červená.
 - Relácia skončí po nečinnosti (`auth_session_idle_minutes`, predvolene 480) a najneskôr po
   `auth_session_max_hours` (predvolene 24) — obe sú systémové nastavenia v kategórii Prihlásenie; ďalej odhlásením,
   zrušením v Reláciách, zmenou hesla (ostatné prehliadače) a novým heslom od správcu (všetky).
+- Keď relácia skončí úkonom človeka, aplikácia sa to dozvie (`AppKit(on_account_change=…)`, udalosť `AccountEvent`)
+  v tej istej transakcii ako úkon: `signed_out` (odhlásenie), `password_changed` (zmena vlastného hesla),
+  `password_set` (nové heslo od správcu), `deactivated` (vypnutie účtu), `session_ended` (zrušenie v Reláciách),
+  `deleted` (zmazanie používateľa). Uplynutie času ani to, že NEX Manager človeka už nepotvrdí, úkon nie je;
+  zmena roly reláciu neukončí. NEX Manager na šablóne podľa toho odhlási človeka aj v aplikáciách spustených z neho.
 - **Vlastné heslo:** prvý správca `admin` vznikne z `ADMIN_INITIAL_PASSWORD` a pri prvom prihlásení si heslo musí
   zmeniť. Kým má zmenu hesla pred sebou, otvorí len `GET /auth/me`, `POST /auth/change-password` a odhlásenie; ostatné
   vráti 403 s kódom `KIT-PASSWORD-CHANGE`. Po 5 zlých heslách za sebou čaká účet 15 minút (429).

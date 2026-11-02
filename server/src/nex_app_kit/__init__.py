@@ -8,6 +8,7 @@ from .manifest import AgentRole, Manifest, ManifestError, load_manifest, manifes
 from .migrate import upgrade_database
 from .models import KitBase, User
 from .passwords import PASSWORD_MIN_LENGTH
+from .sessions import AccountChanged, AccountEvent
 from .system_settings import KIT_SETTINGS, SettingChanged, SettingDefinition, SystemSettings
 
 __all__ = [
@@ -15,6 +16,8 @@ __all__ = [
     "KIT_SETTINGS",
     "PASSWORD_MIN_LENGTH",
     "SIDEBAR_WIDTH",
+    "AccountChanged",
+    "AccountEvent",
     "AgentChoice",
     "AgentRole",
     "AppKit",

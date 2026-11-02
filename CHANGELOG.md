@@ -7,6 +7,16 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.5.0
+- `[nové]` **Aplikácia sa dozvie, keď šablóna človeku ukončí prihlásenie** (`AppKit(on_account_change=…)`,
+  `AccountEvent`): odhlásenie, zmena vlastného hesla, nové heslo od správcu, vypnutie účtu, zrušenie relácie
+  v Reláciách a zmazanie používateľa — v tej istej transakcii ako úkon, takže zápis aplikácie stojí a padá s ním.
+  Uplynutie času ani nepotvrdenie z NEX Managera úkon nie je. NEX Manager na šablóne tak naďalej odhlási človeka aj
+  v aplikáciách spustených z neho (DEV-290).
+- `[API]` `Sessions.end_all` prijme `event=`; bez neho končí relácie ako doteraz a aplikácii nič nehlási. Nová
+  `Sessions.revoke` pre zrušenie jednej relácie (DEV-290).
+- `[oprava]` `package-lock.json` nesie číslo verzie balíka (stálo na 0.3.0).
+
 ## v0.4.0
 - `[nové]` **Položka ľavého panela len pre niektorých ľudí** (`defineApp(data, { visible: { "/statutory": useIsStatutory } })`).
   Háčik aplikácie rozhodne; položka sa ukáže, až keď povie áno. NEX Knowledge tak drží Uchovávanie len pre konateľov

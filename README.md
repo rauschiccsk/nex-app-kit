@@ -91,7 +91,10 @@ Vlastné cesty aplikácie sa pýtajú na prihláseného `Depends(kit.current_use
 čítajú `kit.settings.get_int("search_limit")` a model agenta `kit.agent_choice("assistant")`. Nastavenie s výberom
 z ponuky aplikácie dostane `SettingDefinition(..., choices=lambda: [("g-1", "Vedenie"), …])`; o každej zmene nastavenia
 sa aplikácia dozvie cez `AppKit(..., on_setting_change=lambda db, key, old, new, user: …)` v tej istej transakcii, aby
-si ju zapísala do svojho denníka. Tabuľka aplikácie,
+si ju zapísala do svojho denníka. Rovnako sa dozvie, keď šablóna človeku ukončí prihlásenie jeho úkonom alebo úkonom
+správcu (`AppKit(..., on_account_change=lambda db, user, event: …)`, `AccountEvent` — odhlásenie, zmena hesla, nové
+heslo od správcu, vypnutie, zrušenie relácie, zmazanie); NEX Manager tak odhlási človeka aj v aplikáciách spustených
+z neho. Tabuľka aplikácie,
 ktorá ukazuje na človeka, ukazuje na `kit_users.id`. Pri spustení z NEX Managera berie balík nastavenia
 `MANAGER_LAUNCH_SIGNING_KEY`, `MANAGER_MODULE_SLUG`, `MANAGER_DEPLOY_SLUG`, `NEX_MANAGER_BASE_URL`,
 `NEX_MANAGER_API_KEY` — tie, ktoré kokpit zapisuje.

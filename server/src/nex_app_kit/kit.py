@@ -35,7 +35,7 @@ from .manifest import Manifest
 from .migrate import upgrade_database
 from .models import AgentSetting, User
 from .passwords import hash_password
-from .sessions import SAFE_METHODS, Sessions, same_origin
+from .sessions import SAFE_METHODS, AccountChanged, Sessions, same_origin
 from .system_settings import SettingChanged, SettingDefinition, SystemSettings, check_definitions
 
 logger = logging.getLogger("nex_app_kit")
@@ -71,6 +71,7 @@ class AppKit:
         bcrypt_rounds: int = 12,
         after_launch: str = "/",
         on_setting_change: SettingChanged | None = None,
+        on_account_change: AccountChanged | None = None,
     ) -> None:
         definitions = list(settings)
         problems = check_definitions(definitions)
@@ -93,7 +94,7 @@ class AppKit:
         self.after_launch = after_launch
         self._session_factory = session_factory
         self.settings = SystemSettings(definitions, session_factory, clock, on_change=on_setting_change)
-        self.sessions = Sessions(self.settings, clock, secure_cookies, manager)
+        self.sessions = Sessions(self.settings, clock, secure_cookies, manager, on_account_change)
 
         def db() -> Iterator[Db]:
             session = session_factory()

@@ -28,7 +28,7 @@ from .layout import SIDEBAR_WIDTH
 from .manager import LaunchRefused, ManagerUnavailable, admission_problem, ticket_expiry
 from .models import AgentSetting, Session, UsedLaunchToken, User, UserLayout
 from .passwords import DUMMY_HASH, check_new_password, hash_password, verify_password
-from .sessions import mirror_identity, same_origin
+from .sessions import AccountEvent, mirror_identity, same_origin
 
 if TYPE_CHECKING:
     from .kit import AppKit
@@ -279,7 +279,7 @@ def build_router(kit: AppKit) -> APIRouter:
             user.must_change_password = False
             user.updated_at = kit.clock()
             # The other browsers of this person sign in again with the new password; this one stays.
-            kit.sessions.end_all(db, user.id, keep=request.state.kit_session)
+            kit.sessions.end_all(db, user.id, keep=request.state.kit_session, event=AccountEvent.PASSWORD_CHANGED)
             db.commit()
             return Response(status_code=204)
 
@@ -348,10 +348,11 @@ def build_router(kit: AppKit) -> APIRouter:
             user.role = role
             user.first_name = clean_name(body.first_name, "Meno")
             user.last_name = clean_name(body.last_name, "Priezvisko")
-            if user.is_active and not body.is_active:
-                kit.sessions.end_all(db, user.id)
+            switched_off = user.is_active and not body.is_active
             user.is_active = body.is_active
             user.updated_at = kit.clock()
+            if switched_off:
+                kit.sessions.end_all(db, user.id, event=AccountEvent.DEACTIVATED)
             db.commit()
             return user_read(user)
 
@@ -360,6 +361,7 @@ def build_router(kit: AppKit) -> APIRouter:
             user = find_user(db, user_id)
             if user.id == admin.id:
                 raise conflict("Vlastný účet nezmažeš — urobí to iný správca.", "KIT-SELF")
+            kit.sessions.end_all(db, user.id, event=AccountEvent.DELETED)
             db.delete(user)
             try:
                 db.commit()
@@ -384,7 +386,7 @@ def build_router(kit: AppKit) -> APIRouter:
             user.failed_logins = 0
             user.locked_until = None
             user.updated_at = kit.clock()
-            kit.sessions.end_all(db, user.id)
+            kit.sessions.end_all(db, user.id, event=AccountEvent.PASSWORD_SET)
             db.commit()
             return Response(status_code=204)
 
@@ -473,7 +475,7 @@ def build_router(kit: AppKit) -> APIRouter:
             row = None
         if row is None:
             raise not_found("Taká relácia nie je — možno už skončila.")
-        db.delete(row)
+        kit.sessions.revoke(db, row)
         db.commit()
         return Response(status_code=204)
 
