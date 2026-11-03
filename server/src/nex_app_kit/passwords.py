@@ -2,37 +2,44 @@
 
 from __future__ import annotations
 
+import base64
+import hashlib
+
 import bcrypt
 
 from .errors import invalid
 
-#: The shortest password the server accepts — the same number the frontend shows (PASSWORD_MIN_LENGTH).
-PASSWORD_MIN_LENGTH = 8
-#: bcrypt reads at most 72 bytes; a longer password would be cut without a word.
-PASSWORD_MAX_BYTES = 72
+#: DEV-296 — the Director's rule: „Dĺžku, zložitosť ani tvar hesla neobmedzujem a nenavrhujem — o hesle rozhoduje
+#: Director; nástroj odmietne nanajvýš prázdne heslo." The shortest password is one character — the same number the
+#: frontend gives its forms (PASSWORD_MIN_LENGTH); apps that read it keep reading it.
+PASSWORD_MIN_LENGTH = 1
+#: bcrypt reads at most 72 bytes. A longer password is condensed with SHA-256 first, so its whole length counts.
+BCRYPT_MAX_BYTES = 72
+
+
+def _material(password: str) -> bytes:
+    """What bcrypt hashes: the password itself up to 72 bytes — as NEX Manager and the cockpit hash it, so their hashes
+    keep working — and the SHA-256 of a longer one (base64, 44 bytes)."""
+    data = password.encode("utf-8")
+    if len(data) <= BCRYPT_MAX_BYTES:
+        return data
+    return base64.b64encode(hashlib.sha256(data).digest())
 
 
 def check_new_password(password: str) -> None:
-    if len(password) < PASSWORD_MIN_LENGTH:
-        raise invalid(f"Heslo musí mať aspoň {PASSWORD_MIN_LENGTH} znakov.", "KIT-PASSWORD-SHORT")
-    if len(password.encode("utf-8")) > PASSWORD_MAX_BYTES:
-        raise invalid(
-            "Heslo je príliš dlhé — najviac 72 znakov (písmeno s diakritikou sa ráta za dva).", "KIT-PASSWORD-LONG"
-        )
+    if not password:
+        raise invalid("Heslo nesmie byť prázdne.", "KIT-PASSWORD-EMPTY")
 
 
 def hash_password(password: str, rounds: int = 12) -> str:
-    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(rounds)).decode("ascii")
+    return bcrypt.hashpw(_material(password), bcrypt.gensalt(rounds)).decode("ascii")
 
 
 def verify_password(password: str, password_hash: str | None) -> bool:
     if not password_hash:
         return False
-    data = password.encode("utf-8")
-    if len(data) > PASSWORD_MAX_BYTES:
-        return False
     try:
-        return bcrypt.checkpw(data, password_hash.encode("ascii"))
+        return bcrypt.checkpw(_material(password), password_hash.encode("ascii"))
     except ValueError:
         return False
 

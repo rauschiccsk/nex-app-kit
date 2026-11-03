@@ -7,6 +7,15 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.8.0
+- `[API]` **Heslo bez obmedzenia dĺžky.** Server odmietne len prázdne heslo (`KIT-PASSWORD-EMPTY`); kódy
+  `KIT-PASSWORD-SHORT` a `KIT-PASSWORD-LONG` zanikli. Heslo dlhšie ako 72 bajtov (najviac, čo bcrypt číta) sa pred
+  bcryptom zhustí cez SHA-256, takže sa ráta celé; kratšie ide do bcryptu ako doteraz, odtlačky z NEX Managera a kokpitu
+  platia ďalej. `PASSWORD_MIN_LENGTH` = 1 na serveri aj vo frontende, obrazovka zmeny hesla nepíše „aspoň 8 znakov“.
+  Pravidlo Directora: „Dĺžku, zložitosť ani tvar hesla neobmedzujem a nenavrhujem — o hesle rozhoduje Director; nástroj
+  odmietne nanajvýš prázdne heslo.“ (DEV-296)
+- `[API]` Šablóna a kostra stoja na nex-shared v0.31.0.
+
 ## v0.7.0
 - `[nové]` **Tlačidlo aplikácie v riadku človeka v Nastaveniach → Používatelia** (`defineApp(data, { userActions })`).
   Všetko o ľuďoch ostáva v tejto jednej záložke: NEX Manager z nej otvorí okno „Prístupy“ (skupiny, aplikácie a história

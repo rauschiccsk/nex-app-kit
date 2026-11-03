@@ -86,8 +86,9 @@ declare const STANDARD_ROLES: readonly [{
     readonly label: "Používateľ";
 }];
 declare const ADMIN_ROLE = "admin";
-/** The shortest password the server accepts — the forms say the same before sending. */
-declare const PASSWORD_MIN_LENGTH = 8;
+/** The shortest password the server accepts — one character: only an empty password is refused (the Director's rule,
+ * DEV-296). The forms say the same before sending. */
+declare const PASSWORD_MIN_LENGTH = 1;
 /** When an app has the endpoint: always, with its own password (users live in the app), launched from NEX Manager,
  *  or with AI agents — the column „kedy“ of KONTRAKT.md. */
 type EndpointScope = "always" | "password" | "manager" | "ai";

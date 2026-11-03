@@ -71,7 +71,7 @@ nej — cesta, ktorá chýba alebo pribudla len na jednej strane, je červená.
 
 ## Roly a oprávnenia
 
-Aplikácia má dve roly: `admin` (Správca) a `user` (Používateľ). Heslo má aspoň 8 znakov (`PASSWORD_MIN_LENGTH`).
+Aplikácia má dve roly: `admin` (Správca) a `user` (Používateľ). Dĺžku hesla šablóna neobmedzuje — odmietne len prázdne heslo (`KIT-PASSWORD-EMPTY`, `PASSWORD_MIN_LENGTH` = 1); heslo dlhšie ako 72 bajtov sa pred bcryptom zhustí cez SHA-256.
 
 - **Používatelia** a nové heslo inému — len `admin`.
 - **Systémové nastavenia** vidí každý, mení len `admin`; zmena platí najneskôr do 30 sekúnd (tak to hovorí aj panel Systém).

@@ -4,7 +4,7 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { Brand, Button, Card, Input, LoginForm } from "nex-shared";
 
 import type { AppManifest } from "../manifest";
-import { PASSWORD_MIN_LENGTH, type CurrentUser, type StandardApi } from "../standard-api";
+import type { CurrentUser, StandardApi } from "../standard-api";
 import { errorText } from "./people";
 
 function Centered({ manifest, children }: { manifest: AppManifest; children: ReactNode }) {
@@ -146,7 +146,6 @@ export function ChangePasswordScreen({
             id="kit-new"
             type="password"
             autoComplete="new-password"
-            placeholder={`aspoň ${PASSWORD_MIN_LENGTH} znakov`}
             value={next}
             onChange={(e) => setNext(e.target.value)}
           />

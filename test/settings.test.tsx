@@ -134,6 +134,26 @@ describe("Moje konto", () => {
     );
   });
 
+  // DEV-296 — the Director's rule: the length of a password is not limited, only an empty one is refused.
+  it("with its own password: a one-character password is changed too, no minimum named", async () => {
+    const { calls } = renderApp({ path: "/settings", user: ADMIN });
+    fireEvent.click(await screen.findByRole("tab", { name: "Moje konto" }));
+
+    expect(screen.getByLabelText("Nové heslo")).not.toHaveAttribute("placeholder", expect.stringMatching(/min\./));
+    fireEvent.change(screen.getByLabelText("Súčasné heslo"), { target: { value: "stare-heslo" } });
+    fireEvent.change(screen.getByLabelText("Nové heslo"), { target: { value: "a" } });
+    fireEvent.change(screen.getByLabelText("Zopakuj nové heslo"), { target: { value: "a" } });
+    fireEvent.click(screen.getByRole("button", { name: "Zmeniť heslo" }));
+
+    await waitFor(() =>
+      expect(calls).toContainEqual({
+        method: "POST",
+        path: "/auth/change-password",
+        body: { current_password: "stare-heslo", new_password: "a" },
+      }),
+    );
+  });
+
   it("launched from NEX Manager: the account is shown, changed in NEX Manager", async () => {
     renderApp({ path: "/settings", manifest: { auth: "manager" }, user: ADMIN });
     fireEvent.click(await screen.findByRole("tab", { name: "Moje konto" }));

@@ -4,7 +4,7 @@ var STANDARD_ROLES = [
   { value: "user", label: "Pou\u017E\xEDvate\u013E" }
 ];
 var ADMIN_ROLE = "admin";
-var PASSWORD_MIN_LENGTH = 8;
+var PASSWORD_MIN_LENGTH = 1;
 var STANDARD_ENDPOINTS = [
   { id: "login", method: "POST", path: "/auth/login", scope: "password" },
   { id: "logout", method: "POST", path: "/auth/logout", scope: "always" },

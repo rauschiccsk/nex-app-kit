@@ -275,8 +275,7 @@ def test_a_password_change_due_lets_in_only_to_change_it(make_app):
     [
         ("zle", "nove-heslo-1", "Súčasné heslo je nesprávne."),
         ("heslo-123", "heslo-123", "Nové heslo musí byť iné ako súčasné."),
-        ("heslo-123", "kratke", "Heslo musí mať aspoň 8 znakov."),
-        ("heslo-123", "ž" * 37, "Heslo je príliš dlhé — najviac 72 znakov (písmeno s diakritikou sa ráta za dva)."),
+        ("heslo-123", "", "Heslo nesmie byť prázdne."),  # DEV-296: any length, only empty is refused
     ],
 )
 def test_a_password_change_says_what_is_wrong(make_app, current, new, sentence):

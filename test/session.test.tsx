@@ -75,6 +75,25 @@ describe("before the frame", () => {
     });
   });
 
+  // DEV-296 — the Director's rule: the length of a password is not limited, only an empty one is refused.
+  it("a one-character password is the person's choice — no minimum is named, it is sent", async () => {
+    const { calls } = renderApp({ user: { ...ADMIN, must_change_password: true } });
+
+    await screen.findByRole("heading", { name: "Nastav si vlastné heslo" });
+    expect(screen.getByLabelText("Nové heslo")).not.toHaveAttribute("placeholder", expect.stringMatching(/aspoň/));
+    typeInto("Súčasné heslo", "pociatocne");
+    typeInto("Nové heslo", "a");
+    typeInto("Zopakuj nové heslo", "a");
+    fireEvent.click(screen.getByRole("button", { name: "Nastaviť heslo" }));
+
+    await frame();
+    expect(calls).toContainEqual({
+      method: "POST",
+      path: "/auth/change-password",
+      body: { current_password: "pociatocne", new_password: "a" },
+    });
+  });
+
   it("new passwords that differ are said before anything is sent", async () => {
     const { calls } = renderApp({ user: { ...ADMIN, must_change_password: true } });
 

@@ -86,7 +86,7 @@ def test_the_list_has_everyone_by_login(make_app):
         ({"username": "spravca"}, 409, "Prihlasovacie meno „spravca“ už má iný používateľ."),
         ({"email": "SPRAVCA@firma.sk"}, 409, "Tento e-mail už používa iný používateľ."),
         ({"email": "zly"}, 422, "„zly“ nie je platný e-mail."),
-        ({"password": "kratke"}, 422, "Heslo musí mať aspoň 8 znakov."),
+        ({"password": ""}, 422, "Heslo nesmie byť prázdne."),  # DEV-296: any length, only empty is refused
         ({"role": "ri"}, 422, "Rola je „admin“ (správca) alebo „user“ (používateľ), nie „ri“."),
         ({"first_name": "x" * 101}, 422, "Meno môže mať najviac 100 znakov."),
     ],

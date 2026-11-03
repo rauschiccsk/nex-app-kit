@@ -4,7 +4,7 @@ import {
   STANDARD_ENDPOINTS,
   STANDARD_ROLES,
   createStandardApi
-} from "./chunk-LLPF2X56.js";
+} from "./chunk-KGIWN4Y5.js";
 
 // src/modules.ts
 var MODULES = Object.freeze({});
@@ -261,7 +261,6 @@ function ChangePasswordScreen({
             id: "kit-new",
             type: "password",
             autoComplete: "new-password",
-            placeholder: `aspo\u0148 ${PASSWORD_MIN_LENGTH} znakov`,
             value: next,
             onChange: (e) => setNext(e.target.value)
           }
