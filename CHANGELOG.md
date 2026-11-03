@@ -7,6 +7,12 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.6.0
+- `[nové]` **Náhľad Vizuálu ukáže v Nastaveniach → Používatelia ukážkových ľudí aplikácie**
+  (`previewHandlers({ manifest, user, users })`). Prihlásený človek je medzi nimi vždy — ten s rovnakým `id`, inak
+  pribudne na začiatok; chýbajúce polia sa doplnia a úprava človeka zachová, čo nemení. Bez `users` ostáva náhľad,
+  ako bol. V náhľade NEX Managera 1.5.0 ukazovali Nastavenia dvoch ľudí a „Ľudia a prístupy“ ôsmich (DEV-292).
+
 ## v0.5.0
 - `[nové]` **Aplikácia sa dozvie, keď šablóna človeku ukončí prihlásenie** (`AppKit(on_account_change=…)`,
   `AccountEvent`): odhlásenie, zmena vlastného hesla, nové heslo od správcu, vypnutie účtu, zrušenie relácie

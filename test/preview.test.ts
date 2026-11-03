@@ -101,6 +101,60 @@ describe("preview answers", () => {
     expect((await api.gettingStarted()).markdown).toBe("## Prvé kroky");
   });
 
+  // DEV-292 — NEX Manager 1.5.0's preview showed two people in Nastavenia → Používatelia and eight in its own „Ľudia
+  // a prístupy": the template had its two sample people built in and the app could not give it its own.
+  const ZUZANA = { id: "u-1", username: "admin", role: "admin", first_name: "Zuzana", last_name: "Nováková" };
+  const JANA = { id: "u-2", username: "kovacova", first_name: "Jana", last_name: "Kováčová" };
+  const PETER = { id: "u-3", username: "hudak", is_active: false, created_at: "2026-06-21T08:00:00Z" };
+
+  it("Nastavenia → Používatelia shows the app's own sample people, the signed-in one as the frame knows them", async () => {
+    server.use(...previewHandlers({ manifest: APP, user: { ...ZUZANA, email: "zuzana@firma.sk" }, users: [ZUZANA, JANA, PETER] }));
+
+    const people = await api.listUsers();
+
+    expect(people.map((u) => u.username)).toEqual(["admin", "kovacova", "hudak"]);
+    expect(people[0]).toEqual(await api.me());
+  });
+
+  it("the signed-in person comes first when the app's list does not have them", async () => {
+    server.use(...previewHandlers({ manifest: APP, users: [JANA, PETER] }));
+
+    expect((await api.listUsers()).map((u) => u.username)).toEqual(["spravca", "kovacova", "hudak"]);
+  });
+
+  it("what the app leaves out of a person is filled", async () => {
+    server.use(...previewHandlers({ manifest: APP, users: [JANA, PETER] }));
+
+    const people = await api.listUsers();
+
+    expect(people[1]).toEqual({
+      id: "u-2",
+      username: "kovacova",
+      email: "kovacova@priklad.sk",
+      role: "user",
+      is_active: true,
+      first_name: "Jana",
+      last_name: "Kováčová",
+      created_at: "2026-01-01T08:00:00Z",
+      updated_at: "2026-01-01T08:00:00Z",
+    });
+    expect([people[2]?.is_active, people[2]?.updated_at]).toEqual([false, "2026-06-21T08:00:00Z"]);
+  });
+
+  it("an edited person keeps what the edit does not change", async () => {
+    server.use(...previewHandlers({ manifest: APP, users: [JANA] }));
+
+    const edited = await api.updateUser("u-2", { email: "jana@firma.sk", role: "user", first_name: "Jana", last_name: "Nová", is_active: true });
+
+    expect([edited.username, edited.last_name, edited.created_at]).toEqual(["kovacova", "Nová", "2026-01-01T08:00:00Z"]);
+  });
+
+  it("without the app's people the list is the signed-in person and one colleague", async () => {
+    server.use(...previewHandlers({ manifest: APP }));
+
+    expect((await api.listUsers()).map((u) => u.username)).toEqual(["spravca", "pouzivatel"]);
+  });
+
   it("agents follow the manifest's roles", async () => {
     server.use(...previewHandlers({ manifest: APP }));
 

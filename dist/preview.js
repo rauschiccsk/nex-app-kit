@@ -75,6 +75,18 @@ function previewHandlers(options) {
     created_at: NOW,
     updated_at: NOW
   };
+  const person = (u) => ({
+    email: `${u.username}@priklad.sk`,
+    role: "user",
+    is_active: true,
+    first_name: null,
+    last_name: null,
+    created_at: NOW,
+    ...u,
+    updated_at: u.updated_at ?? u.created_at ?? NOW
+  });
+  const listed = options.users?.map((u) => u.id === me.id ? me : person(u));
+  const people = !listed ? [me, colleague] : listed.some((u) => u.id === me.id) ? listed : [me, ...listed];
   const session = {
     id: "nahlad-relacia",
     user_id: me.id,
@@ -106,9 +118,9 @@ function previewHandlers(options) {
     me: () => json(me),
     updateMe: ({ body }) => json({ ...me, ...body }),
     changePassword: () => noContent(),
-    listUsers: () => json([me, colleague]),
+    listUsers: () => json(people),
     createUser: ({ body }) => json({ ...colleague, ...body, id: "nahlad-novy" }, 201),
-    updateUser: ({ params, body }) => json({ ...colleague, ...body, id: String(params.id) }),
+    updateUser: ({ params, body }) => json({ ...people.find((u) => u.id === params.id) ?? colleague, ...body, id: String(params.id) }),
     deleteUser: () => noContent(),
     setUserPassword: () => noContent(),
     listSessions: () => json([session]),

@@ -116,7 +116,9 @@ Hodnoty a ich význam opisuje hlavička `render.py`. CI vyplní kostru každým 
 postaví ju v Dockeri, pustí skúšky frontendu aj servera a overí, že celá aplikácia odpovedá.
 
 V náhľade Vizuálu (bez servera) odpovedá rám sám: `frontend/src/preview/handlers.ts` skladá
-`previewHandlers({ manifest })` z `nex-app-kit/preview` a za ne odpovede vlastných obrazoviek aplikácie.
+`previewHandlers({ manifest })` z `nex-app-kit/preview` a za ne odpovede vlastných obrazoviek aplikácie. Aplikácia, ktorej
+obrazovky ukazujú ľudí, dá svojich ukážkových ľudí aj rámu (`previewHandlers({ manifest, user, users })`), aby
+Nastavenia → Používatelia ukázali tých istých.
 
 ## Ukážka
 

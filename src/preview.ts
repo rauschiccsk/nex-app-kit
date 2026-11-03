@@ -26,6 +26,11 @@ export interface PreviewOptions {
   manifest: AppManifest;
   /** Who is signed in; an admin with nothing due unless the app says otherwise. */
   user?: Partial<CurrentUser>;
+  /** The app's own sample people for Nastavenia → Používatelia — the same ones its own screens show, so the two never
+   *  disagree in the preview (DEV-292). The signed-in person is always among them: the entry with the same ``id`` is
+   *  the signed-in one, and when none has it, the signed-in person comes first. Missing fields are filled. Without it,
+   *  the list is the signed-in person and one sample colleague. */
+  users?: Array<Partial<UserRead> & Pick<UserRead, "id" | "username">>;
   /** The app's own system settings, as its server would list them. */
   settings?: SystemSettingRead[];
   releaseNotes?: ReleaseNote[];
@@ -85,6 +90,18 @@ export function previewHandlers(options: PreviewOptions): HttpHandler[] {
     created_at: NOW,
     updated_at: NOW,
   };
+  const person = (u: Partial<UserRead> & Pick<UserRead, "id" | "username">): UserRead => ({
+    email: `${u.username}@priklad.sk`,
+    role: "user",
+    is_active: true,
+    first_name: null,
+    last_name: null,
+    created_at: NOW,
+    ...u,
+    updated_at: u.updated_at ?? u.created_at ?? NOW,
+  });
+  const listed = options.users?.map((u) => (u.id === me.id ? me : person(u)));
+  const people: UserRead[] = !listed ? [me, colleague] : listed.some((u) => u.id === me.id) ? listed : [me, ...listed];
   const session: SessionRead = {
     id: "nahlad-relacia",
     user_id: me.id,
@@ -117,9 +134,10 @@ export function previewHandlers(options: PreviewOptions): HttpHandler[] {
     me: () => json(me),
     updateMe: ({ body }) => json({ ...me, ...(body as object) }),
     changePassword: () => noContent(),
-    listUsers: () => json([me, colleague]),
+    listUsers: () => json(people),
     createUser: ({ body }) => json({ ...colleague, ...(body as object), id: "nahlad-novy" }, 201),
-    updateUser: ({ params, body }) => json({ ...colleague, ...(body as object), id: String(params.id) }),
+    updateUser: ({ params, body }) =>
+      json({ ...(people.find((u) => u.id === params.id) ?? colleague), ...(body as object), id: String(params.id) }),
     deleteUser: () => noContent(),
     setUserPassword: () => noContent(),
     listSessions: () => json([session]),
