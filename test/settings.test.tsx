@@ -152,6 +152,38 @@ describe("Používatelia", () => {
 
     expect(await screen.findByText("eva")).toBeInTheDocument();
   });
+
+  // DEV-293 — NEX Manager's „Prístupy“ (groups, apps and history of one person) opens from the person's row here;
+  // the Director: „Všetko má byť len v nastaveniach v záložke používatelia.“
+  it("the app's own action stands in every person's row and gets that person", async () => {
+    const opened: string[] = [];
+    renderApp({
+      path: "/settings",
+      user: ADMIN,
+      answers: { "GET /users": [ADMIN, PLAIN_USER] },
+      extras: {
+        userActions: (person) => (
+          <button type="button" onClick={() => opened.push(person.username)}>
+            Prístupy {person.username}
+          </button>
+        ),
+      },
+    });
+    fireEvent.click(await screen.findByRole("tab", { name: "Používatelia" }));
+
+    fireEvent.click(await screen.findByRole("button", { name: "Prístupy eva" }));
+
+    expect(screen.getByRole("button", { name: "Prístupy jan" })).toBeInTheDocument();
+    expect(opened).toEqual(["eva"]);
+  });
+
+  it("an app without its own action keeps the rows as they were", async () => {
+    renderApp({ path: "/settings", user: ADMIN, answers: { "GET /users": [ADMIN, PLAIN_USER] } });
+    fireEvent.click(await screen.findByRole("tab", { name: "Používatelia" }));
+
+    await screen.findByText("eva");
+    expect(screen.queryByRole("button", { name: /Prístupy/ })).toBeNull();
+  });
 });
 
 describe("Agenti", () => {

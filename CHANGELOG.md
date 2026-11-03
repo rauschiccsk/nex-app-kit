@@ -7,6 +7,13 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.7.0
+- `[nové]` **Tlačidlo aplikácie v riadku človeka v Nastaveniach → Používatelia** (`defineApp(data, { userActions })`).
+  Všetko o ľuďoch ostáva v tejto jednej záložke: NEX Manager z nej otvorí okno „Prístupy“ (skupiny, aplikácie a história
+  človeka) namiesto druhej obrazovky s ľuďmi v ľavom paneli. Čo uvidí ten, kto ľudí spravovať nesmie, rozhodne aplikácia.
+  Director 03.11.2026: „Všetko má byť len v nastaveniach v záložke používatelia.“ (DEV-293)
+- `[API]` Šablóna stojí na nex-shared v0.30.0 (`UsersPanel rowActions`); kostra tiež.
+
 ## v0.6.0
 - `[nové]` **Náhľad Vizuálu ukáže v Nastaveniach → Používatelia ukážkových ľudí aplikácie**
   (`previewHandlers({ manifest, user, users })`). Prihlásený človek je medzi nimi vždy — ten s rovnakým `id`, inak

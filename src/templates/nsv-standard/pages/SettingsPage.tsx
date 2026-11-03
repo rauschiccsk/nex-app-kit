@@ -207,7 +207,7 @@ function AccountTab() {
 }
 
 function UsersTab() {
-  const { api, isAdmin } = useFrame();
+  const { api, isAdmin, manifest } = useFrame();
   const [users, setUsers] = useState<UserRead[]>([]);
 
   useEffect(() => {
@@ -222,6 +222,7 @@ function UsersTab() {
   return (
     <UsersPanel
       users={users}
+      rowActions={manifest.userActions}
       roleOptions={ROLE_OPTIONS}
       canManage={isAdmin}
       fieldSchema={USER_FIELDS}

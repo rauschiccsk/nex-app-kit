@@ -2,7 +2,8 @@
 // (app.manifest.json). The frame reads it through defineApp, the server through load_manifest (DEV-252). A wrong value
 // stops the app before it starts, with every problem named in one sentence each — the agent fixes them all in one go.
 // The rules both sides check run on the same cases (server/tests/manifest_cases.json).
-import type { SettingsCategory } from "nex-shared";
+import type { ReactNode } from "react";
+import type { SettingsCategory, UserRead } from "nex-shared";
 
 import { MODULES } from "./modules";
 import { TEMPLATE_IDS, type TemplateId } from "./templates/ids";
@@ -58,6 +59,8 @@ export interface AppManifest {
   readonly modules: readonly string[];
   readonly nav: readonly NavEntry[];
   readonly settings: { readonly categories: readonly SettingsCategory[] };
+  /** The app's own action for one person in Nastavenia → Používatelia (DEV-293). */
+  readonly userActions?: (user: UserRead) => ReactNode;
 }
 
 /** The template's own pages — an app's entry never takes their path. */
@@ -71,6 +74,10 @@ export const NAV_LABEL_MAX = 22;
 export interface AppExtras {
   counts?: Record<string, () => number | null | undefined>;
   visible?: Record<string, () => boolean | null | undefined>;
+  /** The app's own action for one person, first in their row of Nastavenia → Používatelia — NEX Manager's „Prístupy“.
+   *  Everything about people stays in that one tab; what a viewer who may not manage people sees, the app decides
+   *  (DEV-293). */
+  userActions?: (user: UserRead) => ReactNode;
 }
 
 export class ManifestError extends Error {
@@ -159,6 +166,7 @@ export function defineApp(input: AppManifestInput, extras: AppExtras = {}): AppM
     modules: Object.freeze([...modules]),
     nav: Object.freeze([...nav]),
     settings: Object.freeze({ categories: Object.freeze([...(input.settings?.categories ?? [])]) }),
+    ...(extras.userActions ? { userActions: extras.userActions } : {}),
   });
 }
 

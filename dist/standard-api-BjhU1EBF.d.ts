@@ -1,3 +1,4 @@
+import { ReactNode } from 'react';
 import { SettingsCategory, UserRead, UserSessionRead, SystemSettingRead, ReleaseNote, ApiClient } from 'nex-shared';
 
 declare const TEMPLATE_IDS: readonly ["nsv-standard"];
@@ -53,6 +54,8 @@ interface AppManifest {
     readonly settings: {
         readonly categories: readonly SettingsCategory[];
     };
+    /** The app's own action for one person in Nastavenia → Používatelia (DEV-293). */
+    readonly userActions?: (user: UserRead) => ReactNode;
 }
 /** The template's own pages — an app's entry never takes their path. */
 declare const TEMPLATE_PATHS: readonly ["/", "/getting-started", "/updates", "/settings"];
@@ -63,6 +66,10 @@ declare const NAV_LABEL_MAX = 22;
 interface AppExtras {
     counts?: Record<string, () => number | null | undefined>;
     visible?: Record<string, () => boolean | null | undefined>;
+    /** The app's own action for one person, first in their row of Nastavenia → Používatelia — NEX Manager's „Prístupy“.
+     *  Everything about people stays in that one tab; what a viewer who may not manage people sees, the app decides
+     *  (DEV-293). */
+    userActions?: (user: UserRead) => ReactNode;
 }
 declare class ManifestError extends Error {
     readonly problems: string[];

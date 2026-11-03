@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { ApiError, type ApiClient } from "nex-shared";
 
-import { defineApp, type AppManifestInput } from "../src/manifest";
+import { defineApp, type AppExtras, type AppManifestInput } from "../src/manifest";
 import type { CurrentUser, UserLayout } from "../src/standard-api";
 
 export type { Answer };
@@ -79,6 +79,8 @@ export const BASE: AppManifestInput = { template: "nsv-standard", name: "NEX Kno
 
 export interface RenderOptions {
   manifest?: Partial<AppManifestInput>;
+  /** What the app gives defineApp besides the JSON (hooks, its own action for a person). */
+  extras?: AppExtras;
   /** Who GET /auth/me says is signed in; null = nobody (401). */
   user?: CurrentUser | null;
   path?: string;
@@ -93,7 +95,7 @@ export const UNAUTHORIZED = new ApiError(401, "Nie si prihlásený.", { detail: 
 export function renderApp(options: RenderOptions = {}) {
   const user = options.user === undefined ? ADMIN : options.user;
   const { client, calls } = fakeClient({ "GET /auth/me": user ?? UNAUTHORIZED, ...options.answers });
-  const manifest = defineApp({ ...BASE, ...options.manifest });
+  const manifest = defineApp({ ...BASE, ...options.manifest }, options.extras);
   const utils = render(
     <MemoryRouter initialEntries={[options.path ?? "/"]}>
       <TemplateApp manifest={manifest} client={client} frontendVersion={options.frontendVersion} overview={<p>Obsah prehľadu</p>}>

@@ -95,7 +95,8 @@ function defineApp(input, extras = {}) {
     ai: ai ? Object.freeze({ roles: Object.freeze([...ai.roles]) }) : false,
     modules: Object.freeze([...modules]),
     nav: Object.freeze([...nav]),
-    settings: Object.freeze({ categories: Object.freeze([...input.settings?.categories ?? []]) })
+    settings: Object.freeze({ categories: Object.freeze([...input.settings?.categories ?? []]) }),
+    ...extras.userActions ? { userActions: extras.userActions } : {}
   });
 }
 function duplicates(values) {
@@ -516,7 +517,7 @@ function AccountTab() {
   );
 }
 function UsersTab() {
-  const { api, isAdmin } = useFrame();
+  const { api, isAdmin, manifest } = useFrame();
   const [users, setUsers] = useState4([]);
   useEffect3(() => {
     api.listUsers().then(setUsers).catch(() => setUsers([]));
@@ -526,6 +527,7 @@ function UsersTab() {
     UsersPanel,
     {
       users,
+      rowActions: manifest.userActions,
       roleOptions: ROLE_OPTIONS,
       canManage: isAdmin,
       fieldSchema: USER_FIELDS,
