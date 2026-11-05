@@ -1,13 +1,14 @@
 // DEV-309 — Moje konto says why the server refused. 05.11.2026, NEX Manager 1.5.1 on this template: the server said
 // „Tento e-mail už používa iný používateľ.“ (409) and the person read „Uloženie zlyhalo. Skús to znova.“; a refused
 // password said „skontroluj súčasné heslo“ whatever the reason. The server's sentences are the template's own
-// (KONTRAKT.md, errors.py: {"detail": "<sentence>", "code": "KIT-…"}).
+// (KONTRAKT.md, errors.py: {"detail": "<sentence>", "code": "KIT-…"}). Since DEV-310 the e-mail of another account is
+// no refusal any more; a malformed one still is.
 import { fireEvent, screen } from "@testing-library/react";
 import { ApiError } from "nex-shared";
 
 import { ADMIN, renderApp } from "./helpers";
 
-const TAKEN = "Tento e-mail už používa iný používateľ.";
+const MALFORMED = "„zly“ nie je platný e-mail.";
 const WRONG = "Súčasné heslo je nesprávne.";
 
 async function openAccount(answers: Record<string, unknown>) {
@@ -17,12 +18,12 @@ async function openAccount(answers: Record<string, unknown>) {
 
 describe("Moje konto — the server's reason (DEV-309)", () => {
   it("a refused profile shows the server's sentence", async () => {
-    await openAccount({ "PATCH /auth/me": new ApiError(409, TAKEN, { detail: TAKEN, code: "KIT-EMAIL-TAKEN" }) });
+    await openAccount({ "PATCH /auth/me": new ApiError(422, MALFORMED, { detail: MALFORMED, code: "KIT-EMAIL" }) });
 
-    fireEvent.change(screen.getByLabelText("Email *"), { target: { value: "eva@firma.sk" } });
+    fireEvent.change(screen.getByLabelText("Email *"), { target: { value: "zly" } });
     fireEvent.click(screen.getByRole("button", { name: "Uložiť" }));
 
-    expect(await screen.findByText(TAKEN)).toBeInTheDocument();
+    expect(await screen.findByText(MALFORMED)).toBeInTheDocument();
     expect(screen.queryByText("Uloženie zlyhalo. Skús to znova.")).not.toBeInTheDocument();
   });
 

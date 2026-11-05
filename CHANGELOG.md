@@ -7,6 +7,14 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.10.0
+- `[API]` **Jeden e-mail pri viacerých účtoch.** E-mail človeka už nie je jedinečný: migrácia `kit_0002` zruší obmedzenie
+  `uq_kit_users_email` a odmietnutie `KIT-EMAIL-TAKEN` („Tento e-mail už používa iný používateľ.“) zaniklo v Moje konto aj
+  v Používateľoch. Prihlasovacie meno ostáva jedinečné. Kto má dva účty (napríklad správcu a bežný), má pri oboch svoj
+  e-mail — aj v aplikácii spustenej z NEX Managera, ktorá e-mail preberá. Pravidlo jedinečnosti nikto nezadal: prišlo
+  z prvého návrhu NEX Managera (jún 2026) a šablóna ho prevzala. Director 05.11.2026: „chcem aby emailová adresa bola
+  moja pri obidvoch.“ (DEV-310)
+
 ## v0.9.1
 - `[oprava]` **„Moje konto“ povie, prečo server odmietol.** Šablóna a kostra stoja na nex-shared v0.32.0: keď server
   uloženie údajov alebo zmenu hesla odmietne vlastnou vetou („Tento e-mail už používa iný používateľ.“, „Súčasné heslo

@@ -18,7 +18,7 @@ from email_validator import EmailNotValidError, validate_email
 from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel
-from sqlalchemy import delete, func, select, text
+from sqlalchemy import delete, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as Db
 
@@ -160,13 +160,6 @@ def clean_role(value: str) -> str:
     return value
 
 
-def email_taken(db: Db, email: str, but: User | None = None) -> bool:
-    query = select(User.id).where(func.lower(User.email) == email.lower())
-    if but is not None:
-        query = query.where(User.id != but.id)
-    return db.scalars(query).first() is not None
-
-
 def same_origin_or_refuse(request: Request) -> None:
     if not same_origin(request):
         raise KitError(403, "KIT-ORIGIN", "Požiadavka neprišla z tejto aplikácie — odmietnutá.")
@@ -256,10 +249,7 @@ def build_router(kit: AppKit) -> APIRouter:
 
         @router.patch("/auth/me")
         def update_me(body: ProfileBody, user: User = Depends(kit.current_user), db: Db = db_dep) -> dict:
-            email = clean_email(body.email)
-            if email_taken(db, email, but=user):
-                raise conflict("Tento e-mail už používa iný používateľ.", "KIT-EMAIL-TAKEN")
-            user.email = email
+            user.email = clean_email(body.email)
             user.first_name = clean_name(body.first_name, "Meno")
             user.last_name = clean_name(body.last_name, "Priezvisko")
             user.updated_at = kit.clock()
@@ -300,8 +290,6 @@ def build_router(kit: AppKit) -> APIRouter:
             if db.scalars(select(User.id).where(User.username == username)).first() is not None:
                 raise conflict(f"Prihlasovacie meno „{username}“ už má iný používateľ.", "KIT-USERNAME-TAKEN")
             email = clean_email(body.email)
-            if email_taken(db, email):
-                raise conflict("Tento e-mail už používa iný používateľ.", "KIT-EMAIL-TAKEN")
             check_new_password(body.password)
             now = kit.clock()
             user = User(
@@ -341,10 +329,7 @@ def build_router(kit: AppKit) -> APIRouter:
             # is never left without an active admin.
             if user.id == admin.id and (role != user.role or not body.is_active):
                 raise conflict("Vlastnú rolu si nezmeníš a vlastný účet nevypneš — urobí to iný správca.", "KIT-SELF")
-            email = clean_email(body.email)
-            if email_taken(db, email, but=user):
-                raise conflict("Tento e-mail už používa iný používateľ.", "KIT-EMAIL-TAKEN")
-            user.email = email
+            user.email = clean_email(body.email)
             user.role = role
             user.first_name = clean_name(body.first_name, "Meno")
             user.last_name = clean_name(body.last_name, "Priezvisko")

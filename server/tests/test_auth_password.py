@@ -323,8 +323,6 @@ def test_own_name_and_e_mail_are_changed_here(make_app):
 @pytest.mark.parametrize(
     "email,status,sentence",
     [
-        ("peter@firma.sk", 409, "Tento e-mail už používa iný používateľ."),
-        ("PETER@firma.sk", 409, "Tento e-mail už používa iný používateľ."),
         ("nie-je-mail", 422, "„nie-je-mail“ nie je platný e-mail."),
         ("  ", 422, "E-mail je povinný."),
     ],

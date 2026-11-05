@@ -5,12 +5,17 @@ from __future__ import annotations
 import pytest
 from alembic.autogenerate import compare_metadata
 from alembic.migration import MigrationContext
+from alembic.script import ScriptDirectory
 from sqlalchemy import inspect, text
 from sqlalchemy.exc import IntegrityError
 
 from nex_app_kit import SIDEBAR_WIDTH, KitBase
+from nex_app_kit.migrate import MIGRATIONS
 
 from .conftest import password_kit
+
+#: The kit's newest migration — what an upgrade leaves in ``kit_alembic_version`` (DEV-310: read, not written down).
+HEAD = ScriptDirectory(str(MIGRATIONS)).get_current_head()
 
 
 def test_the_tables_match_the_models(migrated):
@@ -34,9 +39,7 @@ def test_the_app_s_own_migration_record_is_left_alone(migrated, factory):
         password_kit(factory).upgrade_database(migrated)
         with migrated.connect() as connection:
             assert connection.execute(text("SELECT version_num FROM alembic_version")).scalars().all() == ["app_0007"]
-            assert connection.execute(text("SELECT version_num FROM kit_alembic_version")).scalars().all() == [
-                "kit_0001"
-            ]
+            assert connection.execute(text("SELECT version_num FROM kit_alembic_version")).scalars().all() == [HEAD]
     finally:
         with migrated.begin() as connection:
             connection.execute(text("DROP TABLE alembic_version"))
@@ -142,9 +145,7 @@ def test_the_kit_migrates_first_from_inside_the_app_s_own_alembic(tmp_path, migr
 
         with migrated.connect() as connection:
             assert connection.execute(text("SELECT version_num FROM alembic_version")).scalars().all() == ["app_0001"]
-            assert connection.execute(text("SELECT version_num FROM kit_alembic_version")).scalars().all() == [
-                "kit_0001"
-            ]
+            assert connection.execute(text("SELECT version_num FROM kit_alembic_version")).scalars().all() == [HEAD]
             assert "app_notes" in inspect(connection).get_table_names()
     finally:
         with migrated.begin() as connection:

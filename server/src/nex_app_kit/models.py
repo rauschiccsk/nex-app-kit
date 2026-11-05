@@ -52,7 +52,8 @@ class User(KitBase):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     username: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
-    email: Mapped[str | None] = mapped_column(String(255), unique=True)
+    # DEV-310: not unique — one person may have several accounts with their one e-mail; sign-in is by username.
+    email: Mapped[str | None] = mapped_column(String(255))
     password_hash: Mapped[str | None] = mapped_column(String(255))
     role: Mapped[str] = mapped_column(String(10), nullable=False, default="user")
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
