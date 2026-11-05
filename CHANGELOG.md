@@ -7,6 +7,12 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.9.1
+- `[oprava]` **„Moje konto“ povie, prečo server odmietol.** Šablóna a kostra stoja na nex-shared v0.32.0: keď server
+  uloženie údajov alebo zmenu hesla odmietne vlastnou vetou („Tento e-mail už používa iný používateľ.“, „Súčasné heslo
+  je nesprávne.“), panel ju ukáže namiesto „Uloženie zlyhalo. Skús to znova.“ 05.11.2026 to v NEX Manageri 1.5.1
+  zatajilo, že zadaný e-mail má iný účet. Bez vety servera ostáva všeobecná veta. (DEV-309)
+
 ## v0.9.0
 - `[nové]` **Verzia aplikácie z poznámok k vydaniu.** `nex_app_kit.docs.newest_version(docs_dir)` vráti najnovšiu
   verziu, ktorá má poznámky (`v1.2.0/RELEASE_NOTES.md` → `1.2.0`). Kostra (`scaffold/nsv-standard`) berie verziu servera
