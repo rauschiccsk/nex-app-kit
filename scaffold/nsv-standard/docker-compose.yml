@@ -10,7 +10,8 @@ x-backend-build: &backend-build
 x-backend-env: &backend-env
   DATABASE_URL: ${DATABASE_URL:-postgresql+pg8000://{{DB_NAME}}:ci@db:5432/{{DB_NAME}}}
   PUBLIC_URL: ${PUBLIC_URL:-}
-  APP_VERSION: ${APP_VERSION:-0.1.0}
+  # Empty unless the cockpit deploys a version: the server then reports its newest release notes.
+  APP_VERSION: ${APP_VERSION:-}
 {{BACKEND_AUTH_ENV}}
 
 services:

@@ -42,3 +42,24 @@ def test_a_launch_without_the_pairing_says_so(client):
 
     assert response.status_code == 503
     assert "Aplikácia ešte nie je prepojená s NEX Managerom" in response.text
+
+
+def test_without_a_deployed_version_the_server_is_its_newest_release_notes(tmp_path, monkeypatch):
+    """DEV-307 — the version is no number in the code: the cockpit passes APP_VERSION on a deploy, and without it the
+    app is its newest release notes — so a first PROD that renames the notes to 1.0.0 leaves nothing to change."""
+    import importlib
+
+    from app import config
+
+    for version in ("v0.2.1", "v1.0.0"):
+        (tmp_path / "specs" / "versions" / version).mkdir(parents=True)
+        (tmp_path / "specs" / "versions" / version / "RELEASE_NOTES.md").write_text(f"## {version}\n", encoding="utf-8")
+    with monkeypatch.context() as env:
+        env.setenv("APP_DOCS_DIR", str(tmp_path))
+        env.delenv("APP_VERSION", raising=False)
+        newest = importlib.reload(config).APP_VERSION
+        env.setenv("APP_VERSION", "1.0.3")
+        deployed = importlib.reload(config).APP_VERSION
+    importlib.reload(config)
+
+    assert (newest, deployed) == ("1.0.0", "1.0.3")

@@ -93,6 +93,9 @@ je `422 KIT-INVALID`, zmena, keď sa ponuka nedá načítať, `503 KIT-UNAVAILAB
 
 ## Dokumenty aplikácie
 
+- Verzia aplikácie: server hlási `APP_VERSION`, ktorú dodá kokpit pri nasadení; bez nej najnovšiu verziu z poznámok
+  k vydaniu (`nex_app_kit.docs.newest_version`). Číslo verzie do kódu nezapisuj — prvé PROD premenuje poznámky na 1.0.0
+  a zapísané číslo by ostalo staré.
 - Aktualizácie: `docs/specs/versions/v<verzia>/RELEASE_NOTES.md`, dátumy v
   `docs/specs/versions/release-dates.json` (`{"v1.4.2": "2026-10-28"}`); úvodný nadpis s verziou sa vynechá.
 - Ako začať: `docs/AKO_ZACAT.md` — návod pre človeka, ktorý aplikáciu ešte nevidel.

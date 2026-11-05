@@ -41,6 +41,23 @@ def release_notes(docs_dir: Path | None) -> list[dict]:
     return [note for _, note in sorted(notes, key=lambda n: n[0], reverse=True)]
 
 
+def newest_version(docs_dir: Path | None) -> str | None:
+    """The newest version that has release notes (``v1.2.0/RELEASE_NOTES.md`` → ``"1.2.0"``) — what the app is when
+    nobody says otherwise: the cockpit passes ``APP_VERSION`` on every deploy, and its notes are the record of what was
+    released (a first PROD renames them to 1.0.0). ``None`` without notes."""
+    if docs_dir is None:
+        return None
+    root = docs_dir / "specs" / "versions"
+    if not root.is_dir():
+        return None
+    found = [
+        tuple(int(p) for p in match.group(1).split("."))
+        for folder in root.iterdir()
+        if (match := VERSION_DIR.match(folder.name)) and (folder / "RELEASE_NOTES.md").is_file()
+    ]
+    return ".".join(str(p) for p in max(found)) if found else None
+
+
 def _release_dates(file: Path) -> dict[str, str]:
     try:
         data = json.loads(file.read_text(encoding="utf-8"))

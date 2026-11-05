@@ -7,6 +7,14 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.9.0
+- `[nové]` **Verzia aplikácie z poznámok k vydaniu.** `nex_app_kit.docs.newest_version(docs_dir)` vráti najnovšiu
+  verziu, ktorá má poznámky (`v1.2.0/RELEASE_NOTES.md` → `1.2.0`). Kostra (`scaffold/nsv-standard`) berie verziu servera
+  z `APP_VERSION`, ktorú dodá kokpit pri nasadení, inak z najnovších poznámok — už nie z čísla v kóde; predpis služieb
+  nechá `APP_VERSION` prázdne. Prvé PROD, ktoré poznámky premenuje na 1.0.0, tak nemá v aplikácii čo hľadať a meniť.
+  04.11.2026 mala NEX Knowledge „0.2.1“ zapísané na piatich miestach a po premenovaní na 1.0.0 jej hlavná vetva
+  sčervenala. (DEV-307)
+
 ## v0.8.0
 - `[API]` **Heslo bez obmedzenia dĺžky.** Server odmietne len prázdne heslo (`KIT-PASSWORD-EMPTY`); kódy
   `KIT-PASSWORD-SHORT` a `KIT-PASSWORD-LONG` zanikli. Heslo dlhšie ako 72 bajtov (najviac, čo bcrypt číta) sa pred
