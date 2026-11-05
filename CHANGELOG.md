@@ -7,6 +7,17 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.11.0
+- `[nové]` **Zmena prihláseného človeka sa ukáže všade naraz.** Rám sa prihlási k zmenám servera (`onServerChange`
+  z nex-shared v0.33.0) a po každej zmene prihláseného človeka — v Moje konto, v Používateľoch alebo na vlastnej
+  obrazovke aplikácie — obnoví Moje konto, ľavý panel aj „Prihlásený ako“ bez obnovenia stránky; panel Moje konto
+  sleduje aktuálne údaje. 05.11.2026 NEX Manager: e-mail zmenený v Používateľoch, Moje konto ukazovalo starý. (DEV-311)
+- `[nové]` **Pravidlo a stráž pre každú aplikáciu.** KONTRAKT.md, „Údaje na viacerých obrazovkách“: spoločné úložisko,
+  ktoré načíta údaje zo servera, sa prihlási k zmenám a obnoví sa samo. Kostra nesie stráž
+  `src/test/shared-copies.test.ts` (`sharedCopies.ts`): úložisko bez prihlásenia je chyba skúšok. Director 05.11.2026:
+  „… prosím raz a navždy zabezpečiť, aby nič také už viackrát sa nestalo ani v kokpite ani v našich aplikáciách.“
+- `[API]` Šablóna a kostra stoja na nex-shared v0.33.0.
+
 ## v0.10.0
 - `[API]` **Jeden e-mail pri viacerých účtoch.** E-mail človeka už nie je jedinečný: migrácia `kit_0002` zruší obmedzenie
   `uq_kit_users_email` a odmietnutie `KIT-EMAIL-TAKEN` („Tento e-mail už používa iný používateľ.“) zaniklo v Moje konto aj

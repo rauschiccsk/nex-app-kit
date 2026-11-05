@@ -91,6 +91,16 @@ Systémové nastavenie nesie `choices`: `null` bez ponuky, inak zoznam `{value, 
 skupiny z NEX Managera); prázdny zoznam znamená, že aplikácia ponuku teraz nevie načítať. Zmena na hodnotu mimo ponuky
 je `422 KIT-INVALID`, zmena, keď sa ponuka nedá načítať, `503 KIT-UNAVAILABLE`.
 
+## Údaje na viacerých obrazovkách
+
+Údaj zo servera, ktorý ukazuje viac obrazoviek naraz (prihlásený človek, vybraná vec, zoznam, ktorý načíta jedna
+obrazovka a mení iná), drží aplikácia na jednom mieste — v spoločnom úložisku (zustand) alebo v ráme. Toto miesto sa
+prihlási k zmenám servera (`onServerChange` z nex-shared: klient oznámi každú úspešnú zmenu, jej metódu a cestu) a po
+zmene, ktorej sa týka, sa samo obnoví — obrazovka, ktorá údaj mení, nemusí vedieť, kto ho ešte ukazuje. Rám to robí pre
+prihláseného človeka (Moje konto, ľavý panel, „Prihlásený ako“). Kostra má stráž `src/test/shared-copies.test.ts`:
+spoločné úložisko, ktoré načíta údaje zo servera a k zmenám sa neprihlási, je chyba. 05.11.2026 NEX Manager: e-mail
+zmenený v Používateľoch, Moje konto ukazovalo starý, kým sa stránka neobnovila (DEV-311).
+
 ## Dokumenty aplikácie
 
 - Verzia aplikácie: server hlási `APP_VERSION`, ktorú dodá kokpit pri nasadení; bez nej najnovšiu verziu z poznámok

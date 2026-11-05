@@ -12,7 +12,7 @@
 //     </TemplateApp>
 //   </BrowserRouter>
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { ApiError, createApiClient, registerAuthCallback, type ApiClient } from "nex-shared";
+import { ApiError, createApiClient, onServerChange, registerAuthCallback, type ApiClient } from "nex-shared";
 
 import { FrameContext, type Frame } from "./frame/FrameContext";
 import { createLayoutStore } from "./frame/layoutStore";
@@ -76,6 +76,21 @@ export function TemplateApp({ manifest, client, frontendVersion, overview, child
   useEffect(() => {
     registerAuthCallback(() => setSession((s) => (s.kind === "in" ? { kind: "out", why: "expired" } : s)));
   }, []);
+
+  // DEV-311 — the frame's copy of the signed-in person follows every change of that person, wherever it was made (Moje
+  // konto, Používatelia, an app's own screen): Moje konto, the left panel and „Prihlásený ako“ never show a stale person.
+  // 05.11.2026 NEX Manager: the e-mail changed in Používatelia, Moje konto kept the old one until the page was reloaded.
+  const signedInId = session.kind === "in" ? session.user.id : null;
+  useEffect(() => {
+    if (!signedInId) return;
+    return onServerChange(({ path }) => {
+      if (path !== "/auth/me" && path !== `/users/${signedInId}` && !path.startsWith(`/users/${signedInId}/`)) return;
+      api
+        .me()
+        .then((fresh) => setSession((s) => (s.kind === "in" && s.user.id === fresh.id ? { kind: "in", user: fresh } : s)))
+        .catch(() => undefined);
+    });
+  }, [api, signedInId]);
 
   const logout = useCallback(async () => {
     try {

@@ -108,7 +108,7 @@ function duplicates(values) {
 
 // src/TemplateApp.tsx
 import { useCallback as useCallback4, useEffect as useEffect7, useMemo as useMemo3, useState as useState7 } from "react";
-import { ApiError, createApiClient, registerAuthCallback } from "nex-shared";
+import { ApiError, createApiClient, onServerChange, registerAuthCallback } from "nex-shared";
 
 // src/frame/FrameContext.ts
 import { createContext, useContext } from "react";
@@ -908,6 +908,14 @@ function TemplateApp({ manifest, client, frontendVersion, overview, children }) 
   useEffect7(() => {
     registerAuthCallback(() => setSession((s) => s.kind === "in" ? { kind: "out", why: "expired" } : s));
   }, []);
+  const signedInId = session.kind === "in" ? session.user.id : null;
+  useEffect7(() => {
+    if (!signedInId) return;
+    return onServerChange(({ path }) => {
+      if (path !== "/auth/me" && path !== `/users/${signedInId}` && !path.startsWith(`/users/${signedInId}/`)) return;
+      api.me().then((fresh) => setSession((s) => s.kind === "in" && s.user.id === fresh.id ? { kind: "in", user: fresh } : s)).catch(() => void 0);
+    });
+  }, [api, signedInId]);
   const logout = useCallback4(async () => {
     try {
       await api.logout();
