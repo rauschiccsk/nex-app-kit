@@ -1,15 +1,15 @@
 /**
- * Štart predstieraných odpovedí pre ŽIVÝ NÁHĽAD (fáza Vizuál) — ICCINT-94.
+ * Starts the mocked answers of the LIVE PREVIEW (the „Vizuál“ phase) — ICCINT-94.
  *
- * Volá sa VÝHRADNE pod `VITE_PREVIEW` a VŽDY **pred prvým vykreslením**. Keby sa spustil až po ňom,
- * prvé volania appky by odišli na neexistujúci backend a náhľad by skončil na prihlasovacej obrazovke —
- * to je presne tá porucha, ktorá 09.09.2026 zastavila prácu na hodinu a hľadala sa úplne inde
- * (ICCINT-27, ICCINT-93).
+ * Called ONLY under `VITE_PREVIEW` and ALWAYS **before the first render**. Started after it, the app's
+ * first calls would go to a backend that does not exist and the preview would end on the sign-in screen —
+ * exactly the fault that stopped the work for an hour on 09.09.2026 and was looked for somewhere else
+ * entirely (ICCINT-27, ICCINT-93).
  *
- * Náhľad **neobchádza prihlásenie**. Nenasadzuje si nič do úložiska prehliadača a neexistuje príznak,
- * ktorý by stráženie obrazoviek vypol. Robí jedinú vec: odpovedá na otázku „kto som?“ presne tak, ako
- * by na ňu odpovedal backend. Preto stačí tento modul z `main.tsx` nenaimportovať a v ostrom behu po
- * náhľade nezostane ani cesta, ktorou by sa dalo dnu.
+ * The preview **does not bypass the sign-in**. It puts nothing into the browser's storage and there is no
+ * flag that would switch the guarding of screens off. It does one thing only: it answers the question
+ * "who am I?" exactly as the backend would. So it is enough not to import this module from `main.tsx`,
+ * and no path in from the preview is left in a production run.
  */
 import { setupWorker } from "msw/browser";
 
@@ -19,7 +19,7 @@ export async function startPreview(): Promise<void> {
   const worker = setupWorker(...handlers);
   await worker.start({
     quiet: true,
-    // Náhľad obsluhuje len /api/v1 — zvyšok (assety, prenos zmien za behu) nech ide bez zásahu.
+    // The preview serves /api/v1 only — the rest (assets, hot module replacement) passes untouched.
     onUnhandledRequest: "bypass",
   });
 }

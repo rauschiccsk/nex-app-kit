@@ -1,6 +1,6 @@
-// DEV-311 — every shared store of the app that loads from the server refreshes itself after a change (KONTRAKT.md of
-// nex-app-kit, „Údaje na viacerých obrazovkách“). The Director 05.11.2026: „… prosím raz a navždy zabezpečiť, aby nič
-// také už viackrát sa nestalo ani v kokpite ani v našich aplikáciách.“
+// DEV-311 — every shared store of the app that loads from the server refreshes itself after a change (`KONTRAKT.md` of
+// nex-app-kit, „Údaje na viacerých obrazovkách“). The Director 05.11.2026: make sure, once and for all, that this never
+// happens again, neither in the cockpit nor in our apps.
 import { describe, expect, it } from "vitest";
 
 import { storesWithoutChangeListener } from "./sharedCopies";

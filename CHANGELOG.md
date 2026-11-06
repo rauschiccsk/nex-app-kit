@@ -7,6 +7,15 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.11.1
+- `[oprava]` **Kód z kostry je celý po anglicky.** Poznámky, docstringy a mená skúšok, ktoré kostra zapíše do každej
+  aplikácie, boli na 75 riadkoch po slovensky (nginx.conf, náhľad „Vizuál“, `index.html`, `icon.svg`, stráž
+  `shared-copies.test.ts` …) a kontrola jazyka kokpitu ich chytila až vtedy, keď ich agent skopíroval: 05.11.2026 stála
+  na nich rýchla oprava NEX Managera 1.5.4. Text, ktorý aplikácia ukazuje človeku, ostáva po slovensky; meno obrazovky
+  či citát stojí v úvodzovkách na jednom riadku, meno aplikácie v komentári `docker-compose.yml` tiež. Nová skúška
+  `scaffold/tests/test_language.py` vyplní kostru ako kokpit (pre obe prihlásenia) a zlyhá na slovenskej poznámke
+  v ktoromkoľvek súbore; súbor druhu, ktorý nevie čítať, je tiež chyba. (DEV-313)
+
 ## v0.11.0
 - `[nové]` **Zmena prihláseného človeka sa ukáže všade naraz.** Rám sa prihlási k zmenám servera (`onServerChange`
   z nex-shared v0.33.0) a po každej zmene prihláseného človeka — v Moje konto, v Používateľoch alebo na vlastnej

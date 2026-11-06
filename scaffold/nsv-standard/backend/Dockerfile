@@ -1,5 +1,6 @@
 # The server of the app. Built with the compose contexts `frontend` (app.manifest.json — the frontend reads it too)
-# and `docs` (Aktualizácie, Ako začať). The dependencies come first, so a change in the code does not reinstall them.
+# and `docs` („Aktualizácie“, „Ako začať“). The dependencies come first, so a change in the code does not reinstall
+# them.
 FROM python:3.12-slim
 WORKDIR /app
 COPY pyproject.toml ./

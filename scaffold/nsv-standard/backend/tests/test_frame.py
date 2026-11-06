@@ -1,4 +1,4 @@
-"""The template's server answers in this app: health with the database, Aktualizácie, and the sign-in the manifest
+"""The template's server answers in this app: health with the database, „Aktualizácie“, and the sign-in the manifest
 names — own password (the first admin from ADMIN_INITIAL_PASSWORD) or launched from NEX Manager."""
 
 from __future__ import annotations

@@ -1,5 +1,5 @@
-// The app on the template „NSV štandard“ (nex-app-kit). The frame — left panel, top bar, sign-in, Ako začať,
-// Aktualizácie, Nastavenia — comes from the template and is never built here. The app adds its own pages as
+// The app on the template „NSV štandard“ (nex-app-kit). The frame — left panel, top bar, sign-in, „Ako začať“,
+// „Aktualizácie“, „Nastavenia“ — comes from the template and is never built here. The app adds its own pages as
 // <Route> elements inside <TemplateApp> and their left-panel entries in app.manifest.json:
 //
 //   <Route path="/areas" element={<AreasPage />} />          +   { "label": "Oblasti", "path": "/areas", "icon": "🗂️" }

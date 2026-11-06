@@ -1,4 +1,4 @@
-// Prehľad — the app's own overview, the first page after signing in.
+// „Prehľad“ — the app's own overview, the first page after signing in.
 import { Card, Page } from "nex-shared";
 
 export function OverviewPage() {

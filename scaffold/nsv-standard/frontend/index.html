@@ -6,11 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{APP_NAME}}</title>
 
-    <!-- Aby sa appka dala nainštalovať a otvárať vo vlastnom okne ako program (ICCINT-83).
-         Manifest je len POPIS — nič neukladá do pamäte prehliadača a nič nemení na správaní appky
-         v prehliadači. Zvyšok (service worker a kontrola, či na serveri nie je novšia verzia) patrí
-         k ICCINT-76 a robí sa až tam; zapnúť service worker skôr, než tá kontrola existuje, by
-         znamenalo, že sa používateľovi môže dni ukazovať stará verzia. -->
+    <!-- So that the app can be installed and opened in its own window like a program (ICCINT-83).
+         The manifest is only a DESCRIPTION — it caches nothing in the browser and changes nothing in how
+         the app behaves in the browser. The rest (a service worker and a check whether the server has a
+         newer version) belongs to ICCINT-76 and is done only there; switching a service worker on before
+         that check exists would mean the user could be shown an old version for days. -->
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <link rel="apple-touch-icon" href="/icon.svg" />

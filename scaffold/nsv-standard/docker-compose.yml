@@ -1,5 +1,5 @@
-# {{APP_NAME}} — on the ICC app template „NSV štandard“ (nex-app-kit). Services the cockpit expects: db, migrate
-# (alembic upgrade head — the template's tables, then the app's), backend, frontend, test (CI, TEST_DATABASE_URL).
+# „{{APP_NAME}}“ — on the ICC app template „NSV štandard“ (nex-app-kit). Services the cockpit expects: db,
+# migrate (alembic upgrade head — the template's tables, then the app's), backend, frontend, test (CI, TEST_DATABASE_URL).
 x-backend-build: &backend-build
   context: ./backend
   dockerfile: Dockerfile

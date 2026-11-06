@@ -1,7 +1,7 @@
-// DEV-311 — the rule of KONTRAKT.md „Údaje na viacerých obrazovkách“: a shared store (zustand) that loads data from the
-// server listens to the server's changes (onServerChange of nex-shared) and refreshes itself. Without it a change made
-// on one screen stays unseen on another until the page is reloaded — 05.11.2026 NEX Manager: the e-mail changed in
-// Používatelia, Moje konto kept the old one.
+// DEV-311 — the rule of `KONTRAKT.md` „Údaje na viacerých obrazovkách“: a shared store (zustand) that loads data from
+// the server listens to the server's changes (onServerChange of nex-shared) and refreshes itself. Without it a change
+// made on one screen stays unseen on another until the page is reloaded — 05.11.2026 NEX Manager: the e-mail changed in
+// „Používatelia“, „Moje konto“ kept the old one.
 
 export interface SourceFile {
   path: string;

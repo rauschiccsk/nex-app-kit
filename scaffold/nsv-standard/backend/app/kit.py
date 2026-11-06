@@ -1,5 +1,5 @@
-"""The template's server (nex-app-kit) for this app: sign-in, Moje konto, users, sessions, system settings, agents,
-Aktualizácie, Ako začať, the person's layout. The app adds its own system settings below and reads them with
+"""The template's server (nex-app-kit) for this app: sign-in, „Moje konto“, users, sessions, system settings, agents,
+„Aktualizácie“, „Ako začať“, the person's layout. The app adds its own system settings below and reads them with
 kit.settings.get_int("…"); its own routes ask for the signed-in person with Depends(kit.current_user)."""
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ from app.db import SessionLocal
 
 manifest = load_manifest(config.MANIFEST_PATH)
 
-#: The app's own system settings (Nastavenia → Systém) — key, default, type, label, description, unit, bounds.
+#: The app's own system settings („Nastavenia → Systém“) — key, default, type, label, description, unit, bounds.
 SETTINGS: list[SettingDefinition] = []
 
 

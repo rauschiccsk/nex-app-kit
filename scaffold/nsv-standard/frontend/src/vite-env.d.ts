@@ -2,15 +2,16 @@
 
 interface ImportMetaEnv {
   /**
-   * Živý náhľad (fáza Vizuál) — nastavuje ho NEX Studio, appka ho len číta (ICCINT-93/94).
+   * The live preview (the „Vizuál“ phase) — NEX Studio sets it, the app only reads it (ICCINT-93/94).
    *
-   * Zapínajú ho hodnoty `1`, `true`, `yes`, `on` — a nič iné. Porovnávaj s CELÝM tým zoznamom
-   * (viď `main.tsx`), nie s jediným slovom a nie pravdivostne:
+   * The values `1`, `true`, `yes`, `on` switch it on — and nothing else. Compare with that WHOLE list
+   * (see `preview/isPreview.ts`), not with a single word and not by truthiness:
    *
-   * - jediné slovo sa už raz minulo s hodnotou a náhľad sa vôbec nezapol — Manažér z toho videl
-   *   prihlasovaciu obrazovku a skutočnú príčinu hľadal inde (ICCINT-93);
-   * - pravdivostná kontrola má opačnú chybu: v JavaScripte je pravdivý aj reťazec `"false"`, takže
-   *   `VITE_PREVIEW=false` by náhľad ZAPLO (ICCINT-95). `false`, `0` ani `off` ho zapnúť NESMÚ.
+   * - a single word once missed the value and the preview never switched on — the manager saw the
+   *   sign-in screen and looked for the real cause elsewhere (ICCINT-93);
+   * - a truthiness check has the opposite fault: in JavaScript the string `"false"` is truthy too, so
+   *   `VITE_PREVIEW=false` would switch the preview ON (ICCINT-95). `false`, `0` and `off` MUST NOT
+   *   switch it on.
    */
   readonly VITE_PREVIEW?: string;
   readonly VITE_APP_VERSION?: string;

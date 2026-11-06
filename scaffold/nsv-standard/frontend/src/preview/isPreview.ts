@@ -1,25 +1,27 @@
 /**
- * Je zapnutý živý náhľad? (ICCINT-95, ICCINT-107)
+ * Is the live preview switched on? (ICCINT-95, ICCINT-107)
  *
- * ⚠️ **Rozhodovanie je TU, nie v podmienke.** Vo `main.tsx` stojí `import.meta.env.VITE_PREVIEW`
- * ešte raz — ale ako **statická poistka**, nie ako rozhodnutie. Sú to dve rôzne veci a oplatí sa
- * mať ich oddelene:
+ * ⚠️ **The decision is HERE, not in the condition.** `main.tsx` checks `import.meta.env.VITE_PREVIEW`
+ * once more — but as a **static guard**, not as the decision. These are two different things and it
+ * pays to keep them apart:
  *
- * - **poistka** (v `main.tsx`): zostavovač `import.meta.env.VITE_PREVIEW` nahradí literálom, takže
- *   keď premenná nie je nastavená, celá vetva náhľadu je mŕtva a MSW ani fixtures (~200 kB) sa do
- *   ostrého zostavenia nedostanú. Zmerané: bez nej sa tam `startPreview` naozaj dostal.
- * - **rozhodovanie** (tu): porovnanie so ZOZNAMOM zapínacích hodnôt — čitateľné a skúšateľné
- *   samostatne, bez toho, aby na ňom visela veľkosť zväzku.
+ * - **the guard** (in `main.tsx`): the build replaces `import.meta.env.VITE_PREVIEW` with a literal, so
+ *   when the variable is not set, the whole preview branch is dead and neither MSW nor the fixtures
+ *   (~200 kB) reach the production build. Measured: without it `startPreview` really got there.
+ * - **the decision** (here): a comparison with the LIST of switching-on values — readable and testable
+ *   on its own, without the bundle size hanging on it.
  *
- * ⚠️ **Nikdy pravdivostne a nikdy s jediným slovom.** Oba omyly sa už stali:
- * - jediné slovo sa minulo s hodnotou a náhľad sa vôbec nezapol (ICCINT-93);
- * - pravdivostná kontrola má opačnú chybu — v JavaScripte je pravdivý aj reťazec `"false"`, takže
- *   `VITE_PREVIEW=false` by náhľad ZAPLO (ICCINT-95). Zvyk vypínať slovom „false“ je pritom živý.
+ * ⚠️ **Never by truthiness and never against a single word.** Both mistakes have happened:
+ * - a single word missed the value and the preview never switched on (ICCINT-93);
+ * - a truthiness check has the opposite fault — in JavaScript the string `"false"` is truthy too, so
+ *   `VITE_PREVIEW=false` would switch the preview ON (ICCINT-95). And the habit of switching off with
+ *   the word "false" is alive.
  *
- * Vzor pochádza zo stavby NEX Manager 1.2.0, kde ho agent navrhol lepšie než pôvodná šablóna.
+ * The pattern comes from the NEX Manager 1.2.0 build, where the agent designed it better than the
+ * original template.
  */
 
-/** Hodnoty, ktoré náhľad ZAPÍNAJÚ — a nič iné. `false`, `0`, `off` ani prázdno ho nezapnú. */
+/** The values that switch the preview ON — and nothing else. `false`, `0`, `off` or empty do not. */
 const ENABLING_VALUES = ["1", "true", "yes", "on"];
 
 export function isPreviewEnabled(
