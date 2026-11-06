@@ -97,9 +97,18 @@ je `422 KIT-INVALID`, zmena, keď sa ponuka nedá načítať, `503 KIT-UNAVAILAB
 obrazovka a mení iná), drží aplikácia na jednom mieste — v spoločnom úložisku (zustand) alebo v ráme. Toto miesto sa
 prihlási k zmenám servera (`onServerChange` z nex-shared: klient oznámi každú úspešnú zmenu, jej metódu a cestu) a po
 zmene, ktorej sa týka, sa samo obnoví — obrazovka, ktorá údaj mení, nemusí vedieť, kto ho ešte ukazuje. Rám to robí pre
-prihláseného človeka (Moje konto, ľavý panel, „Prihlásený ako“). Kostra má stráž `src/test/shared-copies.test.ts`:
-spoločné úložisko, ktoré načíta údaje zo servera a k zmenám sa neprihlási, je chyba. 05.11.2026 NEX Manager: e-mail
-zmenený v Používateľoch, Moje konto ukazovalo starý, kým sa stránka neobnovila (DEV-311).
+prihláseného človeka (Moje konto, ľavý panel, „Prihlásený ako“). 05.11.2026 NEX Manager: e-mail zmenený
+v Používateľoch, Moje konto ukazovalo starý, kým sa stránka neobnovila (DEV-311).
+
+Každé spoločné úložisko sa k zmenám prihlási, alebo v svojom súbore jedným riadkom povie, prečo nemusí — po anglicky,
+ako celý kód aplikácie:
+
+- `Copy of server data: none — <čo drží namiesto toho>` (napríklad svetlý či tmavý režim, ktorý žije len v prehliadači);
+- `Copy of server data: changed only by this store — <prečo ho žiadna iná obrazovka nemení>`.
+
+Kostra má stráž `src/test/shared-copies.test.ts`: úložisko bez prihlásenia aj bez tohto riadku je chyba skúšok. Stráž
+nehádá, ktoré úložisko číta zo servera — jej prvá podoba to hádala a prehliadla úložisko, ktoré načíta údaje cez vlastnú
+pomocnú funkciu (DEV-316).
 
 ## Dokumenty aplikácie
 

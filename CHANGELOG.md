@@ -7,6 +7,15 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.11.2
+- `[oprava]` **Stráž spoločných úložísk nehádá.** Stráž kostry `src/test/shared-copies.test.ts` (`sharedCopies.ts`)
+  hľadala úložiská, ktoré načítajú údaje zo servera, podľa spôsobu načítania — a úložisko, ktoré načíta cez vlastnú
+  pomocnú funkciu, prehliadla. Teraz platí ako v kokpite: každé spoločné úložisko (zustand, aj `zustand/vanilla`
+  s `createStore`) sa prihlási k zmenám servera (`onServerChange`), alebo v svojom súbore jedným riadkom povie, prečo
+  nemusí — `Copy of server data: none — …` či `Copy of server data: changed only by this store — …` (KONTRAKT.md,
+  „Údaje na viacerých obrazovkách“). Funkcia stráže sa volá `storesThatDoNotFollowTheServer`; aplikácia, ktorá má kópiu
+  stráže, prevezme oba súbory zo šablóny a úložiskám bez prihlásenia dopíše riadok s dôvodom. (DEV-316)
+
 ## v0.11.1
 - `[oprava]` **Kód z kostry je celý po anglicky.** Poznámky, docstringy a mená skúšok, ktoré kostra zapíše do každej
   aplikácie, boli na 75 riadkoch po slovensky (nginx.conf, náhľad „Vizuál“, `index.html`, `icon.svg`, stráž

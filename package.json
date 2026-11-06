@@ -1,6 +1,6 @@
 {
   "name": "nex-app-kit",
-  "version": "0.11.1",
+  "version": "0.11.2",
   "private": true,
   "type": "module",
   "description": "NEX app templates — the frame of an ICC app (left panel, top bar, Getting started, Updates, Settings) on top of nex-shared, and the standard server interface it uses.",
