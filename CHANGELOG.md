@@ -7,6 +7,14 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.12.0
+- `[nové]` **Prehľad len pre niektorých.** Aplikácia môže položku Prehľad v ľavom paneli skryť pred ľuďmi, ktorí ju
+  nemajú vidieť — tým istým spôsobom ako svoje položky: `defineApp(data, { visible: { "/": useSeesOverview } })`.
+  Prehľad sa ukáže, len keď háčik povie áno; kým to nevie, je skrytý. Kto Prehľad nevidí, nedostane ho ani ako prvú
+  obrazovku: rám ho pošle na prvú vlastnú položku aplikácie, ktorú vidí (bez vlastnej podmienky, správcovská len
+  správcovi), inak na Ako začať. Aplikácia bez podmienky sa správa ako doteraz. Údaje Prehľadu musí aplikácia aj tak
+  chrániť na svojom serveri. Prvé použitie: NEX Finance, kde Operátor Prehľad pre vedenie nevidí. (DEV-368)
+
 ## v0.11.2
 - `[oprava]` **Stráž spoločných úložísk nehádá.** Stráž kostry `src/test/shared-copies.test.ts` (`sharedCopies.ts`)
   hľadala úložiská, ktoré načítajú údaje zo servera, podľa spôsobu načítania — a úložisko, ktoré načíta cez vlastnú

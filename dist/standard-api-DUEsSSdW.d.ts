@@ -56,13 +56,16 @@ interface AppManifest {
     };
     /** The app's own action for one person in Nastavenia → Používatelia (DEV-293). */
     readonly userActions?: (user: UserRead) => ReactNode;
+    /** DEV-368: whether the person sees Prehľad — the hook the app gave for „/“; none: everyone sees it. */
+    readonly overviewVisible?: () => boolean | null | undefined;
 }
 /** The template's own pages — an app's entry never takes their path. */
 declare const TEMPLATE_PATHS: readonly ["/", "/getting-started", "/updates", "/settings"];
 /** A left-panel label longer than this does not fit on one line at the default width (ICC layout standard). */
 declare const NAV_LABEL_MAX = 22;
 /** What JSON cannot hold, by the entry's path: the hook that counts what waits behind it, and the one that says
- *  whether the person sees it (DEV-257). */
+ *  whether the person sees it (DEV-257) — for „/“ whether the person sees Prehľad, the template's own entry and first
+ *  screen (DEV-368). */
 interface AppExtras {
     counts?: Record<string, () => number | null | undefined>;
     visible?: Record<string, () => boolean | null | undefined>;

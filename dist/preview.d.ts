@@ -1,6 +1,6 @@
 import { HttpHandler } from 'msw';
 import { UserRead, SystemSettingRead, ReleaseNote } from 'nex-shared';
-import { A as AppManifest, C as CurrentUser } from './standard-api-CSChwOlo.js';
+import { A as AppManifest, C as CurrentUser } from './standard-api-DUEsSSdW.js';
 import 'react';
 
 interface PreviewOptions {

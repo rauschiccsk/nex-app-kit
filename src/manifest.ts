@@ -61,6 +61,8 @@ export interface AppManifest {
   readonly settings: { readonly categories: readonly SettingsCategory[] };
   /** The app's own action for one person in Nastavenia → Používatelia (DEV-293). */
   readonly userActions?: (user: UserRead) => ReactNode;
+  /** DEV-368: whether the person sees Prehľad — the hook the app gave for „/“; none: everyone sees it. */
+  readonly overviewVisible?: () => boolean | null | undefined;
 }
 
 /** The template's own pages — an app's entry never takes their path. */
@@ -70,7 +72,8 @@ export const TEMPLATE_PATHS = ["/", "/getting-started", "/updates", "/settings"]
 export const NAV_LABEL_MAX = 22;
 
 /** What JSON cannot hold, by the entry's path: the hook that counts what waits behind it, and the one that says
- *  whether the person sees it (DEV-257). */
+ *  whether the person sees it (DEV-257) — for „/“ whether the person sees Prehľad, the template's own entry and first
+ *  screen (DEV-368). */
 export interface AppExtras {
   counts?: Record<string, () => number | null | undefined>;
   visible?: Record<string, () => boolean | null | undefined>;
@@ -97,7 +100,8 @@ export function defineApp(input: AppManifestInput, extras: AppExtras = {}): AppM
   const ai = input.ai ?? false;
   const modules = input.modules ?? [];
   const counts = extras.counts ?? {};
-  const visible = extras.visible ?? {};
+  // DEV-368: „/“ is Prehľad — the template's own entry; the rest belong to the app's entries.
+  const { "/": overviewVisible, ...visible } = extras.visible ?? {};
   const nav = (input.nav ?? []).map((entry) => ({
     ...entry,
     ...(counts[entry.path] ? { useCount: counts[entry.path] } : {}),
@@ -167,6 +171,7 @@ export function defineApp(input: AppManifestInput, extras: AppExtras = {}): AppM
     nav: Object.freeze([...nav]),
     settings: Object.freeze({ categories: Object.freeze([...(input.settings?.categories ?? [])]) }),
     ...(extras.userActions ? { userActions: extras.userActions } : {}),
+    ...(overviewVisible ? { overviewVisible } : {}),
   });
 }
 

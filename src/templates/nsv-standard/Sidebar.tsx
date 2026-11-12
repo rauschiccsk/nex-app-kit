@@ -76,7 +76,14 @@ export function NsvSidebar() {
       maxWidth={limit?.max}
       defaultWidth={limit?.default}
     >
-      {entry(TEMPLATE_PLACES.overview)}
+      {manifest.overviewVisible ? (
+        // DEV-368: Prehľad only for those the app says see it — like its own entries.
+        <VisibleEntry key={TEMPLATE_PLACES.overview.path} entry={{ ...TEMPLATE_PLACES.overview, useVisible: manifest.overviewVisible }}>
+          {entry(TEMPLATE_PLACES.overview)}
+        </VisibleEntry>
+      ) : (
+        entry(TEMPLATE_PLACES.overview)
+      )}
       {entry(TEMPLATE_PLACES.gettingStarted)}
       {modules.map((m) => entry(m))}
       {ownEntries.map((e) => {

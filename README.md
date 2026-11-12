@@ -42,7 +42,8 @@ aplikácii s AI. Používateľov a Agentov vidí len správca.
 import data from "../app.manifest.json";
 const manifest = defineApp(data, {
   counts: { "/areas": useAreaCount },        // počet pri položke (voliteľné)
-  visible: { "/statutory": useIsStatutory }, // kto položku vidí — ukáže sa, keď háčik povie áno (voliteľné)
+  visible: { "/statutory": useIsStatutory }, // kto položku vidí — ukáže sa, keď háčik povie áno (voliteľné);
+                                             // "/" je Prehľad: kto ho nevidí, začína na prvej položke, ktorú vidí
   userActions: (person) => <AccessButton person={person} />, // tlačidlo aplikácie v riadku človeka v Nastaveniach (voliteľné)
 });
 

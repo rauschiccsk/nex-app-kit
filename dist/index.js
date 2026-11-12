@@ -30,7 +30,7 @@ function defineApp(input, extras = {}) {
   const ai = input.ai ?? false;
   const modules = input.modules ?? [];
   const counts = extras.counts ?? {};
-  const visible = extras.visible ?? {};
+  const { "/": overviewVisible, ...visible } = extras.visible ?? {};
   const nav = (input.nav ?? []).map((entry) => ({
     ...entry,
     ...counts[entry.path] ? { useCount: counts[entry.path] } : {},
@@ -96,7 +96,8 @@ function defineApp(input, extras = {}) {
     modules: Object.freeze([...modules]),
     nav: Object.freeze([...nav]),
     settings: Object.freeze({ categories: Object.freeze([...input.settings?.categories ?? []]) }),
-    ...extras.userActions ? { userActions: extras.userActions } : {}
+    ...extras.userActions ? { userActions: extras.userActions } : {},
+    ...overviewVisible ? { overviewVisible } : {}
   });
 }
 function duplicates(values) {
@@ -323,7 +324,7 @@ function useTheme() {
 }
 
 // src/templates/nsv-standard/NsvStandard.tsx
-import { Outlet as Outlet2, Route, Routes } from "react-router-dom";
+import { Navigate, Outlet as Outlet2, Route, Routes } from "react-router-dom";
 
 // src/templates/nsv-standard/pages/GettingStartedPage.tsx
 import { useEffect as useEffect2, useState as useState3 } from "react";
@@ -792,7 +793,10 @@ function NsvSidebar() {
       maxWidth: limit?.max,
       defaultWidth: limit?.default,
       children: [
-        entry(TEMPLATE_PLACES.overview),
+        manifest.overviewVisible ? (
+          // DEV-368: Prehľad only for those the app says see it — like its own entries.
+          /* @__PURE__ */ jsx8(VisibleEntry, { entry: { ...TEMPLATE_PLACES.overview, useVisible: manifest.overviewVisible }, children: entry(TEMPLATE_PLACES.overview) }, TEMPLATE_PLACES.overview.path)
+        ) : entry(TEMPLATE_PLACES.overview),
         entry(TEMPLATE_PLACES.gettingStarted),
         modules.map((m) => entry(m)),
         ownEntries.map((e) => {
@@ -854,9 +858,22 @@ function NsvShell() {
 }
 
 // src/templates/nsv-standard/NsvStandard.tsx
-import { jsx as jsx11, jsxs as jsxs8 } from "react/jsx-runtime";
+import { Fragment as Fragment2, jsx as jsx11, jsxs as jsxs8 } from "react/jsx-runtime";
 function Padded({ children }) {
   return /* @__PURE__ */ jsx11("div", { className: "p-6", children: children ?? /* @__PURE__ */ jsx11(Outlet2, {}) });
+}
+var everyone = () => true;
+function firstPlaceWithoutOverview(manifest, isAdmin) {
+  const own = manifest.nav.find((e) => !e.useVisible && (!e.adminOnly || isAdmin));
+  return own?.path ?? TEMPLATE_PLACES.gettingStarted.path;
+}
+function OverviewPlace({ overview }) {
+  const { manifest, isAdmin } = useFrame();
+  const useOverviewVisible = manifest.overviewVisible ?? everyone;
+  const answer = useOverviewVisible();
+  if (answer === true) return /* @__PURE__ */ jsx11(Fragment2, { children: overview });
+  if (answer === false) return /* @__PURE__ */ jsx11(Navigate, { to: firstPlaceWithoutOverview(manifest, isAdmin), replace: true });
+  return null;
 }
 function NsvStandard({ overview, children }) {
   const { manifest } = useFrame();
@@ -865,7 +882,7 @@ function NsvStandard({ overview, children }) {
     /* @__PURE__ */ jsx11(Route, { path: TEMPLATE_PLACES.updates.path, element: /* @__PURE__ */ jsx11(UpdatesPage, {}) }),
     /* @__PURE__ */ jsx11(Route, { path: TEMPLATE_PLACES.settings.path, element: /* @__PURE__ */ jsx11(SettingsPage, {}) }),
     /* @__PURE__ */ jsxs8(Route, { element: /* @__PURE__ */ jsx11(Padded, {}), children: [
-      /* @__PURE__ */ jsx11(Route, { index: true, element: overview }),
+      /* @__PURE__ */ jsx11(Route, { index: true, element: /* @__PURE__ */ jsx11(OverviewPlace, { overview }) }),
       /* @__PURE__ */ jsx11(Route, { path: TEMPLATE_PLACES.gettingStarted.path, element: /* @__PURE__ */ jsx11(GettingStartedPage, {}) }),
       modules.map((m) => /* @__PURE__ */ jsx11(Route, { path: `${m.path}/*`, element: m.page() }, m.id)),
       children,
