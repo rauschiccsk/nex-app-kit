@@ -20,6 +20,7 @@ import { ChangePasswordScreen, ClosedScreen, LoadingScreen, LoginScreen, Unavail
 import { ThemeProvider } from "./frame/theme";
 import type { AppManifest } from "./manifest";
 import { ADMIN_ROLE, createStandardApi, type CurrentUser } from "./standard-api";
+import { InstallationContext, useInstallation, useInstallationWindow } from "./frame/installation";
 import { TEMPLATES } from "./templates/registry";
 
 export interface TemplateAppProps {
@@ -52,6 +53,9 @@ function sameOriginClient(): ApiClient {
 
 export function TemplateApp({ manifest, client, frontendVersion, overview, children }: TemplateAppProps) {
   const api = useMemo(() => createStandardApi(client ?? sameOriginClient()), [client]);
+  // DEV-377: whom this installation serves — the window, the panel, the sign-in card and a UAT's band say it.
+  const installation = useInstallation(api);
+  useInstallationWindow(manifest.name, installation);
   const [layout] = useState(() => createLayoutStore(api));
   const [session, setSession] = useState<Session>({ kind: "loading" });
 
@@ -155,5 +159,9 @@ export function TemplateApp({ manifest, client, frontendVersion, overview, child
     );
   }
 
-  return <ThemeProvider username={user?.username}>{screen}</ThemeProvider>;
+  return (
+    <ThemeProvider username={user?.username}>
+      <InstallationContext.Provider value={installation}>{screen}</InstallationContext.Provider>
+    </ThemeProvider>
+  );
 }

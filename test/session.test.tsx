@@ -176,7 +176,9 @@ describe("with the real client of nex-shared", () => {
     );
 
     await frame();
-    expect(requests[0]).toEqual({ url: "/api/v1/auth/me", credentials: "same-origin" });
+    // DEV-377: the frame also asks whom the installation serves — at the same address, like everything it asks.
+    expect(requests).toContainEqual({ url: "/api/v1/auth/me", credentials: "same-origin" });
+    expect(requests.every((r) => r.url.startsWith("/api/v1/") && r.credentials === "same-origin")).toBe(true);
   });
 
   it("a 401 while working sends the person back to signing in, saying why", async () => {

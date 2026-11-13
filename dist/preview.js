@@ -1,6 +1,6 @@
 import {
   STANDARD_ENDPOINTS
-} from "./chunk-KGIWN4Y5.js";
+} from "./chunk-VVSBNZ3W.js";
 
 // src/preview.ts
 import { HttpResponse, http } from "msw";
@@ -151,7 +151,10 @@ function previewHandlers(options) {
         { version: "v0.1.0", released_at: null, markdown: "Uk\xE1\u017Eka \u2014 pozn\xE1mky k vydaniu nap\xED\u0161e agent do docs/specs/versions." }
       ]
     ),
-    gettingStarted: () => json({ markdown: options.gettingStarted ?? "Uk\xE1\u017Eka \u2014 n\xE1vod pre \u010Dloveka, ktor\xFD aplik\xE1ciu e\u0161te nevidel, nap\xED\u0161e agent do docs/AKO_ZACAT.md." })
+    gettingStarted: () => json({ markdown: options.gettingStarted ?? "Uk\xE1\u017Eka \u2014 n\xE1vod pre \u010Dloveka, ktor\xFD aplik\xE1ciu e\u0161te nevidel, nap\xED\u0161e agent do docs/AKO_ZACAT.md." }),
+    // DEV-377: the preview serves no customer — it looks as an app outside the cockpit.
+    installation: () => json({ customer: null, environment: null }),
+    installationManifest: () => json({ name: manifest.name, short_name: manifest.name, start_url: "/", display: "standalone" })
   };
   const allowed = /* @__PURE__ */ new Set(["always", manifest.auth === "password" ? "password" : "manager", ...manifest.ai ? ["ai"] : []]);
   return STANDARD_ENDPOINTS.filter((e) => allowed.has(e.scope)).flatMap((e) => {

@@ -43,6 +43,8 @@ nej — cesta, ktorá chýba alebo pribudla len na jednej strane, je červená.
 | `PUT /user-layout` | vždy | Uloženie rozloženia; posielajú sa len zmenené polia, šírka `null` = predvolená, šírka mimo hraníc = 422. |
 | `GET /release-notes` | vždy | Aktualizácie: zoznam verzií s textom poznámok k vydaniu (`version`, `released_at`, `markdown`). |
 | `GET /getting-started` | vždy | Ako začať: návod k aplikácii v tvare Markdown (`markdown`). |
+| `GET /installation` | vždy | Komu inštalácia slúži: `customer` (meno zákazníka) a `environment` (`uat` / `prod`), obe môžu byť `null`; nastavuje ich kokpit pri nasadení (`NEX_CUSTOMER_NAME`, `NEX_ENVIRONMENT`). Aj bez prihlásenia. |
+| `GET /installation/manifest.webmanifest` | vždy | Popis nainštalovanej aplikácie pre túto inštaláciu — meno so zákazníkom a pri UAT so značkou UAT. Aj bez prihlásenia. |
 
 ## Prihlásenie a relácia
 

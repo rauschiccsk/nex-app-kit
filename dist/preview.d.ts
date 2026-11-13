@@ -1,6 +1,6 @@
 import { HttpHandler } from 'msw';
 import { UserRead, SystemSettingRead, ReleaseNote } from 'nex-shared';
-import { A as AppManifest, C as CurrentUser } from './standard-api-DUEsSSdW.js';
+import { A as AppManifest, C as CurrentUser } from './standard-api-CRoN_bfp.js';
 import 'react';
 
 interface PreviewOptions {

@@ -45,6 +45,10 @@ export const STANDARD_ENDPOINTS = [
   { id: "saveLayout", method: "PUT", path: "/user-layout", scope: "always" },
   { id: "releaseNotes", method: "GET", path: "/release-notes", scope: "always" },
   { id: "gettingStarted", method: "GET", path: "/getting-started", scope: "always" },
+  // DEV-377: whom the installation serves — and its installed-app description, which the browser reads by the link in
+  // the page's head (the frame points the link there and never calls it itself).
+  { id: "installation", method: "GET", path: "/installation", scope: "always" },
+  { id: "installationManifest", method: "GET", path: "/installation/manifest.webmanifest", scope: "always" },
 ] as const satisfies readonly { id: string; method: string; path: string; scope: EndpointScope }[];
 
 export type EndpointId = (typeof STANDARD_ENDPOINTS)[number]["id"];
@@ -126,10 +130,17 @@ export interface GettingStartedRead {
   markdown: string;
 }
 
+/** DEV-377: whom the installation serves — written by the cockpit on every deploy; both `null` outside it. */
+export interface InstallationRead {
+  customer: string | null;
+  environment: "uat" | "prod" | null;
+}
+
 export interface StandardApi {
   login(username: string, password: string): Promise<CurrentUser>;
   logout(): Promise<void>;
   health(): Promise<HealthRead>;
+  installation(): Promise<InstallationRead>;
   me(): Promise<CurrentUser>;
   updateMe(changes: ProfileChanges): Promise<CurrentUser>;
   changePassword(currentPassword: string, newPassword: string): Promise<void>;
@@ -179,6 +190,7 @@ export function createStandardApi(client: ApiClient): StandardApi {
     login: (username, password) => call("login", {}, { username, password }),
     logout: () => call("logout"),
     health: () => call("health"),
+    installation: () => call("installation"),
     me: () => call("me"),
     updateMe: (changes) => call("updateMe", {}, changes),
     changePassword: (currentPassword, newPassword) =>

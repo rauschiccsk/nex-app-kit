@@ -101,6 +101,13 @@ ktorá ukazuje na človeka, ukazuje na `kit_users.id`. Pri spustení z NEX Manag
 `MANAGER_LAUNCH_SIGNING_KEY`, `MANAGER_MODULE_SLUG`, `MANAGER_DEPLOY_SLUG`, `NEX_MANAGER_BASE_URL`,
 `NEX_MANAGER_API_KEY` — tie, ktoré kokpit zapisuje.
 
+**Komu inštalácia slúži (DEV-377).** Kokpit pri každom nasadení zapíše backendu inštalácie `NEX_CUSTOMER_NAME` (meno
+zákazníka) a `NEX_ENVIRONMENT` (`uat` / `prod`) — aplikácia ich nikde nedeklaruje. Server ich vydá (`GET
+/installation`) a rám ich ukáže: v názve okna („NEX Manager — MÁGERSTAV s.r.o. (UAT)“), v ľavom paneli, na karte
+prihlásenia a UAT dostane nad každou stránkou pás „Skúšobné prostredie (UAT)“. Nainštalovaná aplikácia sa pomenuje
+tými istými slovami (`GET /installation/manifest.webmanifest`, ikona `/icon.svg` z kostry). Bez nich (aplikácia mimo
+kokpitu) vyzerá ako doteraz.
+
 Cesty, kto ich smie a pravidlá relácie opisuje [KONTRAKT.md](KONTRAKT.md).
 
 ## Kostra nového projektu

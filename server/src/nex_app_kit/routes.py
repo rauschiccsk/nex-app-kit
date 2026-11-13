@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session as Db
 
 from . import docs
 from .errors import KitError, conflict, invalid, not_found
+from .installation import Installation
 from .layout import SIDEBAR_WIDTH
 from .manager import LaunchRefused, ManagerUnavailable, admission_problem, ticket_expiry
 from .models import AgentSetting, Session, UsedLaunchToken, User, UserLayout
@@ -194,6 +195,17 @@ def build_router(kit: AppKit) -> APIRouter:
         return JSONResponse(
             {"status": "ok" if ok else "error", "version": kit.version, "checks": {"database": database}},
             status_code=200 if ok else 503,
+        )
+
+    # ── whom this installation serves (DEV-377) — before the sign-in too: the window says it from the start ─────────
+    @router.get("/installation")
+    def installation() -> dict:
+        return Installation.from_env().as_dict()
+
+    @router.get("/installation/manifest.webmanifest")
+    def installation_manifest() -> JSONResponse:
+        return JSONResponse(
+            Installation.from_env().web_manifest(kit.manifest.name), media_type="application/manifest+json"
         )
 
     @router.get("/release-notes")

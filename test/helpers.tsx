@@ -45,6 +45,7 @@ const DEFAULTS: Record<string, Answer> = {
   "PUT /user-layout": (body: unknown) => ({ ...LAYOUT, ...(body as object) }),
   "GET /release-notes": [],
   "GET /getting-started": { markdown: "" },
+  "GET /installation": { customer: null, environment: null },
   "GET /system-settings": [],
   "GET /sessions": [],
   "GET /users": [],

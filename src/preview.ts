@@ -172,6 +172,9 @@ export function previewHandlers(options: PreviewOptions): HttpHandler[] {
       ),
     gettingStarted: () =>
       json({ markdown: options.gettingStarted ?? "Ukážka — návod pre človeka, ktorý aplikáciu ešte nevidel, napíše agent do docs/AKO_ZACAT.md." }),
+    // DEV-377: the preview serves no customer — it looks as an app outside the cockpit.
+    installation: () => json({ customer: null, environment: null }),
+    installationManifest: () => json({ name: manifest.name, short_name: manifest.name, start_url: "/", display: "standalone" }),
   };
 
   const allowed = new Set(["always", manifest.auth === "password" ? "password" : "manager", ...(manifest.ai ? ["ai"] : [])]);

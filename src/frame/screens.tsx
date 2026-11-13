@@ -5,6 +5,7 @@ import { Brand, Button, Card, Input, LoginForm } from "nex-shared";
 
 import type { AppManifest } from "../manifest";
 import type { CurrentUser, StandardApi } from "../standard-api";
+import { InstallationCustomer, InstallationUat } from "./installation";
 import { errorText } from "./people";
 
 function Centered({ manifest, children }: { manifest: AppManifest; children: ReactNode }) {
@@ -13,6 +14,9 @@ function Centered({ manifest, children }: { manifest: AppManifest; children: Rea
       <Card className="w-full max-w-sm">
         <div className="mb-5">
           <Brand initials={manifest.initials} name={manifest.name} />
+          {/* DEV-377: whose installation one signs in to — and a test one says so before the password goes in. */}
+          <InstallationCustomer className="mt-2" />
+          <InstallationUat />
         </div>
         {children}
       </Card>

@@ -7,6 +7,7 @@ import { useStore } from "zustand";
 import { Brand, NavIcon, NavItem, SectionDivider, Sidebar, UserCard, useShell } from "nex-shared";
 
 import { useFrame } from "../../frame/FrameContext";
+import { InstallationCustomer } from "../../frame/installation";
 import { personName, roleLabel } from "../../frame/people";
 import { useBackendVersion, versionLine } from "../../frame/version";
 import type { NavEntry } from "../../manifest";
@@ -76,6 +77,8 @@ export function NsvSidebar() {
       maxWidth={limit?.max}
       defaultWidth={limit?.default}
     >
+      {/* DEV-377: whom this installation serves — named at the top of the panel; folded to icons it has no room. */}
+      {(!railCollapsed || narrow) && <InstallationCustomer className="px-3 pb-1.5 pt-0.5" />}
       {manifest.overviewVisible ? (
         // DEV-368: Prehľad only for those the app says see it — like its own entries.
         <VisibleEntry key={TEMPLATE_PLACES.overview.path} entry={{ ...TEMPLATE_PLACES.overview, useVisible: manifest.overviewVisible }}>

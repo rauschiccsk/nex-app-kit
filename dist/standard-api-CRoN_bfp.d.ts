@@ -215,6 +215,16 @@ declare const STANDARD_ENDPOINTS: readonly [{
     readonly method: "GET";
     readonly path: "/getting-started";
     readonly scope: "always";
+}, {
+    readonly id: "installation";
+    readonly method: "GET";
+    readonly path: "/installation";
+    readonly scope: "always";
+}, {
+    readonly id: "installationManifest";
+    readonly method: "GET";
+    readonly path: "/installation/manifest.webmanifest";
+    readonly scope: "always";
 }];
 type EndpointId = (typeof STANDARD_ENDPOINTS)[number]["id"];
 interface HealthRead {
@@ -284,10 +294,16 @@ type UserLayoutChanges = Partial<Pick<UserLayout, "sidebar_width" | "sidebar_col
 interface GettingStartedRead {
     markdown: string;
 }
+/** DEV-377: whom the installation serves — written by the cockpit on every deploy; both `null` outside it. */
+interface InstallationRead {
+    customer: string | null;
+    environment: "uat" | "prod" | null;
+}
 interface StandardApi {
     login(username: string, password: string): Promise<CurrentUser>;
     logout(): Promise<void>;
     health(): Promise<HealthRead>;
+    installation(): Promise<InstallationRead>;
     me(): Promise<CurrentUser>;
     updateMe(changes: ProfileChanges): Promise<CurrentUser>;
     changePassword(currentPassword: string, newPassword: string): Promise<void>;

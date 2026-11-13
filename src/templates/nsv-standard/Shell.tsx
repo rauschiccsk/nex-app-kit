@@ -5,6 +5,7 @@ import { useStore } from "zustand";
 import { AppShell } from "nex-shared";
 
 import { useFrame } from "../../frame/FrameContext";
+import { InstallationBand } from "../../frame/installation";
 import { PageErrorBoundary } from "./PageErrorBoundary";
 import { NsvSidebar } from "./Sidebar";
 import { NsvTopbar } from "./Topbar";
@@ -22,7 +23,7 @@ export function NsvShell() {
   }, [userId, load, reset]);
 
   return (
-    <AppShell sidebar={<NsvSidebar />} header={<NsvTopbar />}>
+    <AppShell sidebar={<NsvSidebar />} header={<NsvTopbar />} topBanner={<InstallationBand />}>
       <PageErrorBoundary>
         <Outlet />
       </PageErrorBoundary>

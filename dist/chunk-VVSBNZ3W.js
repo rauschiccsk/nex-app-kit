@@ -30,7 +30,11 @@ var STANDARD_ENDPOINTS = [
   { id: "getLayout", method: "GET", path: "/user-layout", scope: "always" },
   { id: "saveLayout", method: "PUT", path: "/user-layout", scope: "always" },
   { id: "releaseNotes", method: "GET", path: "/release-notes", scope: "always" },
-  { id: "gettingStarted", method: "GET", path: "/getting-started", scope: "always" }
+  { id: "gettingStarted", method: "GET", path: "/getting-started", scope: "always" },
+  // DEV-377: whom the installation serves — and its installed-app description, which the browser reads by the link in
+  // the page's head (the frame points the link there and never calls it itself).
+  { id: "installation", method: "GET", path: "/installation", scope: "always" },
+  { id: "installationManifest", method: "GET", path: "/installation/manifest.webmanifest", scope: "always" }
 ];
 function createStandardApi(client) {
   function call(id, params = {}, body) {
@@ -58,6 +62,7 @@ function createStandardApi(client) {
     login: (username, password) => call("login", {}, { username, password }),
     logout: () => call("logout"),
     health: () => call("health"),
+    installation: () => call("installation"),
     me: () => call("me"),
     updateMe: (changes) => call("updateMe", {}, changes),
     changePassword: (currentPassword, newPassword) => call("changePassword", {}, { current_password: currentPassword, new_password: newPassword }),

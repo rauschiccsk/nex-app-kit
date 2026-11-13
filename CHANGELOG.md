@@ -7,6 +7,17 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.13.0
+- `[nové]` **Aplikácia ukáže, komu inštalácia slúži.** Kokpit (od 4.138.0) pri každom nasadení zapíše backendu
+  inštalácie meno zákazníka a prostredie (`NEX_CUSTOMER_NAME`, `NEX_ENVIRONMENT`) a rám ich ukáže: názov okna
+  „<aplikácia> — <zákazník> (UAT)“, meno zákazníka hore v ľavom paneli aj na karte prihlásenia, a UAT dostane nad každou
+  stránkou výrazný pás „Skúšobné prostredie (UAT) — <zákazník>“ (na karte prihlásenia značku), aby sa skúšobná
+  inštalácia nezamenila s ostrou. Nainštalovaná aplikácia sa pomenuje tými istými slovami — server vydá jej popis pre
+  túto inštaláciu (`GET /installation/manifest.webmanifest`) a rám naň presmeruje odkaz v hlavičke stránky, takže ikona
+  na ploche, lišta aj Alt+Tab povedia, čia je. Nové cesty `GET /installation` a `GET /installation/manifest.webmanifest`
+  (vždy, aj bez prihlásenia). Aplikácia nemusí nič meniť okrem verzie šablóny; mimo kokpitu vyzerá ako doteraz.
+  (DEV-377)
+
 ## v0.12.0
 - `[nové]` **Prehľad len pre niektorých.** Aplikácia môže položku Prehľad v ľavom paneli skryť pred ľuďmi, ktorí ju
   nemajú vidieť — tým istým spôsobom ako svoje položky: `defineApp(data, { visible: { "/": useSeesOverview } })`.
