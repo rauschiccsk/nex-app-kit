@@ -89,7 +89,7 @@ jobs:
           cat > "$RUNNER_TEMP/values.json" <<JSON
           {"app_name": "NEX Skúška", "app_initials": "NS", "slug": "nex-skuska", "auth": "${{ matrix.auth }}", "ai": true,
            "backend_port": 18000, "frontend_port": 18001, "db_port": 18002,
-           "languages": ${{ matrix.auth == 'manager' && '["hu", "sk"]' || '["sk"]' }},
+           "languages": ${{ matrix.auth == 'manager' && '["hu", "sk", "en"]' || '["sk"]' }},
            "kit_frontend": "github:rauschiccsk/nex-app-kit#${GITHUB_SHA}",
            "kit_server": "nex-app-kit @ https://github.com/rauschiccsk/nex-app-kit/archive/${GITHUB_SHA}.tar.gz#subdirectory=server"}
           JSON

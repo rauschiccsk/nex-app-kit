@@ -175,6 +175,51 @@ import { createContext as createContext2, useContext as useContext2, useEffect, 
 import { useMemo } from "react";
 import { createTranslator as createTranslator2, useLanguage, useT } from "nex-shared";
 
+// src/locales/en.ts
+var kitEn = {
+  "kit.error.reload": "Reload",
+  "kit.error.text": "This page could not be shown. Try reloading it; if it happens again, tell the app's administrator.",
+  "kit.error.title": "\u26A0\uFE0F The page ran into an error",
+  "kit.guide.failed": "The guide could not be loaded:",
+  "kit.guide.none": "The app's guide has not been written yet.",
+  "kit.guide.noServer": "the server does not answer",
+  "kit.login.failed": "Signing in did not succeed.",
+  "kit.login.identity": "Username",
+  "kit.login.loading": "Signing in\u2026",
+  "kit.notFound.back": "Back to Overview",
+  "kit.notFound.text": "There is nothing at this address. Perhaps it changed, or it was mistyped.",
+  "kit.notFound.title": "The page does not exist",
+  "kit.password.failed": "Changing the password did not succeed.",
+  "kit.password.mismatch": "The new passwords do not match.",
+  "kit.password.submit": "Set password",
+  "kit.password.title": "Set your own password",
+  "kit.password.why": "Someone else set your password for the first sign-in. Until you set your own, the app will not open.",
+  "kit.place.gettingStarted": "Getting started",
+  "kit.place.overview": "Overview",
+  "kit.place.settings": "Settings",
+  "kit.place.updates": "Updates",
+  "kit.retry": "Try again",
+  "kit.role.admin": "Administrator",
+  "kit.role.user": "User",
+  "kit.settings.agentsLoadFailed": "The agents' settings could not be loaded.",
+  "kit.settings.email": "E-mail",
+  "kit.settings.fullName": "Full name",
+  "kit.settings.loadFailed": "The settings could not be loaded.",
+  "kit.settings.loginCategory": "Sign-in",
+  "kit.settings.loginCategoryHint": "How long a person stays signed in.",
+  "kit.settings.managedByManager": "Your account is managed by NEX Manager \u2014 your name, e-mail and password are changed there.",
+  "kit.settings.saveFailed": "Saving failed.",
+  "kit.settings.sessionsHint": "Who is signed in and since when. A revoked session stops working at once.",
+  "kit.settings.sessionsLoadFailed": "The sessions could not be loaded.",
+  "kit.settings.signedInAs": "Signed in as",
+  "kit.signedOut.managerExpired": "The sign-in has expired. Open the app again from NEX Manager.",
+  "kit.signedOut.managerLogout": "You have been signed out. You can open the app again from NEX Manager.",
+  "kit.signedOut.passwordExpired": "The sign-in has expired. Sign in again.",
+  "kit.uat": "Test environment (UAT)",
+  "kit.unavailable": "The app does not answer right now. Try again in a moment.",
+  "kit.updates.failed": "Loading the updates failed."
+};
+
 // src/locales/hu.ts
 var kitHu = {
   "kit.error.reload": "Friss\xEDt\xE9s",
@@ -266,7 +311,7 @@ var kitSk = {
 };
 
 // src/i18n.ts
-var KIT_MESSAGES = { sk: kitSk, hu: kitHu };
+var KIT_MESSAGES = { sk: kitSk, hu: kitHu, en: kitEn };
 function mergeMessages(app) {
   const merged = {};
   for (const language of /* @__PURE__ */ new Set([...Object.keys(KIT_MESSAGES), ...Object.keys(app ?? {})])) {

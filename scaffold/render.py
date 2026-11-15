@@ -49,11 +49,12 @@ VERBATIM: tuple[str, ...] = ()
 #: DEV-394 — values the cockpit may give: the languages the app speaks, its main one first (none: Slovak only).
 OPTIONAL_KEYS = ("languages",)
 #: The languages the template speaks (nex-shared's ``LANGUAGES``, the server's ``i18n.LANGUAGES``).
-KNOWN_LANGUAGES = ("sk", "hu")
+KNOWN_LANGUAGES = ("sk", "hu", "en")
 #: The scaffold's own texts — its overview — in every language the template speaks; the app's catalogs start with them.
 STARTER_TEXTS = {
     "sk": {"app.overview.preparing": "Prehľad aplikácie sa pripravuje."},
     "hu": {"app.overview.preparing": "Az alkalmazás áttekintése készül."},
+    "en": {"app.overview.preparing": "The app's overview is being prepared."},
 }
 
 AUTH_ENV = {

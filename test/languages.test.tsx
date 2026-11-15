@@ -31,6 +31,21 @@ describe("the person's language (DEV-394)", () => {
     expect(screen.getByText("Felhasználónév")).toBeInTheDocument();
   });
 
+  it("a person who chose English gets the frame in English (DEV-398)", async () => {
+    renderApp({ manifest: { languages: ["sk", "hu", "en"] }, user: { ...ADMIN, language: "en" } });
+
+    await frame();
+    await waitFor(() => expect(panelEntries()).toEqual(["Overview", "Getting started", "Updates", "—", "Settings"]));
+  });
+
+  it("the template's own texts exist in every language it speaks, none missing (DEV-398)", () => {
+    expect(Object.keys(KIT_MESSAGES)).toEqual(["sk", "hu", "en"]);
+    const keys = Object.keys(KIT_MESSAGES.sk ?? {});
+    for (const language of ["hu", "en"] as const) {
+      expect(Object.keys(KIT_MESSAGES[language] ?? {}).sort()).toEqual([...keys].sort());
+    }
+  });
+
   it("an app that speaks only Slovak stays Slovak, whatever the person or installation says", async () => {
     renderApp({ user: { ...ADMIN, language: "hu" } });
 

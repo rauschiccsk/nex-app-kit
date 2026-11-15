@@ -96,12 +96,12 @@
       "auth": "manager",
       "languages": [
         "sk",
-        "en",
+        "de",
         "sk"
       ]
     },
     "problems": [
-      "Jazyk „en“ šablóna nepozná — pozná tieto: sk, hu.",
+      "Jazyk „de“ šablóna nepozná — pozná tieto: sk, hu, en.",
       "Jazyk „sk“ je uvedený dvakrát."
     ]
   },

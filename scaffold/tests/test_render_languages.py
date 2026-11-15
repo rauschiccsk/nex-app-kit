@@ -39,9 +39,9 @@ def test_a_hungarian_app_gets_its_main_catalog_and_the_slovak_one_typed_against_
 
 
 def test_a_language_the_template_does_not_know_is_refused():
-    problems = render.check({**VALUES, "languages": ["sk", "en"]})
+    problems = render.check({**VALUES, "languages": ["sk", "de"]})
 
-    assert problems == ["Jazyk „en“ šablóna nepozná — pozná tieto: sk, hu."]
+    assert problems == ["Jazyk „de“ šablóna nepozná — pozná tieto: sk, hu, en."]
 
 
 def test_every_starter_text_is_in_every_language_the_template_speaks():

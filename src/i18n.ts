@@ -7,13 +7,14 @@
 import { useMemo } from "react";
 import { createTranslator, useLanguage, useT, type AppMessages, type Language, type Translate } from "nex-shared";
 
+import { kitEn } from "./locales/en";
 import { kitHu } from "./locales/hu";
 import { kitSk } from "./locales/sk";
 
 export type { KitMessageKey } from "./locales/sk";
 
 /** The template's own catalogs. */
-export const KIT_MESSAGES: AppMessages = { sk: kitSk, hu: kitHu };
+export const KIT_MESSAGES: AppMessages = { sk: kitSk, hu: kitHu, en: kitEn };
 
 /** The template's catalogs with the app's over them — the app may say a template's text its own way. */
 export function mergeMessages(app: AppMessages | undefined): AppMessages {

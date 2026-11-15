@@ -124,8 +124,8 @@ pomocnú funkciu (DEV-316).
 
 ## Jazyk (DEV-394)
 
-- Aplikácia hovorí jazykmi z manifestu (`languages`, hlavný prvý; bez neho len slovenčina). Rám šablóny, nex-shared aj
-  server šablóny majú katalógy týchto jazykov; aplikácia pridá svoje texty (`defineApp(data, { messages })`).
+- Aplikácia hovorí jazykmi z manifestu (`languages`, hlavný prvý; bez neho len slovenčina) — šablóna pozná `sk`, `hu`
+  a od v0.15.0 `en` (DEV-398). Rám šablóny, nex-shared aj server šablóny majú katalógy týchto jazykov; aplikácia pridá svoje texty (`defineApp(data, { messages })`).
 - Jazyk človeka: jeho voľba (`kit_users.language`, `PUT /auth/language`; pri spustení z NEX Managera ho povie Manager
   v identite — pole `language`), inak jazyk inštalácie (`NEX_LANGUAGE`), inak hlavný jazyk aplikácie.
 - Klient (nex-shared ≥ 0.37.0) pošle jazyk pri každej požiadavke v hlavičke `Accept-Language`; server podľa nej píše

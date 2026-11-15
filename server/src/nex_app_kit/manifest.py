@@ -16,7 +16,7 @@ from typing import Any, Literal
 TEMPLATE_IDS = ("nsv-standard",)
 AUTH_MODES = ("password", "manager")
 #: DEV-394 — the languages the template speaks (``i18n.LANGUAGES``, nex-shared's ``LANGUAGES``).
-KNOWN_LANGUAGES = ("sk", "hu")
+KNOWN_LANGUAGES = ("sk", "hu", "en")
 
 AuthMode = Literal["password", "manager"]
 

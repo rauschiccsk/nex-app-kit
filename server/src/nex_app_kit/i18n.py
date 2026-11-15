@@ -14,7 +14,7 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 #: The languages the template speaks — the same codes as nex-shared's ``LANGUAGES``.
-LANGUAGES: tuple[str, ...] = ("sk", "hu")
+LANGUAGES: tuple[str, ...] = ("sk", "hu", "en")
 DEFAULT_LANGUAGE = "sk"
 _LOCALES = Path(__file__).resolve().parent / "locales"
 CATALOGS: dict[str, dict[str, str]] = {

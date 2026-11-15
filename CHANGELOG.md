@@ -7,6 +7,13 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.15.0
+- `[nové]` **Angličtina ako tretí jazyk šablóny.** Rám (ľavý panel, prihlásenie, Nastavenia, Moje konto, chybové stránky,
+  pás UAT), hlášky servera šablóny aj názvy jej nastavení hovoria aj po anglicky (`src/locales/en.ts`,
+  `server/src/nex_app_kit/locales/en.json`). Manifest aj kostra poznajú jazyk `en`; nová aplikácia s angličtinou dostane
+  aj anglický katalóg svojich textov. Šablóna stojí na nex-shared v0.38.0, ktorá hovorí po anglicky. Aplikácia, ktorá
+  angličtinu neponúka, sa nemení (DEV-398).
+
 ## v0.14.1
 - `[oprava]` **Serverový balík nesie katalógy svojich hlášok.** Vo verzii 0.14.0 chýbali v nainštalovanom balíku súbory
   `locales/sk.json` a `locales/hu.json`, takže server aplikácie na šablóne 0.14.0 sa nespustil (vlastné skúšky balíka

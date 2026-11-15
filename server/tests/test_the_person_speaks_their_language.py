@@ -13,13 +13,14 @@ from pathlib import Path
 
 from sqlalchemy import inspect, text
 
-from nex_app_kit.i18n import CATALOGS, language_of, tr
+from nex_app_kit.i18n import CATALOGS, LANGUAGES, language_of, tr
 from nex_app_kit.manifest import ManifestError, manifest_from_data
 
 from .test_launch import launch, ticket
 
 PACKAGE = Path(__file__).resolve().parents[1] / "src" / "nex_app_kit"
 HU = {"Accept-Language": "hu-HU,hu;q=0.9,sk;q=0.5"}
+EN = {"Accept-Language": "en-GB,en;q=0.9"}
 
 
 def test_a_person_keeps_the_language_they_chose(make_app):
@@ -56,6 +57,24 @@ def test_a_failed_sign_in_is_said_in_the_language_the_browser_asks_for(make_app)
 
     assert (hu.status_code, hu.json()["detail"]) == (401, "Hibás felhasználónév vagy jelszó.")
     assert sk.json()["detail"] == "Nesprávne meno alebo heslo."
+
+
+def test_an_app_that_speaks_english_answers_in_english(make_app):
+    """DEV-398 — English is the template's third language: the server's sentences and its settings' names."""
+    app = make_app(languages=["sk", "hu", "en"])
+    app.user("jan", role="admin")
+
+    wrong = app.client.post("/api/v1/auth/login", json={"username": "jan", "password": "zle"}, headers=EN)
+    assert (wrong.status_code, wrong.json()["detail"]) == (401, "Wrong username or password.")
+
+    app.login("jan")
+    rows = {r["key"]: r for r in app.client.get("/api/v1/system-settings", headers=EN).json()}
+    assert (rows["auth_session_idle_minutes"]["label"], rows["auth_session_idle_minutes"]["unit"]) == (
+        "Sign-out after inactivity",
+        "minutes",
+    )
+    chosen = app.client.put("/api/v1/auth/language", json={"language": "en"})
+    assert chosen.status_code == 200 and chosen.json()["language"] == "en"
 
 
 def test_an_app_that_speaks_only_slovak_answers_in_slovak_whatever_is_asked(make_app):
@@ -120,8 +139,12 @@ def test_a_database_from_before_gets_the_persons_language(migrated, factory):
     assert "language" in {c["name"] for c in inspect(migrated).get_columns("kit_users")}
 
 
-def test_both_catalogs_have_every_key_and_every_key_the_code_says_is_in_them():
-    assert set(CATALOGS["sk"]) == set(CATALOGS["hu"])
+def test_every_catalog_has_every_key_and_every_key_the_code_says_is_in_them():
+    assert LANGUAGES == ("sk", "hu", "en") and set(CATALOGS) == set(LANGUAGES)
+    for language in LANGUAGES:
+        assert set(CATALOGS[language]) == set(CATALOGS["sk"]), language
+        for key, sentence in CATALOGS[language].items():
+            assert set(re.findall(r"\{(\w+)\}", sentence)) == set(re.findall(r"\{(\w+)\}", CATALOGS["sk"][key])), key
     assert all(value.strip() for catalog in CATALOGS.values() for value in catalog.values())
     said = set()
     for source in PACKAGE.rglob("*.py"):
@@ -164,9 +187,12 @@ def test_the_manifest_names_its_languages():
     assert manifest_from_data({**base, "languages": ["hu", "sk"]}).languages == ("hu", "sk")
     assert manifest_from_data(base).languages == ("sk",)
     try:
-        manifest_from_data({**base, "languages": ["sk", "en", "sk"]})
+        manifest_from_data({**base, "languages": ["sk", "de", "sk"]})
     except ManifestError as error:
-        assert error.problems == ["Jazyk „en“ šablóna nepozná — pozná tieto: sk, hu.", "Jazyk „sk“ je uvedený dvakrát."]
+        assert error.problems == [
+            "Jazyk „de“ šablóna nepozná — pozná tieto: sk, hu, en.",
+            "Jazyk „sk“ je uvedený dvakrát.",
+        ]
     else:
         raise AssertionError("a language the template does not know passed")
     assert json.loads((PACKAGE / "locales" / "hu.json").read_text(encoding="utf-8"))
