@@ -7,6 +7,13 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.15.1
+- `[oprava]` **Skúška vyplnenej aplikácie čaká hlášku v hlavnom jazyku aplikácie.** Kostra dávala aplikácii skúšku
+  servera, ktorá pri spustení bez prepojenia s NEX Managerom čakala slovenskú vetu. Aplikácia s iným hlavným jazykom
+  (napríklad maďarčinou) odpovedá — správne — vo svojom hlavnom jazyku, a jej vlastná skúška preto padla hneď po založení.
+  Skúška teraz porovná vetu katalógu šablóny v hlavnom jazyku aplikácie. CI šablóny vypĺňa kostru s maďarčinou ako hlavným
+  jazykom, takže to odteraz stráži (DEV-398).
+
 ## v0.15.0
 - `[nové]` **Angličtina ako tretí jazyk šablóny.** Rám (ľavý panel, prihlásenie, Nastavenia, Moje konto, chybové stránky,
   pás UAT), hlášky servera šablóny aj názvy jej nastavení hovoria aj po anglicky (`src/locales/en.ts`,

@@ -7,6 +7,8 @@ import os
 
 import pytest
 
+from nex_app_kit.i18n import tr
+
 from app.kit import kit, manifest
 
 
@@ -41,7 +43,8 @@ def test_a_launch_without_the_pairing_says_so(client):
     response = client.get("/api/v1/launch", params={"lt": "x"}, follow_redirects=False)
 
     assert response.status_code == 503
-    assert "Aplikácia ešte nie je prepojená s NEX Managerom" in response.text
+    # The page speaks the app's main language when nobody asked for another one (DEV-394, DEV-398).
+    assert tr(manifest.languages[0], "kit.server.launch.notLinked") in response.text
 
 
 def test_without_a_deployed_version_the_server_is_its_newest_release_notes(tmp_path, monkeypatch):
