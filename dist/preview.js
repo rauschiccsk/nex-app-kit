@@ -1,6 +1,6 @@
 import {
   STANDARD_ENDPOINTS
-} from "./chunk-VVSBNZ3W.js";
+} from "./chunk-33ECZEVM.js";
 
 // src/preview.ts
 import { HttpResponse, http } from "msw";
@@ -11,9 +11,9 @@ var kit_settings_default = [
     key: "auth_session_idle_minutes",
     default: "480",
     value_type: "int",
-    label: "Odhl\xE1senie po ne\u010Dinnosti",
-    description: "Po ko\u013Ek\xFDch min\xFAtach bez pr\xE1ce aplik\xE1cia \u010Dloveka odhl\xE1si.",
-    unit: "min\xFAt",
+    label: "kit.setting.idle.label",
+    description: "kit.setting.idle.description",
+    unit: "kit.setting.idle.unit",
     min: 5,
     max: 1440
   },
@@ -21,9 +21,9 @@ var kit_settings_default = [
     key: "auth_session_max_hours",
     default: "24",
     value_type: "int",
-    label: "Najdlh\u0161ie prihl\xE1senie",
-    description: "Najnesk\xF4r po ko\u013Ek\xFDch hodin\xE1ch sa treba prihl\xE1si\u0165 znova, aj ke\u010F \u010Dlovek pracuje.",
-    unit: "hod\xEDn",
+    label: "kit.setting.maxHours.label",
+    description: "kit.setting.maxHours.description",
+    unit: "kit.setting.maxHours.unit",
     min: 1,
     max: 720
   }
@@ -51,7 +51,7 @@ function noContent() {
 }
 function previewHandlers(options) {
   const { manifest } = options;
-  const me = {
+  let me = {
     id: "nahlad-spravca",
     username: "spravca",
     email: "spravca@priklad.sk",
@@ -118,6 +118,11 @@ function previewHandlers(options) {
     me: () => json(me),
     updateMe: ({ body }) => json({ ...me, ...body }),
     changePassword: () => noContent(),
+    // DEV-394: the preview takes the choice, so the Manažér sees the app in each of its languages.
+    setLanguage: ({ body }) => {
+      me = { ...me, language: body.language ?? null };
+      return json(me);
+    },
     listUsers: () => json(people),
     createUser: ({ body }) => json({ ...colleague, ...body, id: "nahlad-novy" }, 201),
     updateUser: ({ params, body }) => json({ ...people.find((u) => u.id === params.id) ?? colleague, ...body, id: String(params.id) }),

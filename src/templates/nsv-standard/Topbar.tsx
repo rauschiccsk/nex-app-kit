@@ -8,6 +8,7 @@ import { useTheme } from "../../frame/theme";
 import type { AppManifest } from "../../manifest";
 import { MODULES } from "../../modules";
 import { TEMPLATE_PLACES } from "./places";
+import { useKitT } from "../../i18n";
 
 /** The place's name: exact first, then the entry the address lies under (/areas/12 → Oblasti), else the app's name. */
 export function placeLabel(pathname: string, manifest: AppManifest): string {
@@ -25,6 +26,7 @@ export function placeLabel(pathname: string, manifest: AppManifest): string {
 }
 
 export function NsvTopbar() {
+  const t = useKitT();
   const { manifest } = useFrame();
   const { pathname } = useLocation();
   const { isDark, toggleDark } = useTheme();
@@ -34,7 +36,7 @@ export function NsvTopbar() {
       left={
         <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-hidden text-xs text-[var(--color-text-muted)]">
           <span className="text-[var(--color-text-muted)]">/</span>
-          <span className="text-[var(--color-text-secondary)] truncate">{placeLabel(pathname, manifest)}</span>
+          <span className="text-[var(--color-text-secondary)] truncate">{t(placeLabel(pathname, manifest))}</span>
         </div>
       }
       right={<ThemeToggle theme={isDark ? "dark" : "light"} onToggle={toggleDark} />}

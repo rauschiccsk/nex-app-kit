@@ -29,3 +29,7 @@ export type { Frame } from "./frame/FrameContext";
 export { personName, roleLabel } from "./frame/people";
 export { TEMPLATES } from "./templates/registry";
 export type { TemplateProps } from "./templates/types";
+
+// DEV-394 — the template's texts in the person's language.
+export { chooseLanguage, KIT_MESSAGES, mergeMessages, useKitT } from "./i18n";
+export type { KitMessageKey } from "./i18n";

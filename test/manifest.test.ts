@@ -21,7 +21,16 @@ describe("defineApp", () => {
   it("fills what an app does not have to say", () => {
     const app = defineApp(MINIMAL);
 
-    expect(app).toEqual({ ...MINIMAL, ai: false, modules: [], nav: [], settings: { categories: [] } });
+    // DEV-394: an app that names no language speaks Slovak, with no texts of its own.
+    expect(app).toEqual({
+      ...MINIMAL,
+      ai: false,
+      modules: [],
+      nav: [],
+      settings: { categories: [] },
+      languages: ["sk"],
+      messages: {},
+    });
     expect(Object.isFrozen(app)).toBe(true);
   });
 

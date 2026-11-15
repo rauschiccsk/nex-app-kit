@@ -86,7 +86,7 @@ def normalize(definition: SettingDefinition, value: str) -> str:
     if text == "":
         if definition.allow_empty:
             return ""
-        raise invalid(f"„{definition.label}“ nesmie byť prázdne.")
+        raise invalid("kit.server.setting.empty", params={"label": definition.label})
     if definition.value_type == "string":
         return text
     if definition.value_type == "bool":
@@ -95,14 +95,17 @@ def normalize(definition: SettingDefinition, value: str) -> str:
             return "true"
         if low in FALSE:
             return "false"
-        raise invalid(f"„{definition.label}“ je áno alebo nie, nie „{text}“.")
+        raise invalid("kit.server.setting.yesNo", params={"label": definition.label, "value": text})
     try:
         number = int(text) if definition.value_type == "int" else float(text.replace(",", "."))
     except ValueError:
-        kind = "celé číslo" if definition.value_type == "int" else "číslo"
-        raise invalid(f"„{definition.label}“ musí byť {kind}, nie „{text}“.") from None
+        key = "kit.server.setting.integer" if definition.value_type == "int" else "kit.server.setting.number"
+        raise invalid(key, params={"label": definition.label, "value": text}) from None
     if definition.min is not None and number < definition.min or definition.max is not None and number > definition.max:
-        raise invalid(f"„{definition.label}“ musí byť od {_num(definition.min)} do {_num(definition.max)}.")
+        raise invalid(
+            "kit.server.setting.range",
+            params={"label": definition.label, "min": _num(definition.min), "max": _num(definition.max)},
+        )
     return str(number)
 
 
@@ -135,7 +138,7 @@ class SystemSettings:
         try:
             return self.definitions[key]
         except KeyError:
-            raise not_found(f"Systémové nastavenie „{key}“ aplikácia nemá.") from None
+            raise not_found("kit.server.setting.unknown", {"key": key}) from None
 
     # ── reading, cached ──────────────────────────────────────────────────────────────────────────────
     def raw(self, key: str) -> str:
@@ -180,9 +183,9 @@ class SystemSettings:
         if definition.choices is not None and stored != "":
             offer = _offer(definition)
             if not offer:
-                raise unavailable(f"Ponuka pre „{definition.label}“ sa teraz nedá načítať — skús to o chvíľu.")
+                raise unavailable("kit.server.setting.choicesDown", params={"label": definition.label})
             if stored not in {c["value"] for c in offer}:
-                raise invalid(f"„{definition.label}“ musí byť z ponuky — „{stored}“ v nej nie je.")
+                raise invalid("kit.server.setting.choice", params={"label": definition.label, "value": stored})
         row = db.get(SystemSetting, key)
         old = row.value if row else definition.default
         if row is None:
@@ -231,3 +234,19 @@ def _usernames(db: Session, ids: list) -> dict:
     if not wanted:
         return {}
     return {u.id: u.username for u in db.scalars(select(User).where(User.id.in_(wanted)))}
+
+
+def said_in(language: str, row: dict) -> dict:
+    """DEV-394 — a setting as the panel reads it, its words in ``language``: a label, description, unit or offered
+    value that is a key of the catalogs (the template's own settings) is said in it; an app's own words stay as they
+    are."""
+    from .i18n import tr
+
+    choices = row.get("choices")
+    return {
+        **row,
+        "label": tr(language, row["label"]),
+        "description": tr(language, row["description"]) if row.get("description") else row.get("description"),
+        "unit": tr(language, row["unit"]) if row.get("unit") else row.get("unit"),
+        "choices": None if choices is None else [{**c, "label": tr(language, c["label"])} for c in choices],
+    }

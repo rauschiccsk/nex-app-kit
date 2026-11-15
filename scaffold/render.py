@@ -46,6 +46,16 @@ KEYS = (
 #: Files copied as they are (binary or meant to keep their braces).
 VERBATIM: tuple[str, ...] = ()
 
+#: DEV-394 — values the cockpit may give: the languages the app speaks, its main one first (none: Slovak only).
+OPTIONAL_KEYS = ("languages",)
+#: The languages the template speaks (nex-shared's ``LANGUAGES``, the server's ``i18n.LANGUAGES``).
+KNOWN_LANGUAGES = ("sk", "hu")
+#: The scaffold's own texts — its overview — in every language the template speaks; the app's catalogs start with them.
+STARTER_TEXTS = {
+    "sk": {"app.overview.preparing": "Prehľad aplikácie sa pripravuje."},
+    "hu": {"app.overview.preparing": "Az alkalmazás áttekintése készül."},
+}
+
 AUTH_ENV = {
     "password": "  ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-}",
     "manager": "\n".join(
@@ -68,7 +78,7 @@ class ScaffoldError(ValueError):
 
 def check(values: dict) -> list[str]:
     problems = [f"Chýba hodnota „{k}“." for k in KEYS if k not in values]
-    problems += [f"Hodnotu „{k}“ kostra nepozná." for k in values if k not in KEYS]
+    problems += [f"Hodnotu „{k}“ kostra nepozná." for k in values if k not in KEYS + OPTIONAL_KEYS]
     if problems:
         return problems
     if not str(values["app_name"]).strip():
@@ -86,6 +96,15 @@ def check(values: dict) -> list[str]:
     for key in ("backend_port", "frontend_port", "db_port"):
         if not isinstance(values[key], int) or not 1 <= values[key] <= 65535:
             problems.append(f"Port „{key}“ musí byť číslo od 1 do 65535.")
+    languages = values.get("languages", ["sk"])
+    if not isinstance(languages, list) or not languages:
+        problems.append("Jazyky (languages) sú neprázdny zoznam, hlavný prvý.")
+    else:
+        problems += [
+            f"Jazyk „{c}“ šablóna nepozná — pozná tieto: {', '.join(KNOWN_LANGUAGES)}."
+            for c in languages
+            if c not in KNOWN_LANGUAGES
+        ]
     return problems
 
 
@@ -100,7 +119,45 @@ def manifest(values: dict) -> dict:
         data["ai"] = {"roles": [{"id": "assistant", "label": "Asistent"}]}
     data["nav"] = []
     data["settings"] = {"categories": []}
+    if values.get("languages", ["sk"]) != ["sk"]:
+        data["languages"] = list(values["languages"])
     return data
+
+
+def catalogs(values: dict) -> dict[str, str]:
+    """DEV-394 — the app's own catalogs (``frontend/src/locales``): one per language, typed against the main one, and
+    the index the manifest takes them from."""
+    languages = list(values.get("languages", ["sk"]))
+    main = languages[0]
+    files: dict[str, str] = {}
+    for code in languages:
+        entries = "".join(
+            f'  "{key}": {json.dumps(text, ensure_ascii=False)},\n' for key, text in STARTER_TEXTS[code].items()
+        )
+        if code == main:
+            files[f"{code}.ts"] = (
+                "// The app's own texts in its main language — the source of every key; every other catalog is typed\n"
+                "// against it, so a missing translation does not compile (DEV-394).\n"
+                'import type { Message } from "nex-shared";\n\n'
+                f"export const {code} = {{\n{entries}}} satisfies Record<string, Message>;\n\n"
+                f"export type AppMessageKey = keyof typeof {code};\n"
+            )
+        else:
+            files[f"{code}.ts"] = (
+                f"// The app's own texts — typed against the main catalog ({main}.ts).\n"
+                'import type { Message } from "nex-shared";\n\n'
+                f'import type {{ AppMessageKey }} from "./{main}";\n\n'
+                f"export const {code}: Record<AppMessageKey, Message> = {{\n{entries}}};\n"
+            )
+    imports = "".join(f'import {{ {code} }} from "./{code}";\n' for code in languages)
+    files["index.ts"] = (
+        "// The app's own texts per language — the manifest takes them (app.ts); the frame says them in the person's\n"
+        "// language (DEV-394).\n"
+        'import type { AppMessages } from "nex-shared";\n\n'
+        f"{imports}\n"
+        f"export const messages: AppMessages = {{ {', '.join(languages)} }};\n"
+    )
+    return files
 
 
 def substitutions(values: dict) -> dict[str, str]:
@@ -154,6 +211,11 @@ def render(template: str, values: dict, target: Path) -> list[Path]:
     (target / "frontend" / "app.manifest.json").write_text(
         json.dumps(manifest(values), ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
+    locales = target / "frontend" / "src" / "locales"
+    locales.mkdir(parents=True, exist_ok=True)
+    for name, text in catalogs(values).items():
+        (locales / name).write_text(text, encoding="utf-8")
+        written.append(locales / name)
     (target / ".env.example.template-block").write_text(block, encoding="utf-8")
     return written
 

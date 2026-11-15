@@ -1,8 +1,8 @@
-import { A as AppManifest, U as UserLayout, a as UserLayoutChanges, S as StandardApi, C as CurrentUser, T as TemplateId } from './standard-api-CRoN_bfp.js';
-export { b as ADMIN_ROLE, c as AgentModelOption, d as AgentRole, e as AgentSettingRead, f as AiConfig, g as AppAuthMode, h as AppManifestInput, E as EndpointId, i as EndpointScope, G as GettingStartedRead, H as HealthRead, L as LayoutLimit, M as ManifestError, N as NAV_LABEL_MAX, j as NavEntry, k as NewUser, P as PASSWORD_MIN_LENGTH, l as ProfileChanges, m as STANDARD_ENDPOINTS, n as STANDARD_ROLES, o as TEMPLATE_IDS, p as TEMPLATE_PATHS, q as UserChanges, r as createStandardApi, s as defineApp } from './standard-api-CRoN_bfp.js';
+import { A as AppManifest, U as UserLayout, a as UserLayoutChanges, S as StandardApi, C as CurrentUser, T as TemplateId } from './standard-api-CcbOriOO.js';
+export { b as ADMIN_ROLE, c as AgentModelOption, d as AgentRole, e as AgentSettingRead, f as AiConfig, g as AppAuthMode, h as AppManifestInput, E as EndpointId, i as EndpointScope, G as GettingStartedRead, H as HealthRead, L as LayoutLimit, M as ManifestError, N as NAV_LABEL_MAX, j as NavEntry, k as NewUser, P as PASSWORD_MIN_LENGTH, l as ProfileChanges, m as STANDARD_ENDPOINTS, n as STANDARD_ROLES, o as TEMPLATE_IDS, p as TEMPLATE_PATHS, q as UserChanges, r as createStandardApi, s as defineApp } from './standard-api-CcbOriOO.js';
 import * as react from 'react';
 import { ReactNode, ComponentType } from 'react';
-import { ApiClient } from 'nex-shared';
+import { ApiClient, Translate, AppMessages, Language } from 'nex-shared';
 import { StoreApi } from 'zustand';
 
 interface ModuleDefinition {
@@ -58,7 +58,8 @@ declare function personName(person: {
     last_name?: string | null;
     username: string;
 } | null | undefined): string;
-declare function roleLabel(role: string | null | undefined): string;
+/** The role's name in the person's language (DEV-394: `t` from `useKitT`; without one, in Slovak). */
+declare function roleLabel(role: string | null | undefined, t?: Translate): string;
 
 /** What a template receives from the app beyond the manifest: its overview page and its own routes. */
 interface TemplateProps {
@@ -70,4 +71,58 @@ interface TemplateProps {
 
 declare const TEMPLATES: Readonly<Record<TemplateId, ComponentType<TemplateProps>>>;
 
-export { AppManifest, CurrentUser, type Frame, MODULES, type ModuleDefinition, StandardApi, TEMPLATES, TemplateApp, type TemplateAppProps, TemplateId, type TemplateProps, UserLayout, UserLayoutChanges, personName, roleLabel, useFrame };
+declare const kitSk: {
+    "kit.error.reload": string;
+    "kit.error.text": string;
+    "kit.error.title": string;
+    "kit.guide.failed": string;
+    "kit.guide.none": string;
+    "kit.guide.noServer": string;
+    "kit.login.failed": string;
+    "kit.login.identity": string;
+    "kit.login.loading": string;
+    "kit.notFound.back": string;
+    "kit.notFound.text": string;
+    "kit.notFound.title": string;
+    "kit.password.failed": string;
+    "kit.password.mismatch": string;
+    "kit.password.submit": string;
+    "kit.password.title": string;
+    "kit.password.why": string;
+    "kit.place.gettingStarted": string;
+    "kit.place.overview": string;
+    "kit.place.settings": string;
+    "kit.place.updates": string;
+    "kit.retry": string;
+    "kit.role.admin": string;
+    "kit.role.user": string;
+    "kit.settings.agentsLoadFailed": string;
+    "kit.settings.email": string;
+    "kit.settings.fullName": string;
+    "kit.settings.loadFailed": string;
+    "kit.settings.loginCategory": string;
+    "kit.settings.loginCategoryHint": string;
+    "kit.settings.managedByManager": string;
+    "kit.settings.saveFailed": string;
+    "kit.settings.sessionsHint": string;
+    "kit.settings.sessionsLoadFailed": string;
+    "kit.settings.signedInAs": string;
+    "kit.signedOut.managerExpired": string;
+    "kit.signedOut.managerLogout": string;
+    "kit.signedOut.passwordExpired": string;
+    "kit.uat": string;
+    "kit.unavailable": string;
+    "kit.updates.failed": string;
+};
+type KitMessageKey = keyof typeof kitSk;
+
+/** The template's own catalogs. */
+declare const KIT_MESSAGES: AppMessages;
+/** The template's catalogs with the app's over them — the app may say a template's text its own way. */
+declare function mergeMessages(app: AppMessages | undefined): AppMessages;
+/** The translator of the current language that knows the template's texts too. */
+declare function useKitT(): Translate;
+/** The person's language: their own choice, else the installation's, else the app's first — one it speaks. */
+declare function chooseLanguage(offered: readonly Language[], personal: string | null | undefined, installation: string | null | undefined): Language;
+
+export { AppManifest, CurrentUser, type Frame, KIT_MESSAGES, type KitMessageKey, MODULES, type ModuleDefinition, StandardApi, TEMPLATES, TemplateApp, type TemplateAppProps, TemplateId, type TemplateProps, UserLayout, UserLayoutChanges, chooseLanguage, mergeMessages, personName, roleLabel, useFrame, useKitT };

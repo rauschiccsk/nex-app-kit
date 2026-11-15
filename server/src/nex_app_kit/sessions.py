@@ -211,4 +211,7 @@ def mirror_identity(user: User, identity, now: datetime) -> None:
     user.email = identity.email or None
     user.role = "admin" if identity.role == "admin" else "user"
     user.is_active = identity.is_active
+    # DEV-394: the language the person set in NEX Manager — kept when the Manager says one.
+    if getattr(identity, "language", None):
+        user.language = str(identity.language)[:8]
     user.updated_at = now

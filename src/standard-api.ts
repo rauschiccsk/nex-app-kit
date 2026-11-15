@@ -5,8 +5,9 @@ import type { ApiClient, ReleaseNote, SystemSettingRead, UserRead, UserSessionRe
 
 /** The two roles of an app on a template; the server refuses everything else. */
 export const STANDARD_ROLES = [
-  { value: "admin", label: "Správca" },
-  { value: "user", label: "Používateľ" },
+  // DEV-394: the label is a key of the template's catalogs — shown in the person's language.
+  { value: "admin", label: "kit.role.admin" },
+  { value: "user", label: "kit.role.user" },
 ] as const;
 
 export const ADMIN_ROLE = "admin";
@@ -29,6 +30,8 @@ export const STANDARD_ENDPOINTS = [
   { id: "me", method: "GET", path: "/auth/me", scope: "always" },
   { id: "updateMe", method: "PATCH", path: "/auth/me", scope: "password" },
   { id: "changePassword", method: "POST", path: "/auth/change-password", scope: "password" },
+  // DEV-394: the person's language — kept with the person; launched from NEX Manager, the Manager says it.
+  { id: "setLanguage", method: "PUT", path: "/auth/language", scope: "password" },
   { id: "listUsers", method: "GET", path: "/users", scope: "password" },
   { id: "createUser", method: "POST", path: "/users", scope: "password" },
   { id: "updateUser", method: "PATCH", path: "/users/{id}", scope: "password" },
@@ -62,6 +65,8 @@ export interface HealthRead {
 /** The signed-in user; `must_change_password` sends them to Moje konto first. */
 export interface CurrentUser extends UserRead {
   must_change_password?: boolean;
+  /** DEV-394 — the language the person chose; none: the installation's. */
+  language?: string | null;
 }
 
 export interface ProfileChanges {
@@ -134,6 +139,10 @@ export interface GettingStartedRead {
 export interface InstallationRead {
   customer: string | null;
   environment: "uat" | "prod" | null;
+  /** DEV-394 — the installation's language for whoever chose none (the customer's, set by the cockpit). */
+  language?: string | null;
+  /** DEV-394 — the languages the app speaks (its manifest). */
+  languages?: string[];
 }
 
 export interface StandardApi {
@@ -143,6 +152,7 @@ export interface StandardApi {
   installation(): Promise<InstallationRead>;
   me(): Promise<CurrentUser>;
   updateMe(changes: ProfileChanges): Promise<CurrentUser>;
+  setLanguage(language: string): Promise<CurrentUser>;
   changePassword(currentPassword: string, newPassword: string): Promise<void>;
   listUsers(): Promise<UserRead[]>;
   createUser(user: NewUser): Promise<UserRead>;
@@ -193,6 +203,7 @@ export function createStandardApi(client: ApiClient): StandardApi {
     installation: () => call("installation"),
     me: () => call("me"),
     updateMe: (changes) => call("updateMe", {}, changes),
+    setLanguage: (language) => call("setLanguage", {}, { language }),
     changePassword: (currentPassword, newPassword) =>
       call("changePassword", {}, { current_password: currentPassword, new_password: newPassword }),
     listUsers: () => call("listUsers"),

@@ -7,6 +7,7 @@ import type { AppManifest } from "../manifest";
 import type { CurrentUser, StandardApi } from "../standard-api";
 import { InstallationCustomer, InstallationUat } from "./installation";
 import { errorText } from "./people";
+import { useKitT } from "../i18n";
 
 function Centered({ manifest, children }: { manifest: AppManifest; children: ReactNode }) {
   return (
@@ -25,9 +26,10 @@ function Centered({ manifest, children }: { manifest: AppManifest; children: Rea
 }
 
 export function LoadingScreen() {
+  const t = useKitT();
   return (
     <div className="flex min-h-full items-center justify-center bg-[var(--color-canvas)] text-sm text-[var(--color-text-muted)]">
-      Načítavam…
+      {t("common.loading")}
     </div>
   );
 }
@@ -43,6 +45,7 @@ export function LoginScreen({
   note?: string;
   onSignedIn: (user: CurrentUser) => void;
 }) {
+  const t = useKitT();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,7 +55,7 @@ export function LoginScreen({
     try {
       onSignedIn(await api.login(username, password));
     } catch (e) {
-      setError(errorText(e, "Prihlásenie sa nepodarilo."));
+      setError(errorText(e, t("kit.login.failed")));
       setBusy(false);
     }
   }
@@ -66,10 +69,10 @@ export function LoginScreen({
         error={error}
         onChange={() => setError(null)}
         autoFocus
-        identityLabel="Prihlasovacie meno"
-        passwordLabel="Heslo"
-        submitLabel="Prihlásiť sa"
-        loadingLabel="Prihlasujem…"
+        identityLabel={t("kit.login.identity")}
+        passwordLabel={t("login.password")}
+        submitLabel={t("login.submit")}
+        loadingLabel={t("kit.login.loading")}
       />
     </Centered>
   );
@@ -85,10 +88,11 @@ export function ClosedScreen({ manifest, sentence }: { manifest: AppManifest; se
 }
 
 export function UnavailableScreen({ manifest, onRetry }: { manifest: AppManifest; onRetry: () => void }) {
+  const t = useKitT();
   return (
     <Centered manifest={manifest}>
-      <p className="mb-4 text-sm text-[var(--color-text-secondary)]">Aplikácia teraz neodpovedá. Skús to o chvíľu znova.</p>
-      <Button onClick={onRetry}>Skúsiť znova</Button>
+      <p className="mb-4 text-sm text-[var(--color-text-secondary)]">{t("kit.unavailable")}</p>
+      <Button onClick={onRetry}>{t("kit.retry")}</Button>
     </Centered>
   );
 }
@@ -105,6 +109,7 @@ export function ChangePasswordScreen({
   onChanged: () => void;
   onLogout: () => void;
 }) {
+  const t = useKitT();
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [again, setAgain] = useState("");
@@ -115,7 +120,7 @@ export function ChangePasswordScreen({
     e.preventDefault();
     setError("");
     if (next !== again) {
-      setError("Nové heslá sa nezhodujú.");
+      setError(t("kit.password.mismatch"));
       return;
     }
     setBusy(true);
@@ -123,7 +128,7 @@ export function ChangePasswordScreen({
       await api.changePassword(current, next);
       onChanged();
     } catch (err) {
-      setError(errorText(err, "Zmena hesla sa nepodarila."));
+      setError(errorText(err, t("kit.password.failed")));
       setBusy(false);
     }
   }
@@ -131,20 +136,18 @@ export function ChangePasswordScreen({
   const label = "mb-1 block text-xs text-[var(--color-text-muted)]";
   return (
     <Centered manifest={manifest}>
-      <h1 className="mb-1 text-base font-semibold text-[var(--color-text-primary)]">Nastav si vlastné heslo</h1>
-      <p className="mb-4 text-sm text-[var(--color-text-secondary)]">
-        Heslo na prvé prihlásenie ti nastavil niekto iný. Kým si nastavíš vlastné, aplikácia sa neotvorí.
-      </p>
+      <h1 className="mb-1 text-base font-semibold text-[var(--color-text-primary)]">{t("kit.password.title")}</h1>
+      <p className="mb-4 text-sm text-[var(--color-text-secondary)]">{t("kit.password.why")}</p>
       <form onSubmit={submit} className="space-y-3">
         <div>
           <label htmlFor="kit-current" className={label}>
-            Súčasné heslo
+            {t("account.currentPassword")}
           </label>
           <Input id="kit-current" type="password" autoComplete="current-password" value={current} onChange={(e) => setCurrent(e.target.value)} />
         </div>
         <div>
           <label htmlFor="kit-new" className={label}>
-            Nové heslo
+            {t("password.new")}
           </label>
           <Input
             id="kit-new"
@@ -156,7 +159,7 @@ export function ChangePasswordScreen({
         </div>
         <div>
           <label htmlFor="kit-again" className={label}>
-            Zopakuj nové heslo
+            {t("account.repeatPassword")}
           </label>
           <Input id="kit-again" type="password" autoComplete="new-password" value={again} onChange={(e) => setAgain(e.target.value)} />
         </div>
@@ -167,10 +170,10 @@ export function ChangePasswordScreen({
         )}
         <div className="flex items-center justify-between gap-3 pt-1">
           <button type="button" onClick={onLogout} className="text-xs text-[var(--color-text-muted)] hover:underline">
-            Odhlásiť sa
+            {t("user.logout")}
           </button>
           <Button type="submit" disabled={busy || !current || !next || !again}>
-            {busy ? "Ukladám…" : "Nastaviť heslo"}
+            {busy ? t("common.saving") : t("kit.password.submit")}
           </Button>
         </div>
       </form>

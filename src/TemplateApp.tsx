@@ -12,7 +12,7 @@
 //     </TemplateApp>
 //   </BrowserRouter>
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { ApiError, createApiClient, onServerChange, registerAuthCallback, type ApiClient } from "nex-shared";
+import { ApiError, createApiClient, I18nProvider, onServerChange, registerAuthCallback, type ApiClient } from "nex-shared";
 
 import { FrameContext, type Frame } from "./frame/FrameContext";
 import { createLayoutStore } from "./frame/layoutStore";
@@ -22,6 +22,7 @@ import type { AppManifest } from "./manifest";
 import { ADMIN_ROLE, createStandardApi, type CurrentUser } from "./standard-api";
 import { InstallationContext, useInstallation, useInstallationWindow } from "./frame/installation";
 import { TEMPLATES } from "./templates/registry";
+import { chooseLanguage, mergeMessages, useKitT } from "./i18n";
 
 export interface TemplateAppProps {
   manifest: AppManifest;
@@ -41,11 +42,35 @@ type Session =
   | { kind: "out"; why: "start" | "logout" | "expired" }
   | { kind: "in"; user: CurrentUser };
 
+/** DEV-394: keys of the template's catalogs — said in the person's language. */
 export const SIGNED_OUT_SENTENCES = {
-  managerExpired: "Prihlásenie vypršalo. Aplikáciu otvor znova z NEX Managera.",
-  managerLogout: "Odhlásenie prebehlo. Aplikáciu otvoríš znova z NEX Managera.",
-  passwordExpired: "Prihlásenie vypršalo. Prihlás sa znova.",
+  managerExpired: "kit.signedOut.managerExpired",
+  managerLogout: "kit.signedOut.managerLogout",
+  passwordExpired: "kit.signedOut.passwordExpired",
 } as const;
+
+/** The screens before the frame say their sentence in the person's language. */
+function SignedOut({ manifest, api, why, onSignedIn }: {
+  manifest: AppManifest;
+  api: ReturnType<typeof createStandardApi>;
+  why: "start" | "logout" | "expired";
+  onSignedIn: (user: CurrentUser) => void;
+}) {
+  const t = useKitT();
+  return manifest.auth === "manager" ? (
+    <ClosedScreen
+      manifest={manifest}
+      sentence={t(why === "logout" ? SIGNED_OUT_SENTENCES.managerLogout : SIGNED_OUT_SENTENCES.managerExpired)}
+    />
+  ) : (
+    <LoginScreen
+      manifest={manifest}
+      api={api}
+      note={why === "expired" ? t(SIGNED_OUT_SENTENCES.passwordExpired) : undefined}
+      onSignedIn={onSignedIn}
+    />
+  );
+}
 
 function sameOriginClient(): ApiClient {
   return createApiClient({ baseUrl: "", apiPrefix: "/api/v1", getToken: () => null });
@@ -128,20 +153,7 @@ export function TemplateApp({ manifest, client, frontendVersion, overview, child
   } else if (session.kind === "unavailable") {
     screen = <UnavailableScreen manifest={manifest} onRetry={ask} />;
   } else if (session.kind === "out") {
-    screen =
-      manifest.auth === "manager" ? (
-        <ClosedScreen
-          manifest={manifest}
-          sentence={session.why === "logout" ? SIGNED_OUT_SENTENCES.managerLogout : SIGNED_OUT_SENTENCES.managerExpired}
-        />
-      ) : (
-        <LoginScreen
-          manifest={manifest}
-          api={api}
-          note={session.why === "expired" ? SIGNED_OUT_SENTENCES.passwordExpired : undefined}
-          onSignedIn={setUser}
-        />
-      );
+    screen = <SignedOut manifest={manifest} api={api} why={session.why} onSignedIn={setUser} />;
   } else if (session.user.must_change_password && manifest.auth === "password") {
     screen = (
       <ChangePasswordScreen
@@ -159,9 +171,15 @@ export function TemplateApp({ manifest, client, frontendVersion, overview, child
     );
   }
 
+  // DEV-394: the person's language — their own choice, else the installation's, else the app's first; already on the
+  // sign-in, where nobody is known yet.
+  const language = chooseLanguage(manifest.languages, user?.language, installation?.language);
+  const messages = useMemo(() => mergeMessages(manifest.messages), [manifest.messages]);
   return (
-    <ThemeProvider username={user?.username}>
-      <InstallationContext.Provider value={installation}>{screen}</InstallationContext.Provider>
-    </ThemeProvider>
+    <I18nProvider language={language} messages={messages}>
+      <ThemeProvider username={user?.username}>
+        <InstallationContext.Provider value={installation}>{screen}</InstallationContext.Provider>
+      </ThemeProvider>
+    </I18nProvider>
   );
 }

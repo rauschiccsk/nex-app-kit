@@ -27,6 +27,7 @@ nej — cesta, ktorá chýba alebo pribudla len na jednej strane, je červená.
 | `GET /auth/me` | vždy | Prihlásený používateľ (rovnaké polia ako riadok používateľa, navyše `must_change_password`). |
 | `PATCH /auth/me` | heslo | Moje konto: zmena e-mailu, mena a priezviska vlastného účtu. |
 | `POST /auth/change-password` | heslo | Zmena vlastného hesla: `current_password`, `new_password`. |
+| `PUT /auth/language` | heslo | Jazyk prihláseného: `language` (jeden z jazykov aplikácie); vráti prihláseného s jeho jazykom. Spustenej aplikácii jazyk povie NEX Manager. |
 | `GET /users` | heslo | Zoznam používateľov (len admin). |
 | `POST /users` | heslo | Nový používateľ: `username`, `email`, `password`, `role`, `first_name`, `last_name`, `is_active`. |
 | `PATCH /users/{id}` | heslo | Úprava používateľa: `email`, `role`, `first_name`, `last_name`, `is_active`. |
@@ -43,7 +44,7 @@ nej — cesta, ktorá chýba alebo pribudla len na jednej strane, je červená.
 | `PUT /user-layout` | vždy | Uloženie rozloženia; posielajú sa len zmenené polia, šírka `null` = predvolená, šírka mimo hraníc = 422. |
 | `GET /release-notes` | vždy | Aktualizácie: zoznam verzií s textom poznámok k vydaniu (`version`, `released_at`, `markdown`). |
 | `GET /getting-started` | vždy | Ako začať: návod k aplikácii v tvare Markdown (`markdown`). |
-| `GET /installation` | vždy | Komu inštalácia slúži: `customer` (meno zákazníka) a `environment` (`uat` / `prod`), obe môžu byť `null`; nastavuje ich kokpit pri nasadení (`NEX_CUSTOMER_NAME`, `NEX_ENVIRONMENT`). Aj bez prihlásenia. |
+| `GET /installation` | vždy | Komu inštalácia slúži: `customer` (meno zákazníka) a `environment` (`uat` / `prod`), obe môžu byť `null`; nastavuje ich kokpit pri nasadení (`NEX_CUSTOMER_NAME`, `NEX_ENVIRONMENT`). DEV-394: aj `languages` (jazyky aplikácie z manifestu) a `language` — jazyk inštalácie pre toho, kto si nevybral (`NEX_LANGUAGE`, ak ho aplikácia má, inak jej hlavný). Aj bez prihlásenia. |
 | `GET /installation/manifest.webmanifest` | vždy | Popis nainštalovanej aplikácie pre túto inštaláciu — meno so zákazníkom a pri UAT so značkou UAT. Aj bez prihlásenia. |
 
 ## Prihlásenie a relácia
@@ -120,3 +121,12 @@ pomocnú funkciu (DEV-316).
 - Aktualizácie: `docs/specs/versions/v<verzia>/RELEASE_NOTES.md`, dátumy v
   `docs/specs/versions/release-dates.json` (`{"v1.4.2": "2026-10-28"}`); úvodný nadpis s verziou sa vynechá.
 - Ako začať: `docs/AKO_ZACAT.md` — návod pre človeka, ktorý aplikáciu ešte nevidel.
+
+## Jazyk (DEV-394)
+
+- Aplikácia hovorí jazykmi z manifestu (`languages`, hlavný prvý; bez neho len slovenčina). Rám šablóny, nex-shared aj
+  server šablóny majú katalógy týchto jazykov; aplikácia pridá svoje texty (`defineApp(data, { messages })`).
+- Jazyk človeka: jeho voľba (`kit_users.language`, `PUT /auth/language`; pri spustení z NEX Managera ho povie Manager
+  v identite — pole `language`), inak jazyk inštalácie (`NEX_LANGUAGE`), inak hlavný jazyk aplikácie.
+- Klient (nex-shared ≥ 0.37.0) pošle jazyk pri každej požiadavke v hlavičke `Accept-Language`; server podľa nej píše
+  hlášky (`{"detail": …}`) — ak ten jazyk aplikácia nemá, jazykom inštalácie.

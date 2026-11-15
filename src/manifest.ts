@@ -1,9 +1,10 @@
+// texts: for the agent — the manifest's sentences and the preview's sample data are read by the agent who builds the app (DEV-394).
 // DEV-251 — the manifest: everything the template needs to know about an app, in one file the app owns
 // (app.manifest.json). The frame reads it through defineApp, the server through load_manifest (DEV-252). A wrong value
 // stops the app before it starts, with every problem named in one sentence each — the agent fixes them all in one go.
 // The rules both sides check run on the same cases (server/tests/manifest_cases.json).
 import type { ReactNode } from "react";
-import type { SettingsCategory, UserRead } from "nex-shared";
+import { createTranslator, LANGUAGES, type AppMessages, type Language, type SettingsCategory, type UserRead } from "nex-shared";
 
 import { MODULES } from "./modules";
 import { TEMPLATE_IDS, type TemplateId } from "./templates/ids";
@@ -48,6 +49,8 @@ export interface AppManifestInput {
   modules?: string[];
   nav?: NavEntry[];
   settings?: { categories?: SettingsCategory[] };
+  /** DEV-394 — the languages the app speaks, its main one first (default: Slovak only). */
+  languages?: string[];
 }
 
 export interface AppManifest {
@@ -63,6 +66,10 @@ export interface AppManifest {
   readonly userActions?: (user: UserRead) => ReactNode;
   /** DEV-368: whether the person sees Prehľad — the hook the app gave for „/“; none: everyone sees it. */
   readonly overviewVisible?: () => boolean | null | undefined;
+  /** DEV-394 — the languages the app speaks, its main one first. */
+  readonly languages: readonly Language[];
+  /** DEV-394 — the app's own texts per language (labels of the left panel, its screens); keys, not words. */
+  readonly messages: AppMessages;
 }
 
 /** The template's own pages — an app's entry never takes their path. */
@@ -81,6 +88,8 @@ export interface AppExtras {
    *  Everything about people stays in that one tab; what a viewer who may not manage people sees, the app decides
    *  (DEV-293). */
   userActions?: (user: UserRead) => ReactNode;
+  /** DEV-394 — the app's own texts per language (`src/locales`); a label of the left panel may be one of their keys. */
+  messages?: AppMessages;
 }
 
 export class ManifestError extends Error {
@@ -133,11 +142,13 @@ export function defineApp(input: AppManifestInput, extras: AppExtras = {}): AppM
       );
     }
   }
+  const shownIn = (input.languages ?? ["sk"]).filter((code) => LANGUAGES.some((l) => l.code === code)) as Language[];
   for (const entry of nav) {
-    if ([...entry.label].length > NAV_LABEL_MAX) {
-      problems.push(
-        `Položka „${entry.label}“ má ${[...entry.label].length} znakov — v ľavom paneli sa zmestí najviac ${NAV_LABEL_MAX}.`,
-      );
+    // DEV-394: a label may be a key of the app's texts — what has to fit is what the panel shows, in every language.
+    for (const shown of new Set(shownIn.map((code) => createTranslator(code, extras.messages ?? {})(entry.label)))) {
+      if ([...shown].length > NAV_LABEL_MAX) {
+        problems.push(`Položka „${shown}“ má ${[...shown].length} znakov — v ľavom paneli sa zmestí najviac ${NAV_LABEL_MAX}.`);
+      }
     }
     if (!entry.icon || !entry.icon.trim()) problems.push(`Položka „${entry.label}“ nemá ikonu.`);
     if (!entry.path.startsWith("/")) {
@@ -159,6 +170,21 @@ export function defineApp(input: AppManifestInput, extras: AppExtras = {}): AppM
     if (!nav.some((n) => n.path === path)) problems.push(`Počet pre „${path}“ nepatrí žiadnej položke ľavého panela.`);
   }
 
+  const languages = input.languages ?? ["sk"];
+  const known = LANGUAGES.map((l) => l.code as string);
+  if (languages.length === 0) problems.push("Zoznam jazykov (languages) je prázdny — aplikácia hovorí aspoň jedným.");
+  for (const code of languages) {
+    if (!known.includes(code)) problems.push(`Jazyk „${code}“ šablóna nepozná — pozná tieto: ${known.join(", ")}.`);
+  }
+  for (const code of duplicates(languages)) problems.push(`Jazyk „${code}“ je uvedený dvakrát.`);
+  const messages = extras.messages ?? {};
+  const main = languages[0] as Language | undefined;
+  for (const key of Object.keys((main && messages[main]) ?? {})) {
+    for (const code of languages.slice(1) as Language[]) {
+      if (!(key in (messages[code] ?? {}))) problems.push(`Text „${key}“ nemá preklad v jazyku „${code}“.`);
+    }
+  }
+
   if (problems.length) throw new ManifestError(problems);
 
   return Object.freeze({
@@ -172,6 +198,8 @@ export function defineApp(input: AppManifestInput, extras: AppExtras = {}): AppM
     settings: Object.freeze({ categories: Object.freeze([...(input.settings?.categories ?? [])]) }),
     ...(extras.userActions ? { userActions: extras.userActions } : {}),
     ...(overviewVisible ? { overviewVisible } : {}),
+    languages: Object.freeze([...languages]) as Language[],
+    messages,
   });
 }
 

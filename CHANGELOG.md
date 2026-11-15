@@ -7,6 +7,20 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.14.0
+- `[nové]` **Aplikácia hovorí s každým v jeho jazyku — slovenčina a maďarčina.** Rám šablóny (ľavý panel, horná lišta,
+  prihlásenie, zmena hesla, Nastavenia, Ako začať, Aktualizácie, pás UAT, chybové stránky) berie texty z katalógov
+  jazykov (`src/locales`, nad katalógmi nex-shared ≥ 0.37.0). Aplikácia v manifeste povie, akými jazykmi hovorí
+  (`"languages": ["hu", "sk"]`, hlavný prvý; bez neho len slovenčina) a svoje vlastné texty dá do tých istých katalógov
+  (`defineApp(data, { messages })`; položka ľavého panela môže byť kľúč). Každý používateľ si jazyk zvolí v „Moje konto“
+  (`PUT /auth/language`, jazyk ostáva pri ňom — `kit_users.language`, migrácia `kit_0003`); kto si nevybral, dostane
+  jazyk inštalácie (`NEX_LANGUAGE`, zapisuje ho kokpit), už na prihlásení. Aplikácia spúšťaná z NEX Managera prevezme
+  jazyk, ktorý Manager pošle pri spustení. Server píše hlášky v jazyku, ktorý mu klient povie (`Accept-Language`),
+  stránka chyby pri spustení v jazyku prehliadača, systémové nastavenia šablóny tiež. Text, ktorý aplikácia nepreloží
+  do všetkých svojich jazykov, ju zastaví pri štarte s menom textu a jazyka. Nový príkaz `nex-check-texts src`
+  (a `nex-app-kit/check-texts`) nájde text napísaný natvrdo mimo katalógu; kostra ho púšťa vo svojich skúškach
+  v aplikácii s viacerými jazykmi. Aplikácia, ktorá hovorí len po slovensky, sa správa ako doteraz. (DEV-394)
+
 ## v0.13.0
 - `[nové]` **Aplikácia ukáže, komu inštalácia slúži.** Kokpit (od 4.138.0) pri každom nasadení zapíše backendu
   inštalácie meno zákazníka a prostredie (`NEX_CUSTOMER_NAME`, `NEX_ENVIRONMENT`) a rám ich ukáže: názov okna

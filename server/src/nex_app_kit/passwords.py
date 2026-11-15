@@ -28,7 +28,7 @@ def _material(password: str) -> bytes:
 
 def check_new_password(password: str) -> None:
     if not password:
-        raise invalid("Heslo nesmie byť prázdne.", "KIT-PASSWORD-EMPTY")
+        raise invalid("kit.server.passwordEmpty", "KIT-PASSWORD-EMPTY")
 
 
 def hash_password(password: str, rounds: int = 12) -> str:

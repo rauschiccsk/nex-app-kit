@@ -1,3 +1,4 @@
+// texts: for the agent — the manifest's sentences and the preview's sample data are read by the agent who builds the app (DEV-394).
 // DEV-253 — answers for the Vizuál preview, which runs without a server (MSW in the browser). The frame's own routes
 // are answered here, so the preview opens signed in, with the whole frame; the agent writes answers only for the app's
 // own screens and adds them after these:
@@ -66,7 +67,7 @@ function noContent(): Response {
 
 export function previewHandlers(options: PreviewOptions): HttpHandler[] {
   const { manifest } = options;
-  const me: CurrentUser = {
+  let me: CurrentUser = {
     id: "nahlad-spravca",
     username: "spravca",
     email: "spravca@priklad.sk",
@@ -134,6 +135,11 @@ export function previewHandlers(options: PreviewOptions): HttpHandler[] {
     me: () => json(me),
     updateMe: ({ body }) => json({ ...me, ...(body as object) }),
     changePassword: () => noContent(),
+    // DEV-394: the preview takes the choice, so the Manažér sees the app in each of its languages.
+    setLanguage: ({ body }) => {
+      me = { ...me, language: (body as { language?: string }).language ?? null };
+      return json(me);
+    },
     listUsers: () => json(people),
     createUser: ({ body }) => json({ ...colleague, ...(body as object), id: "nahlad-novy" }, 201),
     updateUser: ({ params, body }) =>

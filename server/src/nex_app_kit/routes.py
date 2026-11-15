@@ -23,13 +23,15 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as Db
 
 from . import docs
-from .errors import KitError, conflict, invalid, not_found
+from .errors import KitError, conflict, invalid, not_found, request_language
+from .i18n import tr
 from .installation import Installation
 from .layout import SIDEBAR_WIDTH
 from .manager import LaunchRefused, ManagerUnavailable, admission_problem, ticket_expiry
 from .models import AgentSetting, Session, UsedLaunchToken, User, UserLayout
 from .passwords import DUMMY_HASH, check_new_password, hash_password, verify_password
 from .sessions import AccountEvent, mirror_identity, same_origin
+from .system_settings import said_in as settings_said_in
 
 if TYPE_CHECKING:
     from .kit import AppKit
@@ -83,6 +85,10 @@ class PasswordBody(BaseModel):
     new_password: str
 
 
+class LanguageBody(BaseModel):
+    language: str
+
+
 class SettingBody(BaseModel):
     value: str
 
@@ -108,6 +114,7 @@ def user_read(user: User) -> dict[str, Any]:
         "first_name": user.first_name,
         "last_name": user.last_name,
         "must_change_password": user.must_change_password,
+        "language": user.language,
         "created_at": user.created_at.isoformat(),
         "updated_at": user.updated_at.isoformat(),
     }
@@ -141,40 +148,44 @@ def layout_read(row: UserLayout | None) -> dict[str, Any]:
 def clean_email(value: str) -> str:
     text_ = value.strip()
     if not text_:
-        raise invalid("E-mail je povinný.", "KIT-EMAIL")
+        raise invalid("kit.server.emailRequired", "KIT-EMAIL")
     try:
         return validate_email(text_, check_deliverability=False).normalized
     except EmailNotValidError:
-        raise invalid(f"„{text_}“ nie je platný e-mail.", "KIT-EMAIL") from None
+        raise invalid("kit.server.emailInvalid", "KIT-EMAIL", {"email": text_}) from None
 
 
 def clean_name(value: str, what: str) -> str | None:
     text_ = value.strip()
     if len(text_) > NAME_MAX:
-        raise invalid(f"{what} môže mať najviac {NAME_MAX} znakov.")
+        raise invalid("kit.server.nameTooLong", params={"what": what, "max": NAME_MAX})
     return text_ or None
 
 
 def clean_role(value: str) -> str:
     if value not in ROLES:
-        raise invalid(f"Rola je „admin“ (správca) alebo „user“ (používateľ), nie „{value}“.", "KIT-ROLE")
+        raise invalid("kit.server.roleInvalid", "KIT-ROLE", {"role": value})
     return value
 
 
 def same_origin_or_refuse(request: Request) -> None:
     if not same_origin(request):
-        raise KitError(403, "KIT-ORIGIN", "Požiadavka neprišla z tejto aplikácie — odmietnutá.")
+        raise KitError(403, "KIT-ORIGIN", "kit.server.origin")
 
 
-def launch_page(message: str, status: int) -> HTMLResponse:
-    """A launch that fails ends in the browser, not in the app: one sentence, in plain words."""
-    body = f"""<!doctype html><html lang="sk"><head><meta charset="utf-8"><title>Spustenie aplikácie</title>
+def launch_page(request: Request, message: str, status: int) -> HTMLResponse:
+    """A launch that fails ends in the browser, not in the app: one sentence, in plain words — in the language the
+    browser asks for (DEV-394; ``message`` is the key of the sentence)."""
+    language = request_language(request)
+    title = escape(tr(language, "kit.server.launch.pageTitle"))
+    heading = escape(tr(language, "kit.server.launch.pageHeading"))
+    body = f"""<!doctype html><html lang="{language}"><head><meta charset="utf-8"><title>{title}</title>
 <meta name="viewport" content="width=device-width, initial-scale=1"><style>
 body{{font:15px/1.5 system-ui,sans-serif;margin:0;min-height:100vh;display:flex;align-items:center;
 justify-content:center;background:#0f172a;color:#e2e8f0}}
 main{{max-width:28rem;padding:1.5rem;border:1px solid #334155;border-radius:.75rem;
 background:#1e293b}}h1{{font-size:1rem;margin:0 0 .5rem}}p{{margin:0;color:#cbd5e1}}</style></head><body><main>
-<h1>Aplikáciu sa nepodarilo otvoriť</h1><p>{escape(message)}</p></main></body></html>"""
+<h1>{heading}</h1><p>{escape(tr(language, message))}</p></main></body></html>"""
     return HTMLResponse(body, status_code=status)
 
 
@@ -200,7 +211,14 @@ def build_router(kit: AppKit) -> APIRouter:
     # ── whom this installation serves (DEV-377) — before the sign-in too: the window says it from the start ─────────
     @router.get("/installation")
     def installation() -> dict:
-        return Installation.from_env().as_dict()
+        # DEV-394: the languages the app speaks, and the installation's for whoever chose none (one of them).
+        here = Installation.from_env()
+        offered = list(kit.manifest.languages)
+        return {
+            **here.as_dict(),
+            "language": here.language if here.language in offered else offered[0],
+            "languages": offered,
+        }
 
     @router.get("/installation/manifest.webmanifest")
     def installation_manifest() -> JSONResponse:
@@ -238,21 +256,19 @@ def build_router(kit: AppKit) -> APIRouter:
             user = db.scalars(select(User).where(User.username == body.username.strip())).one_or_none()
             if user is not None and user.locked_until is not None and user.locked_until > now:
                 minutes = max(1, math.ceil((user.locked_until - now).total_seconds() / 60))
-                raise KitError(
-                    429, "KIT-AUTH-LOCKED", f"Príliš veľa nesprávnych pokusov. Skús to znova o {minutes} min."
-                )
+                raise KitError(429, "KIT-AUTH-LOCKED", "kit.server.locked", params={"minutes": minutes})
             if user is None or user.source != "local":
                 verify_password(body.password, DUMMY_HASH)
-                raise KitError(401, "KIT-AUTH-FAILED", "Nesprávne meno alebo heslo.")
+                raise KitError(401, "KIT-AUTH-FAILED", "kit.server.wrongCredentials")
             if not verify_password(body.password, user.password_hash):
                 user.failed_logins += 1
                 if user.failed_logins >= MAX_FAILED_LOGINS:
                     user.failed_logins = 0
                     user.locked_until = now + LOCK_FOR
                 db.commit()
-                raise KitError(401, "KIT-AUTH-FAILED", "Nesprávne meno alebo heslo.")
+                raise KitError(401, "KIT-AUTH-FAILED", "kit.server.wrongCredentials")
             if not user.is_active:
-                raise KitError(403, "KIT-AUTH-INACTIVE", "Tento účet je vypnutý. Obráť sa na správcu aplikácie.")
+                raise KitError(403, "KIT-AUTH-INACTIVE", "kit.server.accountInactive")
             user.failed_logins = 0
             user.locked_until = None
             kit.sessions.start(db, user, request, response)
@@ -262,8 +278,23 @@ def build_router(kit: AppKit) -> APIRouter:
         @router.patch("/auth/me")
         def update_me(body: ProfileBody, user: User = Depends(kit.current_user), db: Db = db_dep) -> dict:
             user.email = clean_email(body.email)
-            user.first_name = clean_name(body.first_name, "Meno")
-            user.last_name = clean_name(body.last_name, "Priezvisko")
+            user.first_name = clean_name(body.first_name, "kit.server.field.firstName")
+            user.last_name = clean_name(body.last_name, "kit.server.field.lastName")
+            user.updated_at = kit.clock()
+            db.commit()
+            return user_read(user)
+
+        @router.put("/auth/language")
+        def set_language(body: LanguageBody, user: User = Depends(kit.current_user), db: Db = db_dep) -> dict:
+            """DEV-394 — the person's language, one of the app's (its manifest)."""
+            offered = list(kit.manifest.languages)
+            if body.language not in offered:
+                raise invalid(
+                    "kit.server.languageUnknown",
+                    "KIT-LANGUAGE",
+                    {"language": body.language, "languages": ", ".join(offered)},
+                )
+            user.language = body.language
             user.updated_at = kit.clock()
             db.commit()
             return user_read(user)
@@ -273,9 +304,9 @@ def build_router(kit: AppKit) -> APIRouter:
             body: ChangePasswordBody, request: Request, user: User = Depends(kit.signed_in), db: Db = db_dep
         ) -> Response:
             if not verify_password(body.current_password, user.password_hash):
-                raise invalid("Súčasné heslo je nesprávne.", "KIT-PASSWORD-WRONG")
+                raise invalid("kit.server.passwordWrong", "KIT-PASSWORD-WRONG")
             if body.new_password == body.current_password:
-                raise invalid("Nové heslo musí byť iné ako súčasné.", "KIT-PASSWORD-SAME")
+                raise invalid("kit.server.passwordSame", "KIT-PASSWORD-SAME")
             check_new_password(body.new_password)
             user.password_hash = hash_password(body.new_password, kit.bcrypt_rounds)
             user.must_change_password = False
@@ -294,13 +325,9 @@ def build_router(kit: AppKit) -> APIRouter:
         def create_user(body: NewUserBody, _admin: User = Depends(kit.require_admin), db: Db = db_dep) -> dict:
             username = body.username.strip()
             if not USERNAME.match(username):
-                raise invalid(
-                    "Prihlasovacie meno má 3 až 50 znakov: písmená bez diakritiky, číslice, bodku, pomlčku, "
-                    "podčiarkovník alebo zavináč.",
-                    "KIT-USERNAME",
-                )
+                raise invalid("kit.server.usernameInvalid", "KIT-USERNAME")
             if db.scalars(select(User.id).where(User.username == username)).first() is not None:
-                raise conflict(f"Prihlasovacie meno „{username}“ už má iný používateľ.", "KIT-USERNAME-TAKEN")
+                raise conflict("kit.server.usernameTaken", "KIT-USERNAME-TAKEN", {"username": username})
             email = clean_email(body.email)
             check_new_password(body.password)
             now = kit.clock()
@@ -310,8 +337,8 @@ def build_router(kit: AppKit) -> APIRouter:
                 password_hash=hash_password(body.password, kit.bcrypt_rounds),
                 role=clean_role(body.role),
                 is_active=body.is_active,
-                first_name=clean_name(body.first_name, "Meno"),
-                last_name=clean_name(body.last_name, "Priezvisko"),
+                first_name=clean_name(body.first_name, "kit.server.field.firstName"),
+                last_name=clean_name(body.last_name, "kit.server.field.lastName"),
                 must_change_password=True,
                 failed_logins=0,
                 source="local",
@@ -328,7 +355,7 @@ def build_router(kit: AppKit) -> APIRouter:
             except ValueError:
                 user = None
             if user is None:
-                raise not_found("Taký používateľ nie je.")
+                raise not_found("kit.server.userUnknown")
             return user
 
         @router.patch("/users/{user_id}")
@@ -340,11 +367,11 @@ def build_router(kit: AppKit) -> APIRouter:
             # Nobody demotes, switches off or deletes themselves — so the admin doing it always stays, and the app
             # is never left without an active admin.
             if user.id == admin.id and (role != user.role or not body.is_active):
-                raise conflict("Vlastnú rolu si nezmeníš a vlastný účet nevypneš — urobí to iný správca.", "KIT-SELF")
+                raise conflict("kit.server.selfRole", "KIT-SELF")
             user.email = clean_email(body.email)
             user.role = role
-            user.first_name = clean_name(body.first_name, "Meno")
-            user.last_name = clean_name(body.last_name, "Priezvisko")
+            user.first_name = clean_name(body.first_name, "kit.server.field.firstName")
+            user.last_name = clean_name(body.last_name, "kit.server.field.lastName")
             switched_off = user.is_active and not body.is_active
             user.is_active = body.is_active
             user.updated_at = kit.clock()
@@ -357,17 +384,14 @@ def build_router(kit: AppKit) -> APIRouter:
         def delete_user(user_id: str, admin: User = Depends(kit.require_admin), db: Db = db_dep) -> Response:
             user = find_user(db, user_id)
             if user.id == admin.id:
-                raise conflict("Vlastný účet nezmažeš — urobí to iný správca.", "KIT-SELF")
+                raise conflict("kit.server.selfDelete", "KIT-SELF")
             kit.sessions.end_all(db, user.id, event=AccountEvent.DELETED)
             db.delete(user)
             try:
                 db.commit()
             except IntegrityError:
                 db.rollback()
-                raise conflict(
-                    "Používateľa nejde zmazať — aplikácia má záznamy, ktoré k nemu patria. Vypni ho namiesto toho.",
-                    "KIT-USER-IN-USE",
-                ) from None
+                raise conflict("kit.server.userHasRecords", "KIT-USER-IN-USE") from None
             return Response(status_code=204)
 
         @router.post("/users/{user_id}/password", status_code=204)
@@ -376,7 +400,7 @@ def build_router(kit: AppKit) -> APIRouter:
         ) -> Response:
             user = find_user(db, user_id)
             if user.id == admin.id:
-                raise conflict("Svoje heslo si zmeň v Moje konto.", "KIT-SELF")
+                raise conflict("kit.server.selfPassword", "KIT-SELF")
             check_new_password(body.new_password)
             user.password_hash = hash_password(body.new_password, kit.bcrypt_rounds)
             user.must_change_password = True
@@ -400,9 +424,7 @@ def build_router(kit: AppKit) -> APIRouter:
         def launch(request: Request, ticket: str, db: Db) -> Response:
             link = kit.manager
             if link is None:
-                return launch_page(
-                    "Aplikácia ešte nie je prepojená s NEX Managerom. Povedz o tom správcovi aplikácie.", 503
-                )
+                return launch_page(request, "kit.server.launch.notLinked", 503)
             now = kit.clock()
             identity = None
             try:
@@ -417,23 +439,16 @@ def build_router(kit: AppKit) -> APIRouter:
                     db.commit()
                 except IntegrityError:
                     db.rollback()
-                    raise LaunchRefused(
-                        "KIT-LAUNCH-USED",
-                        "Tento lístok na spustenie už bol použitý. Otvor aplikáciu znova z NEX Managera.",
-                    ) from None
+                    raise LaunchRefused("KIT-LAUNCH-USED", "kit.server.launch.used") from None
                 try:
                     identity = link.lookup(str(claims["sub"]))
                 except ManagerUnavailable:
-                    raise LaunchRefused(
-                        "KIT-MANAGER-UNAVAILABLE",
-                        "NEX Manager teraz neodpovedá. Skús aplikáciu otvoriť o chvíľu znova.",
-                        503,
-                    ) from None
+                    raise LaunchRefused("KIT-MANAGER-UNAVAILABLE", "kit.server.launch.managerDown", 503) from None
                 problem = admission_problem(identity)
                 if problem is not None:
                     raise problem
             except LaunchRefused as refused:
-                return launch_page(refused.message, refused.status)
+                return launch_page(request, refused.message, refused.status)
             assert identity is not None
             user = db.scalars(select(User).where(User.username == identity.login)).one_or_none()
             if user is None:
@@ -471,21 +486,24 @@ def build_router(kit: AppKit) -> APIRouter:
         except ValueError:
             row = None
         if row is None:
-            raise not_found("Taká relácia nie je — možno už skončila.")
+            raise not_found("kit.server.sessionUnknown")
         kit.sessions.revoke(db, row)
         db.commit()
         return Response(status_code=204)
 
     # ── system settings ──────────────────────────────────────────────────────────────────────────
     @router.get("/system-settings")
-    def list_settings(_user: User = Depends(kit.current_user), db: Db = db_dep) -> list[dict]:
-        return kit.settings.list(db)
+    def list_settings(request: Request, _user: User = Depends(kit.current_user), db: Db = db_dep) -> list[dict]:
+        language = request_language(request)
+        return [settings_said_in(language, row) for row in kit.settings.list(db)]
 
     @router.patch("/system-settings/{key}")
-    def update_setting(key: str, body: SettingBody, admin: User = Depends(kit.require_admin), db: Db = db_dep) -> dict:
+    def update_setting(
+        key: str, body: SettingBody, request: Request, admin: User = Depends(kit.require_admin), db: Db = db_dep
+    ) -> dict:
         row = kit.settings.update(db, key, body.value, admin)
         db.commit()
-        return row
+        return settings_said_in(request_language(request), row)
 
     # ── agents ───────────────────────────────────────────────────────────────────────────────────
     if kit.manifest.ai:
@@ -510,7 +528,7 @@ def build_router(kit: AppKit) -> APIRouter:
         @router.put("/agent-settings/{role}")
         def save_agent(role: str, body: AgentBody, admin: User = Depends(kit.require_admin), db: Db = db_dep) -> dict:
             if role not in roles:
-                raise not_found(f"Rolu agenta „{role}“ aplikácia nemá.")
+                raise not_found("kit.server.agentRoleUnknown", {"role": role})
             families = [f for f, _ in MODEL_FAMILIES]
             if body.model and body.model not in families:
                 raise invalid(f"Model je jeden z: {', '.join(families)} — nie „{body.model}“.", "KIT-AGENT-MODEL")
@@ -543,7 +561,7 @@ def build_router(kit: AppKit) -> APIRouter:
             width = body.sidebar_width
             if width is not None and not SIDEBAR_WIDTH.min <= width <= SIDEBAR_WIDTH.max:
                 raise invalid(
-                    f"Šírka ľavého panela musí byť od {SIDEBAR_WIDTH.min} do {SIDEBAR_WIDTH.max} px.", "KIT-LAYOUT"
+                    "kit.server.layoutWidth", "KIT-LAYOUT", {"min": SIDEBAR_WIDTH.min, "max": SIDEBAR_WIDTH.max}
                 )
             row.sidebar_width = width
         if "sidebar_collapsed" in sent and body.sidebar_collapsed is not None:

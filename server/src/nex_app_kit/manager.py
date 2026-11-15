@@ -46,6 +46,8 @@ class Identity:
     token_version: int
     #: ``None`` = NEX Manager did not say (an older NEX Manager) — entry is refused then.
     has_module_access: bool | None
+    #: DEV-394 — the language the person set in NEX Manager; ``None`` = it did not say (an older NEX Manager).
+    language: str | None = None
 
 
 class ManagerUnavailable(Exception):
@@ -102,7 +104,7 @@ class ManagerLink:
     def verify_ticket(self, ticket: str) -> dict:
         """The ticket's claims, or :class:`LaunchRefused` with the reason in a sentence."""
         if not ticket:
-            raise LaunchRefused("KIT-LAUNCH-MISSING", "Chýba lístok na spustenie. Otvor aplikáciu z NEX Managera.", 400)
+            raise LaunchRefused("KIT-LAUNCH-MISSING", "kit.server.launch.missing", 400)
         try:
             claims = jwt.decode(
                 ticket,
@@ -114,21 +116,15 @@ class ManagerLink:
                 options={"require": ["exp", "iat", "jti", "sub", "iss", "aud"]},
             )
         except jwt.ExpiredSignatureError:
-            raise LaunchRefused(
-                "KIT-LAUNCH-EXPIRED", "Lístok na spustenie už neplatí. Otvor aplikáciu znova z NEX Managera."
-            ) from None
+            raise LaunchRefused("KIT-LAUNCH-EXPIRED", "kit.server.launch.expired") from None
         except jwt.PyJWTError:
-            raise LaunchRefused(
-                "KIT-LAUNCH-INVALID", "Lístok na spustenie nie je platný. Otvor aplikáciu znova z NEX Managera."
-            ) from None
+            raise LaunchRefused("KIT-LAUNCH-INVALID", "kit.server.launch.invalid") from None
         if claims.get("purpose") != PURPOSE:
-            raise LaunchRefused("KIT-LAUNCH-INVALID", "Lístok nie je na spustenie aplikácie.")
+            raise LaunchRefused("KIT-LAUNCH-INVALID", "kit.server.launch.notLaunch")
         if self.deploy_slug and claims.get("deploy") != self.deploy_slug:
-            raise LaunchRefused("KIT-LAUNCH-INVALID", "Lístok vydal NEX Manager iného zákazníka.")
+            raise LaunchRefused("KIT-LAUNCH-INVALID", "kit.server.launch.otherCustomer")
         if int(claims["exp"]) - int(claims["iat"]) > MAX_TICKET_SECONDS:
-            raise LaunchRefused(
-                "KIT-LAUNCH-INVALID", "Lístok na spustenie platí príliš dlho — taký NEX Manager nevydáva."
-            )
+            raise LaunchRefused("KIT-LAUNCH-INVALID", "kit.server.launch.tooLong")
         return claims
 
 
@@ -161,6 +157,7 @@ def http_identity(link: ManagerLink, login: str) -> Identity | None:
             must_change_password=bool(data.get("must_change_password")),
             token_version=int(data.get("token_version") or 0),
             has_module_access=data.get("has_module_access"),
+            language=(str(data["language"]) if data.get("language") else None),
         )
     except (ValueError, KeyError, TypeError):
         raise ManagerUnavailable("NEX Manager poslal odpoveď, ktorej aplikácia nerozumie.") from None
@@ -169,17 +166,17 @@ def http_identity(link: ManagerLink, login: str) -> Identity | None:
 def admission_problem(identity: Identity | None) -> LaunchRefused | None:
     """Why NEX Manager's person may not in — ``None`` when they may."""
     if identity is None:
-        return LaunchRefused("KIT-LAUNCH-UNKNOWN", "NEX Manager túto osobu nepozná.", 403)
+        return LaunchRefused("KIT-LAUNCH-UNKNOWN", "kit.server.launch.unknown", 403)
     if not identity.is_active:
-        return LaunchRefused("KIT-LAUNCH-INACTIVE", "Tvoj účet v NEX Manageri je vypnutý.", 403)
+        return LaunchRefused("KIT-LAUNCH-INACTIVE", "kit.server.launch.inactive", 403)
     if identity.has_module_access is None:
         return LaunchRefused(
             "KIT-MANAGER-OUTDATED",
-            "NEX Manager nepovedal, či máš k tejto aplikácii prístup — treba novšiu verziu NEX Managera.",
+            "kit.server.launch.noAccessAnswer",
             503,
         )
     if not identity.has_module_access:
-        return LaunchRefused("KIT-LAUNCH-NO-ACCESS", "K tejto aplikácii nemáš v NEX Manageri prístup.", 403)
+        return LaunchRefused("KIT-LAUNCH-NO-ACCESS", "kit.server.launch.noAccess", 403)
     if identity.must_change_password:
-        return LaunchRefused("KIT-LAUNCH-PASSWORD", "Najprv si zmeň heslo v NEX Manageri.", 403)
+        return LaunchRefused("KIT-LAUNCH-PASSWORD", "kit.server.launch.password", 403)
     return None

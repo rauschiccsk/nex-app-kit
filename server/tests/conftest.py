@@ -79,8 +79,10 @@ class Clock:
         self.now += timedelta(**delta)
 
 
-def manifest(auth: str = "password", ai: bool = False):
+def manifest(auth: str = "password", ai: bool = False, languages: list[str] | None = None):
     data = {"template": "nsv-standard", "name": "NEX Skúška", "initials": "NS", "auth": auth}
+    if languages is not None:
+        data["languages"] = languages
     if ai:
         data["ai"] = {"roles": [{"id": "assistant", "label": "Asistent"}, {"id": "reviewer", "label": "Kontrolór"}]}
     return manifest_from_data(data)
@@ -193,6 +195,7 @@ def make_app(factory: sessionmaker) -> Callable[..., App]:
         deploy: str | None = DEPLOY,
         on_setting_change=None,
         on_account_change=None,
+        languages: list[str] | None = None,
     ) -> App:
         clock = Clock()
         fake = FakeManager() if auth == "manager" else None
@@ -209,7 +212,7 @@ def make_app(factory: sessionmaker) -> Callable[..., App]:
             else None
         )
         kit = AppKit(
-            manifest=manifest(auth, ai),
+            manifest=manifest(auth, ai, languages),
             version="1.2.3",
             session_factory=factory,
             settings=settings,

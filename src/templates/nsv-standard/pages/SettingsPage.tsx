@@ -19,6 +19,7 @@ import {
   type SettingsCategory,
   type SettingsKitConfig,
   type SettingsTabId,
+  useLanguage,
   type SystemSettingRead,
   type UserFieldSchema,
   type UserRead,
@@ -34,19 +35,12 @@ import {
   type AgentModelOption,
   type SessionRead,
 } from "../../../standard-api";
+import { useKitT } from "../../../i18n";
 
-const LABELS: Record<SettingsTabId, string> = {
-  system: "Systém",
-  agents: "Agenti",
-  konto: "Moje konto",
-  users: "Používatelia",
-  sessions: "Relácie",
-};
 
 /** The cockpit's effort levels — never `ultracode`, which is a setting, not a level. */
 const EFFORTS = ["low", "medium", "high", "xhigh", "max"];
 
-const ROLE_OPTIONS = STANDARD_ROLES.map((r) => ({ value: r.value, label: r.label }));
 
 const USER_FIELDS: UserFieldSchema = { username: true, names: true, telegram: false, passwordMinLength: PASSWORD_MIN_LENGTH };
 
@@ -54,8 +48,9 @@ const USER_FIELDS: UserFieldSchema = { username: true, names: true, telegram: fa
 export const KIT_SETTINGS_CATEGORIES: SettingsCategory[] = [
   {
     id: "kit-auth",
-    label: "Prihlásenie",
-    description: "Ako dlho ostáva človek prihlásený.",
+    // DEV-394: keys of the template's catalogs, said in the person's language where the panel draws them.
+    label: "kit.settings.loginCategory",
+    description: "kit.settings.loginCategoryHint",
     prefixes: ["auth_"],
   },
 ];
@@ -68,12 +63,14 @@ export function settingsConfig(manifest: AppManifest): SettingsKitConfig {
   tabs.push("sessions");
   return {
     tabs,
-    labels: LABELS,
+    // DEV-394: the tabs are named by nex-shared, in the person's language.
+    labels: {},
     tabVisibleForRole: (tab, role) => (tab === "users" || tab === "agents" ? role === ADMIN_ROLE : true),
   };
 }
 
 function SystemTab() {
+  const t = useKitT();
   const { api, manifest, isAdmin } = useFrame();
   const [settings, setSettings] = useState<SystemSettingRead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,9 +80,9 @@ function SystemTab() {
     api
       .listSystemSettings()
       .then(setSettings)
-      .catch((e: unknown) => setLoadError(errorText(e, "Nepodarilo sa načítať nastavenia.")))
+      .catch((e: unknown) => setLoadError(errorText(e, t("kit.settings.loadFailed"))))
       .finally(() => setLoading(false));
-  }, [api]);
+  }, [api, t]);
 
   const save = useCallback(
     async (key: string, value: string) => {
@@ -99,7 +96,11 @@ function SystemTab() {
   return (
     <SystemSettingsPanel
       settings={settings}
-      categories={[...manifest.settings.categories, ...KIT_SETTINGS_CATEGORIES]}
+      categories={[...manifest.settings.categories, ...KIT_SETTINGS_CATEGORIES].map((c) => ({
+        ...c,
+        label: t(c.label),
+        description: c.description ? t(c.description) : c.description,
+      }))}
       canEdit={isAdmin}
       onSave={save}
       loading={loading}
@@ -109,8 +110,9 @@ function SystemTab() {
 }
 
 function AgentsTab() {
+  const t = useKitT();
   const { api, manifest } = useFrame();
-  const roles = manifest.ai ? [...manifest.ai.roles] : [];
+  const roles = (manifest.ai ? [...manifest.ai.roles] : []).map((r) => ({ ...r, label: t(r.label) }));
   const [models, setModels] = useState<AgentModelOption[]>([]);
   const [drafts, setDrafts] = useState<Record<string, AgentDraft> | null>(null);
   const [loadError, setLoadError] = useState("");
@@ -125,8 +127,8 @@ function AgentsTab() {
         setModels(options);
         setDrafts(initial);
       })
-      .catch((e: unknown) => setLoadError(errorText(e, "Nepodarilo sa načítať nastavenia agentov.")));
-  }, [api, manifest]);
+      .catch((e: unknown) => setLoadError(errorText(e, t("kit.settings.agentsLoadFailed"))));
+  }, [api, manifest, t]);
 
   const save = useCallback(
     async (role: string, draft: AgentDraft) => {
@@ -134,11 +136,11 @@ function AgentsTab() {
       try {
         await api.saveAgentSetting(role, { model: draft.model, effort: draft.effort });
       } catch (e) {
-        setSaveErrors((prev) => ({ ...prev, [role]: errorText(e, "Uloženie zlyhalo.") }));
+        setSaveErrors((prev) => ({ ...prev, [role]: errorText(e, t("kit.settings.saveFailed")) }));
         throw e;
       }
     },
-    [api],
+    [api, t],
   );
 
   return (
@@ -165,6 +167,8 @@ function ReadOnlyField({ label, value }: { label: string; value: string }) {
 }
 
 function AccountTab() {
+  const t = useKitT();
+  const { language } = useLanguage();
   const { api, manifest, user, setUser } = useFrame();
   if (!user) return null;
 
@@ -172,14 +176,12 @@ function AccountTab() {
     return (
       <div className="p-6">
         <Card className="max-w-3xl">
-          <p className="mb-4 text-sm text-[var(--color-text-secondary)]">
-            Tvoj účet spravuje NEX Manager — meno, e-mail aj heslo sa menia tam.
-          </p>
+          <p className="mb-4 text-sm text-[var(--color-text-secondary)]">{t("kit.settings.managedByManager")}</p>
           <div className="grid grid-cols-2 gap-3">
-            <ReadOnlyField label="Meno a priezvisko" value={personName(user)} />
-            <ReadOnlyField label="E-mail" value={user.email} />
-            <ReadOnlyField label="Používateľské meno" value={user.username} />
-            <ReadOnlyField label="Rola" value={roleLabel(user.role)} />
+            <ReadOnlyField label={t("kit.settings.fullName")} value={personName(user)} />
+            <ReadOnlyField label={t("kit.settings.email")} value={user.email} />
+            <ReadOnlyField label={t("user.username")} value={user.username} />
+            <ReadOnlyField label={t("user.role")} value={roleLabel(user.role, t)} />
           </div>
         </Card>
       </div>
@@ -195,8 +197,14 @@ function AccountTab() {
         first_name: user.first_name,
         last_name: user.last_name,
       }}
-      roleLabel={roleLabel(user.role)}
+      roleLabel={roleLabel(user.role, t)}
       telegram={false}
+      // DEV-394: the person's language — offered when the app speaks more than one.
+      languages={manifest.languages}
+      language={language}
+      onLanguageChange={async (next) => {
+        setUser(await api.setLanguage(next));
+      }}
       passwordMinLength={PASSWORD_MIN_LENGTH}
       onSaveProfile={async ({ email, first_name, last_name }) => {
         setUser(await api.updateMe({ email, first_name, last_name }));
@@ -207,7 +215,9 @@ function AccountTab() {
 }
 
 function UsersTab() {
+  const t = useKitT();
   const { api, isAdmin, manifest } = useFrame();
+  const roleOptions = STANDARD_ROLES.map((r) => ({ value: r.value, label: t(r.label) }));
   const [users, setUsers] = useState<UserRead[]>([]);
 
   useEffect(() => {
@@ -223,7 +233,7 @@ function UsersTab() {
     <UsersPanel
       users={users}
       rowActions={manifest.userActions}
-      roleOptions={ROLE_OPTIONS}
+      roleOptions={roleOptions}
       canManage={isAdmin}
       fieldSchema={USER_FIELDS}
       onCreate={async (d) => {
@@ -271,6 +281,7 @@ function UsersTab() {
 }
 
 function SessionsTab() {
+  const t = useKitT();
   const { api, isAdmin } = useFrame();
   const [sessions, setSessions] = useState<SessionRead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -280,9 +291,9 @@ function SessionsTab() {
     api
       .listSessions()
       .then(setSessions)
-      .catch((e: unknown) => setLoadError(errorText(e, "Nepodarilo sa načítať relácie.")))
+      .catch((e: unknown) => setLoadError(errorText(e, t("kit.settings.sessionsLoadFailed"))))
       .finally(() => setLoading(false));
-  }, [api]);
+  }, [api, t]);
 
   // Every row names its person — the server joins them, so nobody needs the users list to read this tab.
   const names = useMemo(() => Object.fromEntries(sessions.map((s) => [s.user_id, s.username ?? s.user_id])), [sessions]);
@@ -298,19 +309,20 @@ function SessionsTab() {
       }}
       loading={loading}
       loadError={loadError}
-      description="Kto je prihlásený a odkedy. Zrušená relácia prestane platiť hneď."
+      description={t("kit.settings.sessionsHint")}
     />
   );
 }
 
 export function SettingsPage() {
+  const t = useKitT();
   const { manifest, user } = useFrame();
   const config = useMemo(() => settingsConfig(manifest), [manifest]);
   const headerRight = user ? (
     <span className="text-xs text-[var(--color-text-muted)]">
-      Prihlásený ako <span className="font-medium text-[var(--color-text-secondary)]">{user.username}</span>
+      {t("kit.settings.signedInAs")} <span className="font-medium text-[var(--color-text-secondary)]">{user.username}</span>
       {" · "}
-      <span className="text-[11px] font-medium">{roleLabel(user.role)}</span>
+      <span className="text-[11px] font-medium">{roleLabel(user.role, t)}</span>
     </span>
   ) : undefined;
 
@@ -318,7 +330,7 @@ export function SettingsPage() {
     <SettingsShell
       config={config}
       currentUserRole={user?.role ?? ""}
-      title="Nastavenia"
+      title={t("settings.title")}
       headerRight={headerRight}
       panels={{
         system: <SystemTab />,

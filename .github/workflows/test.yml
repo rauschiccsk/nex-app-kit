@@ -80,6 +80,8 @@ jobs:
           python -m pytest scaffold/tests -q -p no:cacheprovider
           ruff check --no-cache --config server/pyproject.toml scaffold/render.py scaffold/tests
           ruff format --no-cache --check --config server/pyproject.toml scaffold/render.py scaffold/tests
+      # DEV-394: the app launched from NEX Manager speaks Hungarian and Slovak — its catalogs are typed against each
+      # other and its tests run the hard-text rule (nex-check-texts); the password app speaks Slovak only.
       - name: Fill the scaffold as the cockpit does, with this commit of the kit
         run: |
           set -euo pipefail
@@ -87,6 +89,7 @@ jobs:
           cat > "$RUNNER_TEMP/values.json" <<JSON
           {"app_name": "NEX Skúška", "app_initials": "NS", "slug": "nex-skuska", "auth": "${{ matrix.auth }}", "ai": true,
            "backend_port": 18000, "frontend_port": 18001, "db_port": 18002,
+           "languages": ${{ matrix.auth == 'manager' && '["hu", "sk"]' || '["sk"]' }},
            "kit_frontend": "github:rauschiccsk/nex-app-kit#${GITHUB_SHA}",
            "kit_server": "nex-app-kit @ https://github.com/rauschiccsk/nex-app-kit/archive/${GITHUB_SHA}.tar.gz#subdirectory=server"}
           JSON

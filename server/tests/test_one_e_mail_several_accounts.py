@@ -10,13 +10,17 @@ for every app at once.
 
 from __future__ import annotations
 
+from alembic.script import ScriptDirectory
 from sqlalchemy import inspect, select, text
 
 from nex_app_kit import User
+from nex_app_kit.migrate import MIGRATIONS
 
 from .conftest import password_kit
 from .test_launch import launch, ticket
 from .test_users import NEW, signed_in_admin
+
+HEAD = ScriptDirectory(str(MIGRATIONS)).get_current_head()
 
 
 def test_a_new_user_may_have_the_e_mail_of_another(make_app):
@@ -78,11 +82,13 @@ def test_a_database_migrated_before_loses_the_rule(migrated, factory):
     """What every installed app has: kit_0001 with ``uq_kit_users_email``."""
     with migrated.begin() as connection:
         connection.execute(text("ALTER TABLE kit_users ADD CONSTRAINT uq_kit_users_email UNIQUE (email)"))
+        # kit_0001 had no person's language either (DEV-394, kit_0003)
+        connection.execute(text("ALTER TABLE kit_users DROP COLUMN language"))
         connection.execute(text("UPDATE kit_alembic_version SET version_num = 'kit_0001'"))
 
     password_kit(factory).upgrade_database(migrated)
 
     with migrated.connect() as connection:
         version = connection.execute(text("SELECT version_num FROM kit_alembic_version")).scalars().all()
-    assert version == ["kit_0002"]
+    assert version == [HEAD]
     assert [c["name"] for c in inspect(migrated).get_unique_constraints("kit_users")] == ["uq_kit_users_username"]

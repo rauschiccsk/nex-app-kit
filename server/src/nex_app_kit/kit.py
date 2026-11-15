@@ -30,6 +30,7 @@ from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.orm import Session as Db
 
 from .errors import KitError, forbidden, kit_error_handler, not_signed_in
+from .installation import Installation
 from .manager import ManagerLink
 from .manifest import Manifest
 from .migrate import upgrade_database
@@ -115,7 +116,7 @@ class AppKit:
 
         def require_admin(user: User = Depends(current_user)) -> User:
             if user.role != ADMIN_ROLE:
-                raise forbidden("Toto smie len správca aplikácie.")
+                raise forbidden("kit.server.adminOnly")
             return user
 
         #: The database session of a request; committed when the request succeeds.
@@ -135,13 +136,13 @@ class AppKit:
         found = self.sessions.resolve(db, request)
         if found is None:
             if self.manifest.auth == "manager":
-                raise not_signed_in("Prihlásenie vypršalo. Aplikáciu otvor znova z NEX Managera.")
-            raise not_signed_in("Nie si prihlásený.")
+                raise not_signed_in("kit.server.managerExpired")
+            raise not_signed_in("kit.server.notSignedIn")
         session, user = found
         if request.method not in SAFE_METHODS and not same_origin(request):
-            raise KitError(403, "KIT-ORIGIN", "Požiadavka neprišla z tejto aplikácie — odmietnutá.")
+            raise KitError(403, "KIT-ORIGIN", "kit.server.origin")
         if user.must_change_password and not password_change_allowed:
-            raise KitError(403, "KIT-PASSWORD-CHANGE", "Najprv si zmeň heslo.")
+            raise KitError(403, "KIT-PASSWORD-CHANGE", "kit.server.passwordChangeFirst")
         request.state.kit_session = session
         return user
 
@@ -149,6 +150,9 @@ class AppKit:
     def install(self, app: FastAPI, prefix: str = "/api/v1") -> None:
         app.include_router(self.router, prefix=prefix)
         app.add_exception_handler(KitError, kit_error_handler)
+        # DEV-394: a refusal is said in the language the request asks for, among the app's; else the installation's.
+        app.state.nex_languages = tuple(self.manifest.languages)
+        app.state.nex_language = Installation.from_env().language
         # The same health answer at /health too — the cockpit's probes and the Docker healthcheck ask there.
         health = next(r for r in self.router.routes if getattr(r, "path", None) == "/health")
         app.add_api_route("/health", health.endpoint, methods=["GET"], include_in_schema=False)

@@ -15,6 +15,8 @@ from typing import Literal
 
 CUSTOMER_KEY = "NEX_CUSTOMER_NAME"
 ENVIRONMENT_KEY = "NEX_ENVIRONMENT"
+#: DEV-394 — the installation's language (the customer's, set by the cockpit) for whoever chose none.
+LANGUAGE_KEY = "NEX_LANGUAGE"
 Environment = Literal["uat", "prod"]
 ENVIRONMENTS: tuple[Environment, ...] = ("uat", "prod")
 
@@ -28,15 +30,17 @@ WINDOW_COLOUR = "#0f172a"
 class Installation:
     customer: str | None
     environment: Environment | None
+    language: str | None = None
 
     @classmethod
     def from_env(cls, environ: Mapping[str, str] = os.environ) -> Installation:
         customer = " ".join((environ.get(CUSTOMER_KEY) or "").split()) or None
         environment = (environ.get(ENVIRONMENT_KEY) or "").strip().lower()
-        return cls(customer, environment if environment in ENVIRONMENTS else None)  # type: ignore[arg-type]
+        language = (environ.get(LANGUAGE_KEY) or "").strip().lower() or None
+        return cls(customer, environment if environment in ENVIRONMENTS else None, language)  # type: ignore[arg-type]
 
     def as_dict(self) -> dict[str, str | None]:
-        return {"customer": self.customer, "environment": self.environment}
+        return {"customer": self.customer, "environment": self.environment, "language": self.language}
 
     def title(self, app_name: str) -> str:
         """„NEX Manager — MÁGERSTAV s.r.o. (UAT)“ — the same words the frame puts into the window's title."""
@@ -57,7 +61,7 @@ class Installation:
             "display": "standalone",
             "background_color": WINDOW_COLOUR,
             "theme_color": WINDOW_COLOUR,
-            "lang": "sk",
+            "lang": self.language or "sk",
             "icons": [
                 {"src": ICON, "sizes": "any", "type": "image/svg+xml", "purpose": "any"},
                 {"src": ICON, "sizes": "any", "type": "image/svg+xml", "purpose": "maskable"},

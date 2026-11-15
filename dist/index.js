@@ -4,7 +4,10 @@ import {
   STANDARD_ENDPOINTS,
   STANDARD_ROLES,
   createStandardApi
-} from "./chunk-VVSBNZ3W.js";
+} from "./chunk-33ECZEVM.js";
+
+// src/manifest.ts
+import { createTranslator, LANGUAGES } from "nex-shared";
 
 // src/modules.ts
 var MODULES = Object.freeze({});
@@ -61,11 +64,12 @@ function defineApp(input, extras = {}) {
       );
     }
   }
+  const shownIn = (input.languages ?? ["sk"]).filter((code) => LANGUAGES.some((l) => l.code === code));
   for (const entry of nav) {
-    if ([...entry.label].length > NAV_LABEL_MAX) {
-      problems.push(
-        `Polo\u017Eka \u201E${entry.label}\u201C m\xE1 ${[...entry.label].length} znakov \u2014 v \u013Eavom paneli sa zmest\xED najviac ${NAV_LABEL_MAX}.`
-      );
+    for (const shown of new Set(shownIn.map((code) => createTranslator(code, extras.messages ?? {})(entry.label)))) {
+      if ([...shown].length > NAV_LABEL_MAX) {
+        problems.push(`Polo\u017Eka \u201E${shown}\u201C m\xE1 ${[...shown].length} znakov \u2014 v \u013Eavom paneli sa zmest\xED najviac ${NAV_LABEL_MAX}.`);
+      }
     }
     if (!entry.icon || !entry.icon.trim()) problems.push(`Polo\u017Eka \u201E${entry.label}\u201C nem\xE1 ikonu.`);
     if (!entry.path.startsWith("/")) {
@@ -86,6 +90,20 @@ function defineApp(input, extras = {}) {
   for (const path of Object.keys(counts)) {
     if (!nav.some((n) => n.path === path)) problems.push(`Po\u010Det pre \u201E${path}\u201C nepatr\xED \u017Eiadnej polo\u017Eke \u013Eav\xE9ho panela.`);
   }
+  const languages = input.languages ?? ["sk"];
+  const known = LANGUAGES.map((l) => l.code);
+  if (languages.length === 0) problems.push("Zoznam jazykov (languages) je pr\xE1zdny \u2014 aplik\xE1cia hovor\xED aspo\u0148 jedn\xFDm.");
+  for (const code of languages) {
+    if (!known.includes(code)) problems.push(`Jazyk \u201E${code}\u201C \u0161abl\xF3na nepozn\xE1 \u2014 pozn\xE1 tieto: ${known.join(", ")}.`);
+  }
+  for (const code of duplicates(languages)) problems.push(`Jazyk \u201E${code}\u201C je uveden\xFD dvakr\xE1t.`);
+  const messages = extras.messages ?? {};
+  const main = languages[0];
+  for (const key of Object.keys((main && messages[main]) ?? {})) {
+    for (const code of languages.slice(1)) {
+      if (!(key in (messages[code] ?? {}))) problems.push(`Text \u201E${key}\u201C nem\xE1 preklad v jazyku \u201E${code}\u201C.`);
+    }
+  }
   if (problems.length) throw new ManifestError(problems);
   return Object.freeze({
     template: input.template,
@@ -97,7 +115,9 @@ function defineApp(input, extras = {}) {
     nav: Object.freeze([...nav]),
     settings: Object.freeze({ categories: Object.freeze([...input.settings?.categories ?? []]) }),
     ...extras.userActions ? { userActions: extras.userActions } : {},
-    ...overviewVisible ? { overviewVisible } : {}
+    ...overviewVisible ? { overviewVisible } : {},
+    languages: Object.freeze([...languages]),
+    messages
   });
 }
 function duplicates(values) {
@@ -108,8 +128,8 @@ function duplicates(values) {
 }
 
 // src/TemplateApp.tsx
-import { useCallback as useCallback4, useEffect as useEffect8, useMemo as useMemo3, useState as useState8 } from "react";
-import { ApiError, createApiClient, onServerChange, registerAuthCallback } from "nex-shared";
+import { useCallback as useCallback4, useEffect as useEffect8, useMemo as useMemo4, useState as useState8 } from "react";
+import { ApiError, createApiClient, I18nProvider, onServerChange, registerAuthCallback } from "nex-shared";
 
 // src/frame/FrameContext.ts
 import { createContext, useContext } from "react";
@@ -150,9 +170,132 @@ import { Brand, Button, Card, Input, LoginForm } from "nex-shared";
 
 // src/frame/installation.tsx
 import { createContext as createContext2, useContext as useContext2, useEffect, useState } from "react";
+
+// src/i18n.ts
+import { useMemo } from "react";
+import { createTranslator as createTranslator2, useLanguage, useT } from "nex-shared";
+
+// src/locales/hu.ts
+var kitHu = {
+  "kit.error.reload": "Friss\xEDt\xE9s",
+  "kit.error.text": "Ezt az oldalt nem siker\xFClt megjelen\xEDteni. Pr\xF3b\xE1ld friss\xEDteni; ha ism\xE9tl\u0151dik, sz\xF3lj az alkalmaz\xE1s rendszergazd\xE1j\xE1nak.",
+  "kit.error.title": "\u26A0\uFE0F Hiba t\xF6rt\xE9nt az oldalon",
+  "kit.guide.failed": "Az \xFAtmutat\xF3t nem siker\xFClt bet\xF6lteni:",
+  "kit.guide.none": "Az alkalmaz\xE1s \xFAtmutat\xF3ja m\xE9g nincs meg\xEDrva.",
+  "kit.guide.noServer": "a szerver nem v\xE1laszol",
+  "kit.login.failed": "A bejelentkez\xE9s nem siker\xFClt.",
+  "kit.login.identity": "Felhaszn\xE1l\xF3n\xE9v",
+  "kit.login.loading": "Bejelentkez\xE9s\u2026",
+  "kit.notFound.back": "Vissza az \xE1ttekint\xE9shez",
+  "kit.notFound.text": "Ezen a c\xEDmen nincs semmi. Lehet, hogy megv\xE1ltozott, vagy el\xEDrt\xE1k.",
+  "kit.notFound.title": "Az oldal nem l\xE9tezik",
+  "kit.password.failed": "A jelsz\xF3 m\xF3dos\xEDt\xE1sa nem siker\xFClt.",
+  "kit.password.mismatch": "Az \xFAj jelszavak nem egyeznek.",
+  "kit.password.submit": "Jelsz\xF3 be\xE1ll\xEDt\xE1sa",
+  "kit.password.title": "\xC1ll\xEDtsd be a saj\xE1t jelszavadat",
+  "kit.password.why": "Az els\u0151 bejelentkez\xE9shez a jelsz\xF3t valaki m\xE1s \xE1ll\xEDtotta be neked. Am\xEDg nem \xE1ll\xEDtasz be saj\xE1tot, az alkalmaz\xE1s nem ny\xEDlik meg.",
+  "kit.place.gettingStarted": "Els\u0151 l\xE9p\xE9sek",
+  "kit.place.overview": "\xC1ttekint\xE9s",
+  "kit.place.settings": "Be\xE1ll\xEDt\xE1sok",
+  "kit.place.updates": "Friss\xEDt\xE9sek",
+  "kit.retry": "\xDAjra",
+  "kit.role.admin": "Rendszergazda",
+  "kit.role.user": "Felhaszn\xE1l\xF3",
+  "kit.settings.agentsLoadFailed": "Az \xFCgyn\xF6k\xF6k be\xE1ll\xEDt\xE1sait nem siker\xFClt bet\xF6lteni.",
+  "kit.settings.email": "E-mail",
+  "kit.settings.fullName": "N\xE9v",
+  "kit.settings.loadFailed": "A be\xE1ll\xEDt\xE1sokat nem siker\xFClt bet\xF6lteni.",
+  "kit.settings.loginCategory": "Bejelentkez\xE9s",
+  "kit.settings.loginCategoryHint": "Meddig marad bejelentkezve egy felhaszn\xE1l\xF3.",
+  "kit.settings.managedByManager": "A fi\xF3kodat a NEX Manager kezeli \u2014 a nevet, az e-mail-c\xEDmet \xE9s a jelsz\xF3t ott m\xF3dos\xEDthatod.",
+  "kit.settings.saveFailed": "A ment\xE9s nem siker\xFClt.",
+  "kit.settings.sessionsHint": "Ki van bejelentkezve, \xE9s mi\xF3ta. A megsz\xFCntetett munkamenet azonnal \xE9rv\xE9ny\xE9t veszti.",
+  "kit.settings.sessionsLoadFailed": "A munkameneteket nem siker\xFClt bet\xF6lteni.",
+  "kit.settings.signedInAs": "Bejelentkezve:",
+  "kit.signedOut.managerExpired": "A bejelentkez\xE9s lej\xE1rt. Nyisd meg \xFAjra az alkalmaz\xE1st a NEX Managerb\u0151l.",
+  "kit.signedOut.managerLogout": "Kijelentkezt\xE9l. Az alkalmaz\xE1st \xFAjra a NEX Managerb\u0151l nyithatod meg.",
+  "kit.signedOut.passwordExpired": "A bejelentkez\xE9s lej\xE1rt. Jelentkezz be \xFAjra.",
+  "kit.uat": "Tesztk\xF6rnyezet (UAT)",
+  "kit.unavailable": "Az alkalmaz\xE1s most nem v\xE1laszol. Pr\xF3b\xE1ld \xFAjra egy kicsit k\xE9s\u0151bb.",
+  "kit.updates.failed": "A friss\xEDt\xE9sek bet\xF6lt\xE9se nem siker\xFClt."
+};
+
+// src/locales/sk.ts
+var kitSk = {
+  "kit.error.reload": "Obnovi\u0165",
+  "kit.error.text": "T\xFAto str\xE1nku sa nepodarilo zobrazi\u0165. Sk\xFAs ju obnovi\u0165; ak sa to opakuje, povedz o tom spr\xE1vcovi aplik\xE1cie.",
+  "kit.error.title": "\u26A0\uFE0F Str\xE1nka narazila na chybu",
+  "kit.guide.failed": "N\xE1vod sa nepodarilo na\u010D\xEDta\u0165:",
+  "kit.guide.none": "N\xE1vod k aplik\xE1cii e\u0161te nie je nap\xEDsan\xFD.",
+  "kit.guide.noServer": "server neodpoved\xE1",
+  "kit.login.failed": "Prihl\xE1senie sa nepodarilo.",
+  "kit.login.identity": "Prihlasovacie meno",
+  "kit.login.loading": "Prihlasujem\u2026",
+  "kit.notFound.back": "Sp\xE4\u0165 na Preh\u013Ead",
+  "kit.notFound.text": "Na tejto adrese ni\u010D nie je. Mo\u017Eno sa zmenila, alebo bola zle nap\xEDsan\xE1.",
+  "kit.notFound.title": "Str\xE1nka neexistuje",
+  "kit.password.failed": "Zmena hesla sa nepodarila.",
+  "kit.password.mismatch": "Nov\xE9 hesl\xE1 sa nezhoduj\xFA.",
+  "kit.password.submit": "Nastavi\u0165 heslo",
+  "kit.password.title": "Nastav si vlastn\xE9 heslo",
+  "kit.password.why": "Heslo na prv\xE9 prihl\xE1senie ti nastavil niekto in\xFD. K\xFDm si nastav\xED\u0161 vlastn\xE9, aplik\xE1cia sa neotvor\xED.",
+  "kit.place.gettingStarted": "Ako za\u010Da\u0165",
+  "kit.place.overview": "Preh\u013Ead",
+  "kit.place.settings": "Nastavenia",
+  "kit.place.updates": "Aktualiz\xE1cie",
+  "kit.retry": "Sk\xFAsi\u0165 znova",
+  "kit.role.admin": "Spr\xE1vca",
+  "kit.role.user": "Pou\u017E\xEDvate\u013E",
+  "kit.settings.agentsLoadFailed": "Nepodarilo sa na\u010D\xEDta\u0165 nastavenia agentov.",
+  "kit.settings.email": "E-mail",
+  "kit.settings.fullName": "Meno a priezvisko",
+  "kit.settings.loadFailed": "Nepodarilo sa na\u010D\xEDta\u0165 nastavenia.",
+  "kit.settings.loginCategory": "Prihl\xE1senie",
+  "kit.settings.loginCategoryHint": "Ako dlho ost\xE1va \u010Dlovek prihl\xE1sen\xFD.",
+  "kit.settings.managedByManager": "Tvoj \xFA\u010Det spravuje NEX Manager \u2014 meno, e-mail aj heslo sa menia tam.",
+  "kit.settings.saveFailed": "Ulo\u017Eenie zlyhalo.",
+  "kit.settings.sessionsHint": "Kto je prihl\xE1sen\xFD a odkedy. Zru\u0161en\xE1 rel\xE1cia prestane plati\u0165 hne\u010F.",
+  "kit.settings.sessionsLoadFailed": "Nepodarilo sa na\u010D\xEDta\u0165 rel\xE1cie.",
+  "kit.settings.signedInAs": "Prihl\xE1sen\xFD ako",
+  "kit.signedOut.managerExpired": "Prihl\xE1senie vypr\u0161alo. Aplik\xE1ciu otvor znova z NEX Managera.",
+  "kit.signedOut.managerLogout": "Odhl\xE1senie prebehlo. Aplik\xE1ciu otvor\xED\u0161 znova z NEX Managera.",
+  "kit.signedOut.passwordExpired": "Prihl\xE1senie vypr\u0161alo. Prihl\xE1s sa znova.",
+  "kit.uat": "Sk\xFA\u0161obn\xE9 prostredie (UAT)",
+  "kit.unavailable": "Aplik\xE1cia teraz neodpoved\xE1. Sk\xFAs to o chv\xED\u013Eu znova.",
+  "kit.updates.failed": "Na\u010D\xEDtanie aktualiz\xE1ci\xED zlyhalo."
+};
+
+// src/i18n.ts
+var KIT_MESSAGES = { sk: kitSk, hu: kitHu };
+function mergeMessages(app) {
+  const merged = {};
+  for (const language of /* @__PURE__ */ new Set([...Object.keys(KIT_MESSAGES), ...Object.keys(app ?? {})])) {
+    merged[language] = { ...KIT_MESSAGES[language], ...app?.[language] };
+  }
+  return merged;
+}
+function useKitT() {
+  const t = useT();
+  const { language } = useLanguage();
+  return useMemo(() => {
+    const kit = createTranslator2(language, KIT_MESSAGES);
+    return (key, params) => {
+      const said = t(key, params);
+      return said === key ? kit(key, params) : said;
+    };
+  }, [t, language]);
+}
+function chooseLanguage(offered, personal, installation) {
+  for (const candidate of [personal, installation]) {
+    if (candidate && offered.includes(candidate)) return candidate;
+  }
+  return offered[0] ?? "sk";
+}
+
+// src/frame/installation.tsx
 import { jsx } from "react/jsx-runtime";
 var INSTALLATION_MANIFEST = "/api/v1/installation/manifest.webmanifest";
-var UAT_SENTENCE = "Sk\xFA\u0161obn\xE9 prostredie (UAT)";
+var UAT_SENTENCE = "kit.uat";
 function installationTitle(appName, installation) {
   const customer = installation?.customer;
   const title = customer ? `${appName} \u2014 ${customer}` : appName;
@@ -187,6 +330,7 @@ function useInstallationIdentity() {
   return useContext2(InstallationContext);
 }
 function InstallationBand() {
+  const t = useKitT();
   const installation = useInstallationIdentity();
   if (installation?.environment !== "uat") return null;
   return /* @__PURE__ */ jsx(
@@ -194,14 +338,15 @@ function InstallationBand() {
     {
       role: "status",
       className: "flex-shrink-0 truncate border-b border-[var(--color-status-warning)] bg-[var(--color-state-warning-bg)] px-3 py-1 text-xs font-semibold text-[var(--color-state-warning-fg)]",
-      children: installation.customer ? `${UAT_SENTENCE} \u2014 ${installation.customer}` : UAT_SENTENCE
+      children: installation.customer ? `${t(UAT_SENTENCE)} \u2014 ${installation.customer}` : t(UAT_SENTENCE)
     }
   );
 }
 function InstallationUat() {
+  const t = useKitT();
   const installation = useInstallationIdentity();
   if (installation?.environment !== "uat") return null;
-  return /* @__PURE__ */ jsx("p", { className: "mt-2 inline-block rounded border border-[var(--color-status-warning)] bg-[var(--color-state-warning-bg)] px-2 py-0.5 text-xs font-semibold text-[var(--color-state-warning-fg)]", children: UAT_SENTENCE });
+  return /* @__PURE__ */ jsx("p", { className: "mt-2 inline-block rounded border border-[var(--color-status-warning)] bg-[var(--color-state-warning-bg)] px-2 py-0.5 text-xs font-semibold text-[var(--color-state-warning-fg)]", children: t(UAT_SENTENCE) });
 }
 function InstallationCustomer({ className = "" }) {
   const installation = useInstallationIdentity();
@@ -210,15 +355,18 @@ function InstallationCustomer({ className = "" }) {
 }
 
 // src/frame/people.ts
+import { createTranslator as createTranslator3 } from "nex-shared";
 function personName(person) {
   if (!person) return "";
   const full = [person.first_name, person.last_name].map((part) => (part ?? "").trim()).filter(Boolean).join(" ");
   return full || person.username;
 }
-function roleLabel(role) {
+function roleLabel(role, t = SLOVAK) {
   if (!role) return "\u2014";
-  return STANDARD_ROLES.find((r) => r.value === role)?.label ?? role;
+  const key = STANDARD_ROLES.find((r) => r.value === role)?.label;
+  return key ? t(key) : role;
 }
+var SLOVAK = createTranslator3("sk", KIT_MESSAGES);
 function errorText(error, fallback) {
   return error instanceof Error && error.message ? error.message : fallback;
 }
@@ -236,7 +384,8 @@ function Centered({ manifest, children }) {
   ] }) });
 }
 function LoadingScreen() {
-  return /* @__PURE__ */ jsx2("div", { className: "flex min-h-full items-center justify-center bg-[var(--color-canvas)] text-sm text-[var(--color-text-muted)]", children: "Na\u010D\xEDtavam\u2026" });
+  const t = useKitT();
+  return /* @__PURE__ */ jsx2("div", { className: "flex min-h-full items-center justify-center bg-[var(--color-canvas)] text-sm text-[var(--color-text-muted)]", children: t("common.loading") });
 }
 function LoginScreen({
   manifest,
@@ -244,6 +393,7 @@ function LoginScreen({
   note,
   onSignedIn
 }) {
+  const t = useKitT();
   const [busy, setBusy] = useState2(false);
   const [error, setError] = useState2(null);
   async function signIn({ username, password }) {
@@ -252,7 +402,7 @@ function LoginScreen({
     try {
       onSignedIn(await api.login(username, password));
     } catch (e) {
-      setError(errorText(e, "Prihl\xE1senie sa nepodarilo."));
+      setError(errorText(e, t("kit.login.failed")));
       setBusy(false);
     }
   }
@@ -266,10 +416,10 @@ function LoginScreen({
         error,
         onChange: () => setError(null),
         autoFocus: true,
-        identityLabel: "Prihlasovacie meno",
-        passwordLabel: "Heslo",
-        submitLabel: "Prihl\xE1si\u0165 sa",
-        loadingLabel: "Prihlasujem\u2026"
+        identityLabel: t("kit.login.identity"),
+        passwordLabel: t("login.password"),
+        submitLabel: t("login.submit"),
+        loadingLabel: t("kit.login.loading")
       }
     )
   ] });
@@ -278,9 +428,10 @@ function ClosedScreen({ manifest, sentence }) {
   return /* @__PURE__ */ jsx2(Centered, { manifest, children: /* @__PURE__ */ jsx2("p", { className: "text-sm text-[var(--color-text-secondary)]", children: sentence }) });
 }
 function UnavailableScreen({ manifest, onRetry }) {
+  const t = useKitT();
   return /* @__PURE__ */ jsxs(Centered, { manifest, children: [
-    /* @__PURE__ */ jsx2("p", { className: "mb-4 text-sm text-[var(--color-text-secondary)]", children: "Aplik\xE1cia teraz neodpoved\xE1. Sk\xFAs to o chv\xED\u013Eu znova." }),
-    /* @__PURE__ */ jsx2(Button, { onClick: onRetry, children: "Sk\xFAsi\u0165 znova" })
+    /* @__PURE__ */ jsx2("p", { className: "mb-4 text-sm text-[var(--color-text-secondary)]", children: t("kit.unavailable") }),
+    /* @__PURE__ */ jsx2(Button, { onClick: onRetry, children: t("kit.retry") })
   ] });
 }
 function ChangePasswordScreen({
@@ -289,6 +440,7 @@ function ChangePasswordScreen({
   onChanged,
   onLogout
 }) {
+  const t = useKitT();
   const [current, setCurrent] = useState2("");
   const [next, setNext] = useState2("");
   const [again, setAgain] = useState2("");
@@ -298,7 +450,7 @@ function ChangePasswordScreen({
     e.preventDefault();
     setError("");
     if (next !== again) {
-      setError("Nov\xE9 hesl\xE1 sa nezhoduj\xFA.");
+      setError(t("kit.password.mismatch"));
       return;
     }
     setBusy(true);
@@ -306,21 +458,21 @@ function ChangePasswordScreen({
       await api.changePassword(current, next);
       onChanged();
     } catch (err) {
-      setError(errorText(err, "Zmena hesla sa nepodarila."));
+      setError(errorText(err, t("kit.password.failed")));
       setBusy(false);
     }
   }
   const label = "mb-1 block text-xs text-[var(--color-text-muted)]";
   return /* @__PURE__ */ jsxs(Centered, { manifest, children: [
-    /* @__PURE__ */ jsx2("h1", { className: "mb-1 text-base font-semibold text-[var(--color-text-primary)]", children: "Nastav si vlastn\xE9 heslo" }),
-    /* @__PURE__ */ jsx2("p", { className: "mb-4 text-sm text-[var(--color-text-secondary)]", children: "Heslo na prv\xE9 prihl\xE1senie ti nastavil niekto in\xFD. K\xFDm si nastav\xED\u0161 vlastn\xE9, aplik\xE1cia sa neotvor\xED." }),
+    /* @__PURE__ */ jsx2("h1", { className: "mb-1 text-base font-semibold text-[var(--color-text-primary)]", children: t("kit.password.title") }),
+    /* @__PURE__ */ jsx2("p", { className: "mb-4 text-sm text-[var(--color-text-secondary)]", children: t("kit.password.why") }),
     /* @__PURE__ */ jsxs("form", { onSubmit: submit, className: "space-y-3", children: [
       /* @__PURE__ */ jsxs("div", { children: [
-        /* @__PURE__ */ jsx2("label", { htmlFor: "kit-current", className: label, children: "S\xFA\u010Dasn\xE9 heslo" }),
+        /* @__PURE__ */ jsx2("label", { htmlFor: "kit-current", className: label, children: t("account.currentPassword") }),
         /* @__PURE__ */ jsx2(Input, { id: "kit-current", type: "password", autoComplete: "current-password", value: current, onChange: (e) => setCurrent(e.target.value) })
       ] }),
       /* @__PURE__ */ jsxs("div", { children: [
-        /* @__PURE__ */ jsx2("label", { htmlFor: "kit-new", className: label, children: "Nov\xE9 heslo" }),
+        /* @__PURE__ */ jsx2("label", { htmlFor: "kit-new", className: label, children: t("password.new") }),
         /* @__PURE__ */ jsx2(
           Input,
           {
@@ -333,20 +485,20 @@ function ChangePasswordScreen({
         )
       ] }),
       /* @__PURE__ */ jsxs("div", { children: [
-        /* @__PURE__ */ jsx2("label", { htmlFor: "kit-again", className: label, children: "Zopakuj nov\xE9 heslo" }),
+        /* @__PURE__ */ jsx2("label", { htmlFor: "kit-again", className: label, children: t("account.repeatPassword") }),
         /* @__PURE__ */ jsx2(Input, { id: "kit-again", type: "password", autoComplete: "new-password", value: again, onChange: (e) => setAgain(e.target.value) })
       ] }),
       error && /* @__PURE__ */ jsx2("p", { role: "alert", className: "text-sm text-[var(--color-status-error)]", children: error }),
       /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between gap-3 pt-1", children: [
-        /* @__PURE__ */ jsx2("button", { type: "button", onClick: onLogout, className: "text-xs text-[var(--color-text-muted)] hover:underline", children: "Odhl\xE1si\u0165 sa" }),
-        /* @__PURE__ */ jsx2(Button, { type: "submit", disabled: busy || !current || !next || !again, children: busy ? "Uklad\xE1m\u2026" : "Nastavi\u0165 heslo" })
+        /* @__PURE__ */ jsx2("button", { type: "button", onClick: onLogout, className: "text-xs text-[var(--color-text-muted)] hover:underline", children: t("user.logout") }),
+        /* @__PURE__ */ jsx2(Button, { type: "submit", disabled: busy || !current || !next || !again, children: busy ? t("common.saving") : t("kit.password.submit") })
       ] })
     ] })
   ] });
 }
 
 // src/frame/theme.tsx
-import { createContext as createContext3, useCallback, useContext as useContext3, useEffect as useEffect2, useMemo, useState as useState3 } from "react";
+import { createContext as createContext3, useCallback, useContext as useContext3, useEffect as useEffect2, useMemo as useMemo2, useState as useState3 } from "react";
 import { jsx as jsx3 } from "react/jsx-runtime";
 var ThemeContext = createContext3(null);
 function darkModeKey(username) {
@@ -379,7 +531,7 @@ function ThemeProvider({ username, children }) {
       return next;
     });
   }, [username]);
-  const value = useMemo(() => ({ isDark, toggleDark }), [isDark, toggleDark]);
+  const value = useMemo2(() => ({ isDark, toggleDark }), [isDark, toggleDark]);
   return /* @__PURE__ */ jsx3(ThemeContext.Provider, { value, children });
 }
 function useTheme() {
@@ -402,20 +554,22 @@ var PROSE = `prose prose-base dark:prose-invert max-w-none prose-headings:font-s
   prose-p:text-[var(--color-text-secondary)] prose-p:leading-relaxed prose-strong:text-[var(--color-text-primary)]
   prose-li:text-[var(--color-text-secondary)] prose-li:marker:text-primary-500`;
 function GettingStartedPage() {
+  const t = useKitT();
   const { api } = useFrame();
   const [markdown, setMarkdown] = useState4(null);
   const [error, setError] = useState4("");
   useEffect3(() => {
     let live = true;
-    api.gettingStarted().then((g) => live && setMarkdown(g.markdown ?? "")).catch((e) => live && setError(errorText(e, "server neodpoved\xE1")));
+    api.gettingStarted().then((g) => live && setMarkdown(g.markdown ?? "")).catch((e) => live && setError(errorText(e, t("kit.guide.noServer"))));
     return () => {
       live = false;
     };
-  }, [api]);
-  return /* @__PURE__ */ jsx4(Page, { title: "Ako za\u010Da\u0165", width: "narrow", children: error ? /* @__PURE__ */ jsxs2("p", { className: "text-sm text-[var(--color-status-error)]", children: [
-    "N\xE1vod sa nepodarilo na\u010D\xEDta\u0165: ",
+  }, [api, t]);
+  return /* @__PURE__ */ jsx4(Page, { title: t("kit.place.gettingStarted"), width: "narrow", children: error ? /* @__PURE__ */ jsxs2("p", { className: "text-sm text-[var(--color-status-error)]", children: [
+    t("kit.guide.failed"),
+    " ",
     error
-  ] }) : markdown === null ? /* @__PURE__ */ jsx4("p", { className: "text-sm text-[var(--color-text-muted)]", children: "Na\u010D\xEDtavam\u2026" }) : markdown.trim() === "" ? /* @__PURE__ */ jsx4("p", { className: "text-sm text-[var(--color-text-muted)]", children: "N\xE1vod k aplik\xE1cii e\u0161te nie je nap\xEDsan\xFD." }) : /* @__PURE__ */ jsx4("div", { className: PROSE, children: /* @__PURE__ */ jsx4(ReactMarkdown, { remarkPlugins: [remarkGfm], children: markdown }) }) });
+  ] }) : markdown === null ? /* @__PURE__ */ jsx4("p", { className: "text-sm text-[var(--color-text-muted)]", children: t("common.loading") }) : markdown.trim() === "" ? /* @__PURE__ */ jsx4("p", { className: "text-sm text-[var(--color-text-muted)]", children: t("kit.guide.none") }) : /* @__PURE__ */ jsx4("div", { className: PROSE, children: /* @__PURE__ */ jsx4(ReactMarkdown, { remarkPlugins: [remarkGfm], children: markdown }) }) });
 }
 
 // src/templates/nsv-standard/pages/NotFoundPage.tsx
@@ -423,14 +577,15 @@ import { Link } from "react-router-dom";
 import { Page as Page2 } from "nex-shared";
 import { jsx as jsx5, jsxs as jsxs3 } from "react/jsx-runtime";
 function NotFoundPage() {
-  return /* @__PURE__ */ jsxs3(Page2, { title: "Str\xE1nka neexistuje", width: "narrow", children: [
-    /* @__PURE__ */ jsx5("p", { className: "text-sm text-[var(--color-text-secondary)]", children: "Na tejto adrese ni\u010D nie je. Mo\u017Eno sa zmenila, alebo bola zle nap\xEDsan\xE1." }),
-    /* @__PURE__ */ jsx5(Link, { to: "/", className: "mt-3 inline-block text-sm text-[var(--color-accent-primary)] hover:underline", children: "Sp\xE4\u0165 na Preh\u013Ead" })
+  const t = useKitT();
+  return /* @__PURE__ */ jsxs3(Page2, { title: t("kit.notFound.title"), width: "narrow", children: [
+    /* @__PURE__ */ jsx5("p", { className: "text-sm text-[var(--color-text-secondary)]", children: t("kit.notFound.text") }),
+    /* @__PURE__ */ jsx5(Link, { to: "/", className: "mt-3 inline-block text-sm text-[var(--color-accent-primary)] hover:underline", children: t("kit.notFound.back") })
   ] });
 }
 
 // src/templates/nsv-standard/pages/SettingsPage.tsx
-import { useCallback as useCallback2, useEffect as useEffect4, useMemo as useMemo2, useState as useState5 } from "react";
+import { useCallback as useCallback2, useEffect as useEffect4, useMemo as useMemo3, useState as useState5 } from "react";
 import {
   AgentsPanel,
   Card as Card2,
@@ -438,24 +593,18 @@ import {
   SessionsPanel,
   SettingsShell,
   SystemSettingsPanel,
-  UsersPanel
+  UsersPanel,
+  useLanguage as useLanguage2
 } from "nex-shared";
 import { jsx as jsx6, jsxs as jsxs4 } from "react/jsx-runtime";
-var LABELS = {
-  system: "Syst\xE9m",
-  agents: "Agenti",
-  konto: "Moje konto",
-  users: "Pou\u017E\xEDvatelia",
-  sessions: "Rel\xE1cie"
-};
 var EFFORTS = ["low", "medium", "high", "xhigh", "max"];
-var ROLE_OPTIONS = STANDARD_ROLES.map((r) => ({ value: r.value, label: r.label }));
 var USER_FIELDS = { username: true, names: true, telegram: false, passwordMinLength: PASSWORD_MIN_LENGTH };
 var KIT_SETTINGS_CATEGORIES = [
   {
     id: "kit-auth",
-    label: "Prihl\xE1senie",
-    description: "Ako dlho ost\xE1va \u010Dlovek prihl\xE1sen\xFD.",
+    // DEV-394: keys of the template's catalogs, said in the person's language where the panel draws them.
+    label: "kit.settings.loginCategory",
+    description: "kit.settings.loginCategoryHint",
     prefixes: ["auth_"]
   }
 ];
@@ -467,18 +616,20 @@ function settingsConfig(manifest) {
   tabs.push("sessions");
   return {
     tabs,
-    labels: LABELS,
+    // DEV-394: the tabs are named by nex-shared, in the person's language.
+    labels: {},
     tabVisibleForRole: (tab, role) => tab === "users" || tab === "agents" ? role === ADMIN_ROLE : true
   };
 }
 function SystemTab() {
+  const t = useKitT();
   const { api, manifest, isAdmin } = useFrame();
   const [settings, setSettings] = useState5([]);
   const [loading, setLoading] = useState5(true);
   const [loadError, setLoadError] = useState5("");
   useEffect4(() => {
-    api.listSystemSettings().then(setSettings).catch((e) => setLoadError(errorText(e, "Nepodarilo sa na\u010D\xEDta\u0165 nastavenia."))).finally(() => setLoading(false));
-  }, [api]);
+    api.listSystemSettings().then(setSettings).catch((e) => setLoadError(errorText(e, t("kit.settings.loadFailed")))).finally(() => setLoading(false));
+  }, [api, t]);
   const save = useCallback2(
     async (key, value) => {
       const row = await api.updateSystemSetting(key, value);
@@ -491,7 +642,11 @@ function SystemTab() {
     SystemSettingsPanel,
     {
       settings,
-      categories: [...manifest.settings.categories, ...KIT_SETTINGS_CATEGORIES],
+      categories: [...manifest.settings.categories, ...KIT_SETTINGS_CATEGORIES].map((c) => ({
+        ...c,
+        label: t(c.label),
+        description: c.description ? t(c.description) : c.description
+      })),
       canEdit: isAdmin,
       onSave: save,
       loading,
@@ -500,8 +655,9 @@ function SystemTab() {
   );
 }
 function AgentsTab() {
+  const t = useKitT();
   const { api, manifest } = useFrame();
-  const roles = manifest.ai ? [...manifest.ai.roles] : [];
+  const roles = (manifest.ai ? [...manifest.ai.roles] : []).map((r) => ({ ...r, label: t(r.label) }));
   const [models, setModels] = useState5([]);
   const [drafts, setDrafts] = useState5(null);
   const [loadError, setLoadError] = useState5("");
@@ -513,19 +669,19 @@ function AgentsTab() {
       for (const row of rows) initial[row.role] = { model: row.model ?? "", effort: row.effort ?? "" };
       setModels(options);
       setDrafts(initial);
-    }).catch((e) => setLoadError(errorText(e, "Nepodarilo sa na\u010D\xEDta\u0165 nastavenia agentov.")));
-  }, [api, manifest]);
+    }).catch((e) => setLoadError(errorText(e, t("kit.settings.agentsLoadFailed"))));
+  }, [api, manifest, t]);
   const save = useCallback2(
     async (role, draft) => {
       setSaveErrors((prev) => ({ ...prev, [role]: "" }));
       try {
         await api.saveAgentSetting(role, { model: draft.model, effort: draft.effort });
       } catch (e) {
-        setSaveErrors((prev) => ({ ...prev, [role]: errorText(e, "Ulo\u017Eenie zlyhalo.") }));
+        setSaveErrors((prev) => ({ ...prev, [role]: errorText(e, t("kit.settings.saveFailed")) }));
         throw e;
       }
     },
-    [api]
+    [api, t]
   );
   return /* @__PURE__ */ jsx6(
     AgentsPanel,
@@ -548,16 +704,18 @@ function ReadOnlyField({ label, value }) {
   ] });
 }
 function AccountTab() {
+  const t = useKitT();
+  const { language } = useLanguage2();
   const { api, manifest, user, setUser } = useFrame();
   if (!user) return null;
   if (manifest.auth === "manager") {
     return /* @__PURE__ */ jsx6("div", { className: "p-6", children: /* @__PURE__ */ jsxs4(Card2, { className: "max-w-3xl", children: [
-      /* @__PURE__ */ jsx6("p", { className: "mb-4 text-sm text-[var(--color-text-secondary)]", children: "Tvoj \xFA\u010Det spravuje NEX Manager \u2014 meno, e-mail aj heslo sa menia tam." }),
+      /* @__PURE__ */ jsx6("p", { className: "mb-4 text-sm text-[var(--color-text-secondary)]", children: t("kit.settings.managedByManager") }),
       /* @__PURE__ */ jsxs4("div", { className: "grid grid-cols-2 gap-3", children: [
-        /* @__PURE__ */ jsx6(ReadOnlyField, { label: "Meno a priezvisko", value: personName(user) }),
-        /* @__PURE__ */ jsx6(ReadOnlyField, { label: "E-mail", value: user.email }),
-        /* @__PURE__ */ jsx6(ReadOnlyField, { label: "Pou\u017E\xEDvate\u013Esk\xE9 meno", value: user.username }),
-        /* @__PURE__ */ jsx6(ReadOnlyField, { label: "Rola", value: roleLabel(user.role) })
+        /* @__PURE__ */ jsx6(ReadOnlyField, { label: t("kit.settings.fullName"), value: personName(user) }),
+        /* @__PURE__ */ jsx6(ReadOnlyField, { label: t("kit.settings.email"), value: user.email }),
+        /* @__PURE__ */ jsx6(ReadOnlyField, { label: t("user.username"), value: user.username }),
+        /* @__PURE__ */ jsx6(ReadOnlyField, { label: t("user.role"), value: roleLabel(user.role, t) })
       ] })
     ] }) });
   }
@@ -571,8 +729,13 @@ function AccountTab() {
         first_name: user.first_name,
         last_name: user.last_name
       },
-      roleLabel: roleLabel(user.role),
+      roleLabel: roleLabel(user.role, t),
       telegram: false,
+      languages: manifest.languages,
+      language,
+      onLanguageChange: async (next) => {
+        setUser(await api.setLanguage(next));
+      },
       passwordMinLength: PASSWORD_MIN_LENGTH,
       onSaveProfile: async ({ email, first_name, last_name }) => {
         setUser(await api.updateMe({ email, first_name, last_name }));
@@ -582,7 +745,9 @@ function AccountTab() {
   );
 }
 function UsersTab() {
+  const t = useKitT();
   const { api, isAdmin, manifest } = useFrame();
+  const roleOptions = STANDARD_ROLES.map((r) => ({ value: r.value, label: t(r.label) }));
   const [users, setUsers] = useState5([]);
   useEffect4(() => {
     api.listUsers().then(setUsers).catch(() => setUsers([]));
@@ -593,7 +758,7 @@ function UsersTab() {
     {
       users,
       rowActions: manifest.userActions,
-      roleOptions: ROLE_OPTIONS,
+      roleOptions,
       canManage: isAdmin,
       fieldSchema: USER_FIELDS,
       onCreate: async (d) => {
@@ -640,14 +805,15 @@ function UsersTab() {
   );
 }
 function SessionsTab() {
+  const t = useKitT();
   const { api, isAdmin } = useFrame();
   const [sessions, setSessions] = useState5([]);
   const [loading, setLoading] = useState5(true);
   const [loadError, setLoadError] = useState5("");
   useEffect4(() => {
-    api.listSessions().then(setSessions).catch((e) => setLoadError(errorText(e, "Nepodarilo sa na\u010D\xEDta\u0165 rel\xE1cie."))).finally(() => setLoading(false));
-  }, [api]);
-  const names = useMemo2(() => Object.fromEntries(sessions.map((s) => [s.user_id, s.username ?? s.user_id])), [sessions]);
+    api.listSessions().then(setSessions).catch((e) => setLoadError(errorText(e, t("kit.settings.sessionsLoadFailed")))).finally(() => setLoading(false));
+  }, [api, t]);
+  const names = useMemo3(() => Object.fromEntries(sessions.map((s) => [s.user_id, s.username ?? s.user_id])), [sessions]);
   return /* @__PURE__ */ jsx6(
     SessionsPanel,
     {
@@ -660,25 +826,27 @@ function SessionsTab() {
       },
       loading,
       loadError,
-      description: "Kto je prihl\xE1sen\xFD a odkedy. Zru\u0161en\xE1 rel\xE1cia prestane plati\u0165 hne\u010F."
+      description: t("kit.settings.sessionsHint")
     }
   );
 }
 function SettingsPage() {
+  const t = useKitT();
   const { manifest, user } = useFrame();
-  const config = useMemo2(() => settingsConfig(manifest), [manifest]);
+  const config = useMemo3(() => settingsConfig(manifest), [manifest]);
   const headerRight = user ? /* @__PURE__ */ jsxs4("span", { className: "text-xs text-[var(--color-text-muted)]", children: [
-    "Prihl\xE1sen\xFD ako ",
+    t("kit.settings.signedInAs"),
+    " ",
     /* @__PURE__ */ jsx6("span", { className: "font-medium text-[var(--color-text-secondary)]", children: user.username }),
     " \xB7 ",
-    /* @__PURE__ */ jsx6("span", { className: "text-[11px] font-medium", children: roleLabel(user.role) })
+    /* @__PURE__ */ jsx6("span", { className: "text-[11px] font-medium", children: roleLabel(user.role, t) })
   ] }) : void 0;
   return /* @__PURE__ */ jsx6(
     SettingsShell,
     {
       config,
       currentUserRole: user?.role ?? "",
-      title: "Nastavenia",
+      title: t("settings.title"),
       headerRight,
       panels: {
         system: /* @__PURE__ */ jsx6(SystemTab, {}),
@@ -696,6 +864,7 @@ import { useCallback as useCallback3, useEffect as useEffect5, useState as useSt
 import { ReleaseNotes } from "nex-shared";
 import { jsx as jsx7 } from "react/jsx-runtime";
 function UpdatesPage() {
+  const t = useKitT();
   const { api, manifest } = useFrame();
   const [notes, setNotes] = useState6([]);
   const [loading, setLoading] = useState6(true);
@@ -706,11 +875,11 @@ function UpdatesPage() {
     try {
       setNotes(await api.releaseNotes());
     } catch (e) {
-      setError(errorText(e, "Na\u010D\xEDtanie aktualiz\xE1ci\xED zlyhalo."));
+      setError(errorText(e, t("kit.updates.failed")));
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, [api, t]);
   useEffect5(() => {
     void refresh();
   }, [refresh]);
@@ -728,10 +897,10 @@ function UpdatesPage() {
 
 // src/templates/nsv-standard/places.ts
 var TEMPLATE_PLACES = {
-  overview: { path: "/", label: "Preh\u013Ead", icon: "\u{1F3E0}" },
-  gettingStarted: { path: "/getting-started", label: "Ako za\u010Da\u0165", icon: "\u{1F9ED}" },
-  updates: { path: "/updates", label: "Aktualiz\xE1cie", icon: "\u2728" },
-  settings: { path: "/settings", label: "Nastavenia", icon: "\u2699\uFE0F" }
+  overview: { path: "/", label: "kit.place.overview", icon: "\u{1F3E0}" },
+  gettingStarted: { path: "/getting-started", label: "kit.place.gettingStarted", icon: "\u{1F9ED}" },
+  updates: { path: "/updates", label: "kit.place.updates", icon: "\u2728" },
+  settings: { path: "/settings", label: "kit.place.settings", icon: "\u2699\uFE0F" }
 };
 
 // src/templates/nsv-standard/Shell.tsx
@@ -744,6 +913,23 @@ import { AppShell } from "nex-shared";
 import { Component } from "react";
 import { useLocation } from "react-router-dom";
 import { jsx as jsx8, jsxs as jsxs5 } from "react/jsx-runtime";
+function Crashed({ message }) {
+  const t = useKitT();
+  return /* @__PURE__ */ jsxs5("div", { role: "alert", className: "m-4 rounded-xl border border-[var(--color-state-error-fg)]/40 bg-[var(--color-state-error-bg)] p-4", children: [
+    /* @__PURE__ */ jsx8("h2", { className: "text-sm font-semibold text-[var(--color-state-error-fg)]", children: t("kit.error.title") }),
+    /* @__PURE__ */ jsx8("p", { className: "mt-2 text-sm text-[var(--color-text-primary)]", children: t("kit.error.text") }),
+    /* @__PURE__ */ jsx8("p", { className: "mt-1 font-mono text-[11px] text-[var(--color-text-muted)]", children: message }),
+    /* @__PURE__ */ jsx8(
+      "button",
+      {
+        type: "button",
+        onClick: () => window.location.reload(),
+        className: "mt-3 rounded-lg border border-[var(--color-border-default)] px-4 py-2 text-xs font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)]",
+        children: t("kit.error.reload")
+      }
+    )
+  ] });
+}
 var Boundary = class extends Component {
   state = { error: null };
   static getDerivedStateFromError(error) {
@@ -752,20 +938,7 @@ var Boundary = class extends Component {
   render() {
     const { error } = this.state;
     if (!error) return this.props.children;
-    return /* @__PURE__ */ jsxs5("div", { role: "alert", className: "m-4 rounded-xl border border-[var(--color-state-error-fg)]/40 bg-[var(--color-state-error-bg)] p-4", children: [
-      /* @__PURE__ */ jsx8("h2", { className: "text-sm font-semibold text-[var(--color-state-error-fg)]", children: "\u26A0\uFE0F Str\xE1nka narazila na chybu" }),
-      /* @__PURE__ */ jsx8("p", { className: "mt-2 text-sm text-[var(--color-text-primary)]", children: "T\xFAto str\xE1nku sa nepodarilo zobrazi\u0165. Sk\xFAs ju obnovi\u0165; ak sa to opakuje, povedz o tom spr\xE1vcovi aplik\xE1cie." }),
-      /* @__PURE__ */ jsx8("p", { className: "mt-1 font-mono text-[11px] text-[var(--color-text-muted)]", children: error.message }),
-      /* @__PURE__ */ jsx8(
-        "button",
-        {
-          type: "button",
-          onClick: () => window.location.reload(),
-          className: "mt-3 rounded-lg border border-[var(--color-border-default)] px-4 py-2 text-xs font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)]",
-          children: "Obnovi\u0165"
-        }
-      )
-    ] });
+    return /* @__PURE__ */ jsx8(Crashed, { message: error.message });
   }
 };
 function PageErrorBoundary({ children }) {
@@ -806,13 +979,15 @@ function useIsActive() {
   return (path) => path === "/" ? pathname === "/" : pathname === path || pathname.startsWith(`${path}/`);
 }
 function CountedEntry({ entry, active, onClick }) {
+  const t = useKitT();
   const count = entry.useCount?.() ?? void 0;
-  return /* @__PURE__ */ jsx9(NavItem, { icon: /* @__PURE__ */ jsx9(NavIcon, { glyph: entry.icon }), label: entry.label, active, onClick, count: count ?? void 0 });
+  return /* @__PURE__ */ jsx9(NavItem, { icon: /* @__PURE__ */ jsx9(NavIcon, { glyph: entry.icon }), label: t(entry.label), active, onClick, count: count ?? void 0 });
 }
 function VisibleEntry({ entry, children }) {
   return entry.useVisible() === true ? /* @__PURE__ */ jsx9(Fragment, { children }) : null;
 }
 function NsvSidebar() {
+  const t = useKitT();
   const { manifest, api, user, isAdmin, onLogout, frontendVersion, layout: store } = useFrame();
   const layout = useStore(store, (s) => s.layout);
   const saveLayout = useStore(store, (s) => s.save);
@@ -828,7 +1003,7 @@ function NsvSidebar() {
     {
       initials: name ? name.slice(0, 1).toUpperCase() : "?",
       name: name || "\u2014",
-      subtitle: roleLabel(user?.role),
+      subtitle: roleLabel(user?.role, t),
       onLogout
     }
   );
@@ -836,7 +1011,7 @@ function NsvSidebar() {
     NavItem,
     {
       icon: /* @__PURE__ */ jsx9(NavIcon, { glyph: place.icon }),
-      label: place.label,
+      label: t(place.label),
       active: isActive(place.path),
       onClick: () => navigate(place.path)
     },
@@ -894,6 +1069,7 @@ function placeLabel(pathname, manifest) {
   return under?.label ?? manifest.name;
 }
 function NsvTopbar() {
+  const t = useKitT();
   const { manifest } = useFrame();
   const { pathname } = useLocation3();
   const { isDark, toggleDark } = useTheme();
@@ -902,7 +1078,7 @@ function NsvTopbar() {
     {
       left: /* @__PURE__ */ jsxs7("div", { className: "flex items-center gap-1.5 flex-1 min-w-0 overflow-hidden text-xs text-[var(--color-text-muted)]", children: [
         /* @__PURE__ */ jsx10("span", { className: "text-[var(--color-text-muted)]", children: "/" }),
-        /* @__PURE__ */ jsx10("span", { className: "text-[var(--color-text-secondary)] truncate", children: placeLabel(pathname, manifest) })
+        /* @__PURE__ */ jsx10("span", { className: "text-[var(--color-text-secondary)] truncate", children: t(placeLabel(pathname, manifest)) })
       ] }),
       right: /* @__PURE__ */ jsx10(ThemeToggle, { theme: isDark ? "dark" : "light", onToggle: toggleDark })
     }
@@ -965,15 +1141,33 @@ var TEMPLATES = Object.freeze({
 // src/TemplateApp.tsx
 import { jsx as jsx13 } from "react/jsx-runtime";
 var SIGNED_OUT_SENTENCES = {
-  managerExpired: "Prihl\xE1senie vypr\u0161alo. Aplik\xE1ciu otvor znova z NEX Managera.",
-  managerLogout: "Odhl\xE1senie prebehlo. Aplik\xE1ciu otvor\xED\u0161 znova z NEX Managera.",
-  passwordExpired: "Prihl\xE1senie vypr\u0161alo. Prihl\xE1s sa znova."
+  managerExpired: "kit.signedOut.managerExpired",
+  managerLogout: "kit.signedOut.managerLogout",
+  passwordExpired: "kit.signedOut.passwordExpired"
 };
+function SignedOut({ manifest, api, why, onSignedIn }) {
+  const t = useKitT();
+  return manifest.auth === "manager" ? /* @__PURE__ */ jsx13(
+    ClosedScreen,
+    {
+      manifest,
+      sentence: t(why === "logout" ? SIGNED_OUT_SENTENCES.managerLogout : SIGNED_OUT_SENTENCES.managerExpired)
+    }
+  ) : /* @__PURE__ */ jsx13(
+    LoginScreen,
+    {
+      manifest,
+      api,
+      note: why === "expired" ? t(SIGNED_OUT_SENTENCES.passwordExpired) : void 0,
+      onSignedIn
+    }
+  );
+}
 function sameOriginClient() {
   return createApiClient({ baseUrl: "", apiPrefix: "/api/v1", getToken: () => null });
 }
 function TemplateApp({ manifest, client, frontendVersion, overview, children }) {
-  const api = useMemo3(() => createStandardApi(client ?? sameOriginClient()), [client]);
+  const api = useMemo4(() => createStandardApi(client ?? sameOriginClient()), [client]);
   const installation = useInstallation(api);
   useInstallationWindow(manifest.name, installation);
   const [layout] = useState8(() => createLayoutStore(api));
@@ -1010,7 +1204,7 @@ function TemplateApp({ manifest, client, frontendVersion, overview, children }) 
   }, [api]);
   const user = session.kind === "in" ? session.user : null;
   const setUser = useCallback4((next) => setSession({ kind: "in", user: next }), []);
-  const frame = useMemo3(
+  const frame = useMemo4(
     () => user && {
       manifest,
       api,
@@ -1030,21 +1224,7 @@ function TemplateApp({ manifest, client, frontendVersion, overview, children }) 
   } else if (session.kind === "unavailable") {
     screen = /* @__PURE__ */ jsx13(UnavailableScreen, { manifest, onRetry: ask });
   } else if (session.kind === "out") {
-    screen = manifest.auth === "manager" ? /* @__PURE__ */ jsx13(
-      ClosedScreen,
-      {
-        manifest,
-        sentence: session.why === "logout" ? SIGNED_OUT_SENTENCES.managerLogout : SIGNED_OUT_SENTENCES.managerExpired
-      }
-    ) : /* @__PURE__ */ jsx13(
-      LoginScreen,
-      {
-        manifest,
-        api,
-        note: session.why === "expired" ? SIGNED_OUT_SENTENCES.passwordExpired : void 0,
-        onSignedIn: setUser
-      }
-    );
+    screen = /* @__PURE__ */ jsx13(SignedOut, { manifest, api, why: session.why, onSignedIn: setUser });
   } else if (session.user.must_change_password && manifest.auth === "password") {
     screen = /* @__PURE__ */ jsx13(
       ChangePasswordScreen,
@@ -1058,10 +1238,13 @@ function TemplateApp({ manifest, client, frontendVersion, overview, children }) 
   } else {
     screen = /* @__PURE__ */ jsx13(FrameContext.Provider, { value: frame, children: /* @__PURE__ */ jsx13(Template, { overview, children }) });
   }
-  return /* @__PURE__ */ jsx13(ThemeProvider, { username: user?.username, children: /* @__PURE__ */ jsx13(InstallationContext.Provider, { value: installation, children: screen }) });
+  const language = chooseLanguage(manifest.languages, user?.language, installation?.language);
+  const messages = useMemo4(() => mergeMessages(manifest.messages), [manifest.messages]);
+  return /* @__PURE__ */ jsx13(I18nProvider, { language, messages, children: /* @__PURE__ */ jsx13(ThemeProvider, { username: user?.username, children: /* @__PURE__ */ jsx13(InstallationContext.Provider, { value: installation, children: screen }) }) });
 }
 export {
   ADMIN_ROLE,
+  KIT_MESSAGES,
   MODULES,
   ManifestError,
   NAV_LABEL_MAX,
@@ -1072,9 +1255,12 @@ export {
   TEMPLATE_IDS,
   TEMPLATE_PATHS,
   TemplateApp,
+  chooseLanguage,
   createStandardApi,
   defineApp,
+  mergeMessages,
   personName,
   roleLabel,
-  useFrame
+  useFrame,
+  useKitT
 };

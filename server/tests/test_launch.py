@@ -185,9 +185,12 @@ def test_nex_manager_down_at_launch_is_said(make_app):
 
 
 def test_the_message_on_the_page_is_escaped(make_app):
+    from starlette.requests import Request
+
     from nex_app_kit.routes import launch_page
 
-    assert "<p>a &lt;b&gt;</p>" in launch_page("a <b>", 403).body.decode()
+    request = Request({"type": "http", "headers": [], "app": make_app().client.app})
+    assert "<p>a &lt;b&gt;</p>" in launch_page(request, "a <b>", 403).body.decode()
 
 
 # ── while the session lasts ─────────────────────────────────────────────────────────────────────────

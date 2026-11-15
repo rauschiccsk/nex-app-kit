@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { SettingsCategory, UserRead, UserSessionRead, SystemSettingRead, ReleaseNote, ApiClient } from 'nex-shared';
+import { SettingsCategory, UserRead, Language, AppMessages, UserSessionRead, SystemSettingRead, ReleaseNote, ApiClient } from 'nex-shared';
 
 declare const TEMPLATE_IDS: readonly ["nsv-standard"];
 type TemplateId = (typeof TEMPLATE_IDS)[number];
@@ -42,6 +42,8 @@ interface AppManifestInput {
     settings?: {
         categories?: SettingsCategory[];
     };
+    /** DEV-394 — the languages the app speaks, its main one first (default: Slovak only). */
+    languages?: string[];
 }
 interface AppManifest {
     readonly template: TemplateId;
@@ -58,6 +60,10 @@ interface AppManifest {
     readonly userActions?: (user: UserRead) => ReactNode;
     /** DEV-368: whether the person sees Prehľad — the hook the app gave for „/“; none: everyone sees it. */
     readonly overviewVisible?: () => boolean | null | undefined;
+    /** DEV-394 — the languages the app speaks, its main one first. */
+    readonly languages: readonly Language[];
+    /** DEV-394 — the app's own texts per language (labels of the left panel, its screens); keys, not words. */
+    readonly messages: AppMessages;
 }
 /** The template's own pages — an app's entry never takes their path. */
 declare const TEMPLATE_PATHS: readonly ["/", "/getting-started", "/updates", "/settings"];
@@ -73,6 +79,8 @@ interface AppExtras {
      *  Everything about people stays in that one tab; what a viewer who may not manage people sees, the app decides
      *  (DEV-293). */
     userActions?: (user: UserRead) => ReactNode;
+    /** DEV-394 — the app's own texts per language (`src/locales`); a label of the left panel may be one of their keys. */
+    messages?: AppMessages;
 }
 declare class ManifestError extends Error {
     readonly problems: string[];
@@ -83,10 +91,10 @@ declare function defineApp(input: AppManifestInput, extras?: AppExtras): AppMani
 /** The two roles of an app on a template; the server refuses everything else. */
 declare const STANDARD_ROLES: readonly [{
     readonly value: "admin";
-    readonly label: "Správca";
+    readonly label: "kit.role.admin";
 }, {
     readonly value: "user";
-    readonly label: "Používateľ";
+    readonly label: "kit.role.user";
 }];
 declare const ADMIN_ROLE = "admin";
 /** The shortest password the server accepts — one character: only an empty password is refused (the Director's rule,
@@ -134,6 +142,11 @@ declare const STANDARD_ENDPOINTS: readonly [{
     readonly id: "changePassword";
     readonly method: "POST";
     readonly path: "/auth/change-password";
+    readonly scope: "password";
+}, {
+    readonly id: "setLanguage";
+    readonly method: "PUT";
+    readonly path: "/auth/language";
     readonly scope: "password";
 }, {
     readonly id: "listUsers";
@@ -235,6 +248,8 @@ interface HealthRead {
 /** The signed-in user; `must_change_password` sends them to Moje konto first. */
 interface CurrentUser extends UserRead {
     must_change_password?: boolean;
+    /** DEV-394 — the language the person chose; none: the installation's. */
+    language?: string | null;
 }
 interface ProfileChanges {
     email: string;
@@ -298,6 +313,10 @@ interface GettingStartedRead {
 interface InstallationRead {
     customer: string | null;
     environment: "uat" | "prod" | null;
+    /** DEV-394 — the installation's language for whoever chose none (the customer's, set by the cockpit). */
+    language?: string | null;
+    /** DEV-394 — the languages the app speaks (its manifest). */
+    languages?: string[];
 }
 interface StandardApi {
     login(username: string, password: string): Promise<CurrentUser>;
@@ -306,6 +325,7 @@ interface StandardApi {
     installation(): Promise<InstallationRead>;
     me(): Promise<CurrentUser>;
     updateMe(changes: ProfileChanges): Promise<CurrentUser>;
+    setLanguage(language: string): Promise<CurrentUser>;
     changePassword(currentPassword: string, newPassword: string): Promise<void>;
     listUsers(): Promise<UserRead[]>;
     createUser(user: NewUser): Promise<UserRead>;

@@ -4,5 +4,7 @@
 import { defineApp } from "nex-app-kit";
 
 import data from "../app.manifest.json";
+import { messages } from "./locales";
 
-export const manifest = defineApp(data);
+// DEV-394: the app's own texts (src/locales) — every text a person reads; the frame says them in the person's language.
+export const manifest = defineApp(data, { messages });

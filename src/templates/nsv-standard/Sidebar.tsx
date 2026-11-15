@@ -13,6 +13,7 @@ import { useBackendVersion, versionLine } from "../../frame/version";
 import type { NavEntry } from "../../manifest";
 import { MODULES } from "../../modules";
 import { TEMPLATE_PLACES } from "./places";
+import { useKitT } from "../../i18n";
 
 function useIsActive() {
   const { pathname } = useLocation();
@@ -20,8 +21,9 @@ function useIsActive() {
 }
 
 function CountedEntry({ entry, active, onClick }: { entry: NavEntry; active: boolean; onClick: () => void }) {
+  const t = useKitT();
   const count = entry.useCount?.() ?? undefined;
-  return <NavItem icon={<NavIcon glyph={entry.icon} />} label={entry.label} active={active} onClick={onClick} count={count ?? undefined} />;
+  return <NavItem icon={<NavIcon glyph={entry.icon} />} label={t(entry.label)} active={active} onClick={onClick} count={count ?? undefined} />;
 }
 
 /** DEV-257: an entry only some people have — its hook decides; not shown until it says yes. */
@@ -30,6 +32,7 @@ function VisibleEntry({ entry, children }: { entry: NavEntry & { useVisible: () 
 }
 
 export function NsvSidebar() {
+  const t = useKitT();
   const { manifest, api, user, isAdmin, onLogout, frontendVersion, layout: store } = useFrame();
   const layout = useStore(store, (s) => s.layout);
   const saveLayout = useStore(store, (s) => s.save);
@@ -46,7 +49,7 @@ export function NsvSidebar() {
     <UserCard
       initials={name ? name.slice(0, 1).toUpperCase() : "?"}
       name={name || "—"}
-      subtitle={roleLabel(user?.role)}
+      subtitle={roleLabel(user?.role, t)}
       onLogout={onLogout}
     />
   );
@@ -55,7 +58,7 @@ export function NsvSidebar() {
     <NavItem
       key={place.path}
       icon={<NavIcon glyph={place.icon} />}
-      label={place.label}
+      label={t(place.label)}
       active={isActive(place.path)}
       onClick={() => navigate(place.path)}
     />

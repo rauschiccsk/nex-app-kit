@@ -15,6 +15,8 @@ from typing import Any, Literal
 #: The templates the kit knows — the same list as ``src/templates/ids.ts`` of the frontend.
 TEMPLATE_IDS = ("nsv-standard",)
 AUTH_MODES = ("password", "manager")
+#: DEV-394 — the languages the template speaks (``i18n.LANGUAGES``, nex-shared's ``LANGUAGES``).
+KNOWN_LANGUAGES = ("sk", "hu")
 
 AuthMode = Literal["password", "manager"]
 
@@ -31,6 +33,8 @@ class Manifest:
     name: str
     auth: AuthMode
     ai_roles: tuple[AgentRole, ...]
+    #: DEV-394 — the languages the app speaks, its main one first.
+    languages: tuple[str, ...] = ("sk",)
 
     @property
     def ai(self) -> bool:
@@ -79,9 +83,20 @@ def manifest_from_data(data: Any) -> Manifest:
             roles = [AgentRole(id=str(r.get("id", "")), label=str(r.get("label", ""))) for r in raw]
             for role_id in _duplicates([r.id for r in roles]):
                 problems.append(f"Rola agenta „{role_id}“ je uvedená dvakrát.")
+    languages = data.get("languages", ["sk"])
+    if not isinstance(languages, list) or not all(isinstance(code, str) for code in languages):
+        languages = []
+        problems.append("Zoznam jazykov (languages) je prázdny — aplikácia hovorí aspoň jedným.")
+    elif not languages:
+        problems.append("Zoznam jazykov (languages) je prázdny — aplikácia hovorí aspoň jedným.")
+    for code in languages:
+        if code not in KNOWN_LANGUAGES:
+            problems.append(f"Jazyk „{code}“ šablóna nepozná — pozná tieto: {', '.join(KNOWN_LANGUAGES)}.")
+    for code in _duplicates(languages):
+        problems.append(f"Jazyk „{code}“ je uvedený dvakrát.")
     if problems:
         raise ManifestError(problems)
-    return Manifest(template=template, name=name, auth=auth, ai_roles=tuple(roles))
+    return Manifest(template=template, name=name, auth=auth, ai_roles=tuple(roles), languages=tuple(languages))
 
 
 def load_manifest(path: str | Path) -> Manifest:

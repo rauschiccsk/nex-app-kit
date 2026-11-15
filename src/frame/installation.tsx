@@ -9,10 +9,12 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
 import type { InstallationRead, StandardApi } from "../standard-api";
+import { useKitT } from "../i18n";
 
 /** The installed app's description for this installation — the server names it by the customer and environment. */
 export const INSTALLATION_MANIFEST = "/api/v1/installation/manifest.webmanifest";
-export const UAT_SENTENCE = "Skúšobné prostredie (UAT)";
+/** DEV-394: the key of the band's sentence — said in the person's language. */
+export const UAT_SENTENCE = "kit.uat";
 
 /** „NEX Manager — MÁGERSTAV s.r.o. (UAT)“ — the same words the server names the installed app with. */
 export function installationTitle(appName: string, installation: InstallationRead | null | undefined): string {
@@ -59,6 +61,7 @@ export function useInstallationIdentity(): InstallationRead | null {
 
 /** The band over every page of a UAT — so a test installation is never taken for the live one. Nothing on a PROD. */
 export function InstallationBand() {
+  const t = useKitT();
   const installation = useInstallationIdentity();
   if (installation?.environment !== "uat") return null;
   return (
@@ -66,18 +69,19 @@ export function InstallationBand() {
       role="status"
       className="flex-shrink-0 truncate border-b border-[var(--color-status-warning)] bg-[var(--color-state-warning-bg)] px-3 py-1 text-xs font-semibold text-[var(--color-state-warning-fg)]"
     >
-      {installation.customer ? `${UAT_SENTENCE} — ${installation.customer}` : UAT_SENTENCE}
+      {installation.customer ? `${t(UAT_SENTENCE)} — ${installation.customer}` : t(UAT_SENTENCE)}
     </div>
   );
 }
 
 /** On the sign-in card: a test installation says so before the password goes in. Nothing on a PROD. */
 export function InstallationUat() {
+  const t = useKitT();
   const installation = useInstallationIdentity();
   if (installation?.environment !== "uat") return null;
   return (
     <p className="mt-2 inline-block rounded border border-[var(--color-status-warning)] bg-[var(--color-state-warning-bg)] px-2 py-0.5 text-xs font-semibold text-[var(--color-state-warning-fg)]">
-      {UAT_SENTENCE}
+      {t(UAT_SENTENCE)}
     </p>
   );
 }

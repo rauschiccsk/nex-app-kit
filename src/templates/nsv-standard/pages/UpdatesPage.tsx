@@ -5,8 +5,10 @@ import { ReleaseNotes, type ReleaseNote } from "nex-shared";
 
 import { useFrame } from "../../../frame/FrameContext";
 import { errorText } from "../../../frame/people";
+import { useKitT } from "../../../i18n";
 
 export function UpdatesPage() {
+  const t = useKitT();
   const { api, manifest } = useFrame();
   const [notes, setNotes] = useState<ReleaseNote[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,11 +20,11 @@ export function UpdatesPage() {
     try {
       setNotes(await api.releaseNotes());
     } catch (e) {
-      setError(errorText(e, "Načítanie aktualizácií zlyhalo."));
+      setError(errorText(e, t("kit.updates.failed")));
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, [api, t]);
 
   useEffect(() => {
     void refresh();

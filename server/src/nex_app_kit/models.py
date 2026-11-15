@@ -63,6 +63,8 @@ class User(KitBase):
     failed_logins: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     source: Mapped[str] = mapped_column(String(10), nullable=False, default="local")
+    #: DEV-394 — the person's language (``i18n.LANGUAGES``); ``None`` = the installation's.
+    language: Mapped[str | None] = mapped_column(String(8))
     created_at: Mapped[datetime] = _now_column()
     updated_at: Mapped[datetime] = _now_column()
 

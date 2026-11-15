@@ -40,7 +40,7 @@ def test_the_title_names_the_customer_and_marks_a_uat(installation, title):
 
 
 def _client(monkeypatch, environ: dict) -> TestClient:
-    for key in ("NEX_CUSTOMER_NAME", "NEX_ENVIRONMENT"):
+    for key in ("NEX_CUSTOMER_NAME", "NEX_ENVIRONMENT", "NEX_LANGUAGE"):
         monkeypatch.delenv(key, raising=False)
     for key, value in environ.items():
         monkeypatch.setenv(key, value)
@@ -52,7 +52,13 @@ def test_the_frame_reads_whom_the_installation_serves_without_a_sign_in(monkeypa
     answer = _client(monkeypatch, MAGER_UAT).get("/api/v1/installation")
 
     assert answer.status_code == 200
-    assert answer.json() == {"customer": "MÁGERSTAV s.r.o.", "environment": "uat"}
+    # DEV-394: and the languages the app speaks, with the installation's for whoever chose none
+    assert answer.json() == {
+        "customer": "MÁGERSTAV s.r.o.",
+        "environment": "uat",
+        "language": "sk",
+        "languages": ["sk"],
+    }
 
 
 def test_the_installed_app_is_named_by_its_customer(monkeypatch):
@@ -69,5 +75,10 @@ def test_the_installed_app_is_named_by_its_customer(monkeypatch):
 def test_an_app_outside_the_cockpit_looks_as_before(monkeypatch):
     client = _client(monkeypatch, {})
 
-    assert client.get("/api/v1/installation").json() == {"customer": None, "environment": None}
+    assert client.get("/api/v1/installation").json() == {
+        "customer": None,
+        "environment": None,
+        "language": "sk",
+        "languages": ["sk"],
+    }
     assert client.get("/api/v1/installation/manifest.webmanifest").json()["name"] == "NEX Skúška"

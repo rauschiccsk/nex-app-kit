@@ -3,9 +3,9 @@
     "key": "auth_session_idle_minutes",
     "default": "480",
     "value_type": "int",
-    "label": "Odhlásenie po nečinnosti",
-    "description": "Po koľkých minútach bez práce aplikácia človeka odhlási.",
-    "unit": "minút",
+    "label": "kit.setting.idle.label",
+    "description": "kit.setting.idle.description",
+    "unit": "kit.setting.idle.unit",
     "min": 5,
     "max": 1440
   },
@@ -13,9 +13,9 @@
     "key": "auth_session_max_hours",
     "default": "24",
     "value_type": "int",
-    "label": "Najdlhšie prihlásenie",
-    "description": "Najneskôr po koľkých hodinách sa treba prihlásiť znova, aj keď človek pracuje.",
-    "unit": "hodín",
+    "label": "kit.setting.maxHours.label",
+    "description": "kit.setting.maxHours.description",
+    "unit": "kit.setting.maxHours.unit",
     "min": 1,
     "max": 720
   }

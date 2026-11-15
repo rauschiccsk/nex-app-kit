@@ -1,17 +1,34 @@
 [
   {
     "why": "a complete manifest passes",
-    "input": {"template": "nsv-standard", "name": "NEX Knowledge", "initials": "NK", "auth": "manager"},
+    "input": {
+      "template": "nsv-standard",
+      "name": "NEX Knowledge",
+      "initials": "NK",
+      "auth": "manager"
+    },
     "problems": []
   },
   {
     "why": "an unknown template is named with the ones there are",
-    "input": {"template": "iny-vzhlad", "name": "NEX Knowledge", "initials": "NK", "auth": "manager"},
-    "problems": ["Šablóna „iny-vzhlad“ neexistuje — sú tieto: nsv-standard."]
+    "input": {
+      "template": "iny-vzhlad",
+      "name": "NEX Knowledge",
+      "initials": "NK",
+      "auth": "manager"
+    },
+    "problems": [
+      "Šablóna „iny-vzhlad“ neexistuje — sú tieto: nsv-standard."
+    ]
   },
   {
     "why": "a missing name and a wrong auth mode are both said",
-    "input": {"template": "nsv-standard", "name": " ", "initials": "NK", "auth": "heslo"},
+    "input": {
+      "template": "nsv-standard",
+      "name": " ",
+      "initials": "NK",
+      "auth": "heslo"
+    },
     "problems": [
       "Chýba názov aplikácie (name).",
       "Spôsob prihlásenia (auth) je „password“ (vlastné heslo) alebo „manager“ (spustenie z NEX Managera), nie „heslo“."
@@ -19,15 +36,86 @@
   },
   {
     "why": "an app with AI names its roles",
-    "input": {"template": "nsv-standard", "name": "NEX Knowledge", "initials": "NK", "auth": "password", "ai": {"roles": []}},
-    "problems": ["Aplikácia s AI (ai) menuje aspoň jednu rolu agenta."]
+    "input": {
+      "template": "nsv-standard",
+      "name": "NEX Knowledge",
+      "initials": "NK",
+      "auth": "password",
+      "ai": {
+        "roles": []
+      }
+    },
+    "problems": [
+      "Aplikácia s AI (ai) menuje aspoň jednu rolu agenta."
+    ]
   },
   {
     "why": "each agent role once",
     "input": {
-      "template": "nsv-standard", "name": "NEX Knowledge", "initials": "NK", "auth": "password",
-      "ai": {"roles": [{"id": "assistant", "label": "Asistent"}, {"id": "assistant", "label": "Druhý"}]}
+      "template": "nsv-standard",
+      "name": "NEX Knowledge",
+      "initials": "NK",
+      "auth": "password",
+      "ai": {
+        "roles": [
+          {
+            "id": "assistant",
+            "label": "Asistent"
+          },
+          {
+            "id": "assistant",
+            "label": "Druhý"
+          }
+        ]
+      }
     },
-    "problems": ["Rola agenta „assistant“ je uvedená dvakrát."]
+    "problems": [
+      "Rola agenta „assistant“ je uvedená dvakrát."
+    ]
+  },
+  {
+    "why": "DEV-394: an app names the languages it speaks",
+    "input": {
+      "template": "nsv-standard",
+      "name": "NEX Knowledge",
+      "initials": "NK",
+      "auth": "manager",
+      "languages": [
+        "hu",
+        "sk"
+      ]
+    },
+    "problems": []
+  },
+  {
+    "why": "DEV-394: a language the template does not know, and one named twice",
+    "input": {
+      "template": "nsv-standard",
+      "name": "NEX Knowledge",
+      "initials": "NK",
+      "auth": "manager",
+      "languages": [
+        "sk",
+        "en",
+        "sk"
+      ]
+    },
+    "problems": [
+      "Jazyk „en“ šablóna nepozná — pozná tieto: sk, hu.",
+      "Jazyk „sk“ je uvedený dvakrát."
+    ]
+  },
+  {
+    "why": "DEV-394: an app speaks at least one language",
+    "input": {
+      "template": "nsv-standard",
+      "name": "NEX Knowledge",
+      "initials": "NK",
+      "auth": "manager",
+      "languages": []
+    },
+    "problems": [
+      "Zoznam jazykov (languages) je prázdny — aplikácia hovorí aspoň jedným."
+    ]
   }
 ]
