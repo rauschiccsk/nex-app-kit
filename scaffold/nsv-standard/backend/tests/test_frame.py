@@ -6,7 +6,6 @@ from __future__ import annotations
 import os
 
 import pytest
-
 from nex_app_kit.i18n import tr
 
 from app.kit import kit, manifest

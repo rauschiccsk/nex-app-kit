@@ -7,6 +7,11 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.15.2
+- `[oprava]` **Skúška vyplnenej aplikácie prejde aj kontrolou štýlu.** Oprava z v0.15.1 pridala do skúšky aplikácie import
+  v poradí, ktoré kontrola štýlu aplikácie (ruff) odmietne — CI novej aplikácie by padlo na štýle. Import je v správnom
+  bloku; kontrola štýlu prejde na aplikácii s prihlásením heslom aj cez NEX Manager. Verziu 0.15.1 nepoužívať (DEV-398).
+
 ## v0.15.1
 - `[oprava]` **Skúška vyplnenej aplikácie čaká hlášku v hlavnom jazyku aplikácie.** Kostra dávala aplikácii skúšku
   servera, ktorá pri spustení bez prepojenia s NEX Managerom čakala slovenskú vetu. Aplikácia s iným hlavným jazykom
