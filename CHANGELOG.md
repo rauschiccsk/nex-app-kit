@@ -7,6 +7,12 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.14.1
+- `[oprava]` **Serverový balík nesie katalógy svojich hlášok.** Vo verzii 0.14.0 chýbali v nainštalovanom balíku súbory
+  `locales/sk.json` a `locales/hu.json`, takže server aplikácie na šablóne 0.14.0 sa nespustil (vlastné skúšky balíka
+  bežia zo zdrojového stromu a chybu nevideli). Verziu 0.14.0 nepoužívaj — 0.14.1 je tá istá funkcia s úplným balíkom.
+  Nová skúška `test_every_file_the_package_reads_is_packaged.py` nepustí súbor balíka, ktorý sa nepribalí. (DEV-394)
+
 ## v0.14.0
 - `[nové]` **Aplikácia hovorí s každým v jeho jazyku — slovenčina a maďarčina.** Rám šablóny (ľavý panel, horná lišta,
   prihlásenie, zmena hesla, Nastavenia, Ako začať, Aktualizácie, pás UAT, chybové stránky) berie texty z katalógov
