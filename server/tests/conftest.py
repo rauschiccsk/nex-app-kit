@@ -196,6 +196,7 @@ def make_app(factory: sessionmaker) -> Callable[..., App]:
         on_setting_change=None,
         on_account_change=None,
         languages: list[str] | None = None,
+        server_messages: dict | None = None,
     ) -> App:
         clock = Clock()
         fake = FakeManager() if auth == "manager" else None
@@ -222,6 +223,7 @@ def make_app(factory: sessionmaker) -> Callable[..., App]:
             bcrypt_rounds=TEST_ROUNDS,
             on_setting_change=on_setting_change,
             on_account_change=on_account_change,
+            server_messages=server_messages,
         )
         client = TestClient(build_app(kit), base_url="https://testserver")
         return App(client=client, kit=kit, clock=clock, factory=factory, manager=fake)

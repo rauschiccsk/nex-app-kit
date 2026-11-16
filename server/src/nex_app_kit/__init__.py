@@ -1,6 +1,7 @@
 """nex-app-kit — the server of the ICC app template (DEV-250, DEV-252). See ``kit.py`` for how an app mounts it."""
 
-from .errors import KitError
+from .errors import KitError, request_language
+from .i18n import load_server_messages, tr
 from .kit import ADMIN_USERNAME, AgentChoice, AppKit
 from .layout import SIDEBAR_WIDTH, Limit
 from .manager import Identity, ManagerLink, ManagerLinkError, ManagerUnavailable
@@ -35,6 +36,9 @@ __all__ = [
     "SystemSettings",
     "User",
     "load_manifest",
+    "load_server_messages",
     "manifest_from_data",
+    "request_language",
+    "tr",
     "upgrade_database",
 ]

@@ -264,6 +264,8 @@ interface NewUser {
     first_name: string;
     last_name: string;
     is_active: boolean;
+    /** DEV-415 — one of the app's languages; absent: the person follows the installation's. */
+    language?: string;
 }
 interface UserChanges {
     email: string;
@@ -271,6 +273,8 @@ interface UserChanges {
     first_name: string;
     last_name: string;
     is_active: boolean;
+    /** DEV-415 — the person's new language; absent: unchanged. */
+    language?: string;
 }
 /** A signed-in browser — the server keeps sessions in its database, without a token version. */
 interface SessionRead extends UserSessionRead {

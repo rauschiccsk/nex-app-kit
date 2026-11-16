@@ -71,6 +71,8 @@ class NewUserBody(BaseModel):
     first_name: str = ""
     last_name: str = ""
     is_active: bool = True
+    #: DEV-415 — one of the app's languages; absent = the person follows the installation's.
+    language: str | None = None
 
 
 class UserChangesBody(BaseModel):
@@ -79,6 +81,8 @@ class UserChangesBody(BaseModel):
     first_name: str = ""
     last_name: str = ""
     is_active: bool
+    #: DEV-415 — the person's new language; absent = unchanged.
+    language: str | None = None
 
 
 class PasswordBody(BaseModel):
@@ -226,13 +230,14 @@ def build_router(kit: AppKit) -> APIRouter:
             Installation.from_env().web_manifest(kit.manifest.name), media_type="application/manifest+json"
         )
 
+    # DEV-415: the notes and the guide in the person's language, when the app wrote them in it.
     @router.get("/release-notes")
-    def release_notes() -> list[dict]:
-        return docs.release_notes(kit.docs_dir)
+    def release_notes(request: Request) -> list[dict]:
+        return docs.release_notes(kit.docs_dir, request_language(request))
 
     @router.get("/getting-started")
-    def getting_started(_user: User = Depends(kit.current_user)) -> dict:
-        return {"markdown": docs.getting_started(kit.docs_dir)}
+    def getting_started(request: Request, _user: User = Depends(kit.current_user)) -> dict:
+        return {"markdown": docs.getting_started(kit.docs_dir, request_language(request))}
 
     # ── own account ──────────────────────────────────────────────────────────────────────────────
     @router.get("/auth/me")
@@ -284,17 +289,21 @@ def build_router(kit: AppKit) -> APIRouter:
             db.commit()
             return user_read(user)
 
-        @router.put("/auth/language")
-        def set_language(body: LanguageBody, user: User = Depends(kit.current_user), db: Db = db_dep) -> dict:
-            """DEV-394 — the person's language, one of the app's (its manifest)."""
+        def offered_language(language: str) -> str:
+            """One of the app's languages (its manifest) — else the refusal says which ones it speaks."""
             offered = list(kit.manifest.languages)
-            if body.language not in offered:
+            if language not in offered:
                 raise invalid(
                     "kit.server.languageUnknown",
                     "KIT-LANGUAGE",
-                    {"language": body.language, "languages": ", ".join(offered)},
+                    {"language": language, "languages": ", ".join(offered)},
                 )
-            user.language = body.language
+            return language
+
+        @router.put("/auth/language")
+        def set_language(body: LanguageBody, user: User = Depends(kit.current_user), db: Db = db_dep) -> dict:
+            """DEV-394 — the person's language, one of the app's (its manifest)."""
+            user.language = offered_language(body.language)
             user.updated_at = kit.clock()
             db.commit()
             return user_read(user)
@@ -330,6 +339,8 @@ def build_router(kit: AppKit) -> APIRouter:
                 raise conflict("kit.server.usernameTaken", "KIT-USERNAME-TAKEN", {"username": username})
             email = clean_email(body.email)
             check_new_password(body.password)
+            # DEV-415: the admin may give the person a language; without one the person follows the installation's.
+            language = offered_language(body.language) if body.language is not None else None
             now = kit.clock()
             user = User(
                 username=username,
@@ -342,6 +353,7 @@ def build_router(kit: AppKit) -> APIRouter:
                 must_change_password=True,
                 failed_logins=0,
                 source="local",
+                language=language,
                 created_at=now,
                 updated_at=now,
             )
@@ -364,6 +376,8 @@ def build_router(kit: AppKit) -> APIRouter:
         ) -> dict:
             user = find_user(db, user_id)
             role = clean_role(body.role)
+            # DEV-415: the person's language, when the admin changed it — checked before anything of the person moves.
+            language = offered_language(body.language) if body.language is not None else None
             # Nobody demotes, switches off or deletes themselves — so the admin doing it always stays, and the app
             # is never left without an active admin.
             if user.id == admin.id and (role != user.role or not body.is_active):
@@ -374,6 +388,8 @@ def build_router(kit: AppKit) -> APIRouter:
             user.last_name = clean_name(body.last_name, "kit.server.field.lastName")
             switched_off = user.is_active and not body.is_active
             user.is_active = body.is_active
+            if language is not None:
+                user.language = language
             user.updated_at = kit.clock()
             if switched_off:
                 kit.sessions.end_all(db, user.id, event=AccountEvent.DEACTIVATED)

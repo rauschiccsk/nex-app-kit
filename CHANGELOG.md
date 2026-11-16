@@ -7,6 +7,20 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.16.0
+- `[nové]` **Správca mení jazyk človeka v Používateľoch.** Pri každom človeku je jeho jazyk a v úprave človeka voľba jazyka
+  (nex-shared v0.39.0); server ho prijme pri úprave aj založení človeka (`language`) a jazyk, ktorým aplikácia nehovorí,
+  odmietne. Človek, ktorý si jazyk nevybral, ďalej nasleduje jazyk inštalácie (DEV-415).
+- `[nové]` **Vlastné hlášky servera aplikácie v jazyku človeka.** Aplikácia dá šablóne katalógy svojich viet
+  (`backend/app/locales/<jazyk>.json`, `load_server_messages`, `AppKit(server_messages=…)`); odmietnutie s kľúčom `app.…`
+  server povie v jazyku, ktorý žiada požiadavka. Katalóg, ktorý nesedí s hlavným jazykom (chýbajúci jazyk či veta, iné
+  hodnoty v `{…}`, kľúč mimo `app.`), aplikáciu nespustí. Kostra novej aplikácie má prázdny katalóg pre každý jazyk.
+- `[nové]` **Aktualizácie a Ako začať v jazyku človeka.** Vedľa `RELEASE_NOTES.md` a `AKO_ZACAT.md` súbor jazyka
+  (`RELEASE_NOTES.hu.md`, `AKO_ZACAT.en.md`); kde chýba, ukáže sa hlavný.
+- `[nové]` **Stránka hovorí svojím jazykom.** Rám nastaví `lang` na `<html>` podľa jazyka obrazoviek (aj na prihlásení)
+  — prehliadač neponúka preklad zo slovenčiny, čítačka obrazovky číta správnou výslovnosťou.
+- Šablóna stojí na nex-shared v0.39.0.
+
 ## v0.15.2
 - `[oprava]` **Skúška vyplnenej aplikácie prejde aj kontrolou štýlu.** Oprava z v0.15.1 pridala do skúšky aplikácie import
   v poradí, ktoré kontrola štýlu aplikácie (ruff) odmietne — CI novej aplikácie by padlo na štýle. Import je v správnom

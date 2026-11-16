@@ -217,6 +217,12 @@ def render(template: str, values: dict, target: Path) -> list[Path]:
     for name, text in catalogs(values).items():
         (locales / name).write_text(text, encoding="utf-8")
         written.append(locales / name)
+    # DEV-415: the server's own sentences — one catalog per language, empty until the app says something of its own.
+    server_locales = target / "backend" / "app" / "locales"
+    server_locales.mkdir(parents=True, exist_ok=True)
+    for code in values.get("languages", ["sk"]):
+        (server_locales / f"{code}.json").write_text("{}\n", encoding="utf-8")
+        written.append(server_locales / f"{code}.json")
     (target / ".env.example.template-block").write_text(block, encoding="utf-8")
     return written
 

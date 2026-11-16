@@ -48,3 +48,22 @@ def test_every_starter_text_is_in_every_language_the_template_speaks():
     assert set(render.STARTER_TEXTS) == set(render.KNOWN_LANGUAGES)
     keys = {frozenset(texts) for texts in render.STARTER_TEXTS.values()}
     assert len(keys) == 1
+
+
+def test_the_server_gets_one_catalog_of_its_own_sentences_per_language_and_hands_them_to_the_kit(tmp_path):
+    """DEV-415 — the app's own server sentences in the person's language: an empty catalog per language to start, the
+    kit reads them all."""
+    render.render("nsv-standard", {**VALUES, "languages": ["sk", "hu", "en"]}, tmp_path)
+
+    server_locales = tmp_path / "backend" / "app" / "locales"
+    assert sorted(p.name for p in server_locales.iterdir()) == ["en.json", "hu.json", "sk.json"]
+    assert {json.loads(p.read_text(encoding="utf-8")) == {} for p in server_locales.iterdir()} == {True}
+    kit = (tmp_path / "backend" / "app" / "kit.py").read_text(encoding="utf-8")
+    assert 'SERVER_MESSAGES = load_server_messages(Path(__file__).resolve().parent / "locales")' in kit
+    assert "    server_messages=SERVER_MESSAGES,\n" in kit
+
+
+def test_an_app_without_languages_gets_the_slovak_server_catalog(tmp_path):
+    render.render("nsv-standard", VALUES, tmp_path)
+
+    assert sorted(p.name for p in (tmp_path / "backend" / "app" / "locales").iterdir()) == ["sk.json"]

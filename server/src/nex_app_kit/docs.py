@@ -2,7 +2,11 @@
 
 - ``<docs>/specs/versions/v<version>/RELEASE_NOTES.md`` — one file per version; dates in
   ``<docs>/specs/versions/release-dates.json`` (``{"v1.4.2": "2026-10-28"}``), else none;
-- ``<docs>/AKO_ZACAT.md`` — the app's guide for a person who never saw it (the template's page Ako začať)."""
+- ``<docs>/AKO_ZACAT.md`` — the app's guide for a person who never saw it (the template's page Ako začať).
+
+DEV-415: both are written in the app's main language; beside them a file of another language — ``RELEASE_NOTES.hu.md``,
+``AKO_ZACAT.en.md`` — is what a person reading in that language gets. Where it is missing, the main file is said: a
+translation that lags behind never leaves a version without its notes."""
 
 from __future__ import annotations
 
@@ -15,9 +19,22 @@ VERSION_DIR = re.compile(r"^v(\d+(?:\.\d+)*)$")
 LEADING_VERSION_HEADING = re.compile(r"^\s*#{1,2}\s+v?\d+(?:\.\d+)*\b[^\n]*\n+")
 HTML_COMMENT = re.compile(r"<!--.*?-->\s*", re.DOTALL)
 GETTING_STARTED = "AKO_ZACAT.md"
+RELEASE_NOTES = "RELEASE_NOTES.md"
+#: A language code as it stands in a file name — nothing else may reach a path.
+LANGUAGE_CODE = re.compile(r"^[a-z]{2}$")
 
 
-def release_notes(docs_dir: Path | None) -> list[dict]:
+def in_language(main: Path, language: str | None) -> Path:
+    """The file of ``language`` beside ``main`` (``RELEASE_NOTES.md`` → ``RELEASE_NOTES.hu.md``) when it is there, else
+    ``main``."""
+    if language and LANGUAGE_CODE.match(language):
+        translated = main.with_name(f"{main.stem}.{language}{main.suffix}")
+        if translated.is_file():
+            return translated
+    return main
+
+
+def release_notes(docs_dir: Path | None, language: str | None = None) -> list[dict]:
     if docs_dir is None:
         return []
     root = docs_dir / "specs" / "versions"
@@ -27,10 +44,10 @@ def release_notes(docs_dir: Path | None) -> list[dict]:
     notes = []
     for folder in root.iterdir():
         match = VERSION_DIR.match(folder.name)
-        file = folder / "RELEASE_NOTES.md"
-        if not match or not file.is_file():
+        main = folder / RELEASE_NOTES
+        if not match or not main.is_file():
             continue
-        text = HTML_COMMENT.sub("", file.read_text(encoding="utf-8"))
+        text = HTML_COMMENT.sub("", in_language(main, language).read_text(encoding="utf-8"))
         text = LEADING_VERSION_HEADING.sub("", text, count=1).strip()
         notes.append(
             (
@@ -66,10 +83,10 @@ def _release_dates(file: Path) -> dict[str, str]:
     return {str(k): str(v) for k, v in data.items()} if isinstance(data, dict) else {}
 
 
-def getting_started(docs_dir: Path | None) -> str:
+def getting_started(docs_dir: Path | None, language: str | None = None) -> str:
     if docs_dir is None:
         return ""
     try:
-        return (docs_dir / GETTING_STARTED).read_text(encoding="utf-8").strip()
+        return in_language(docs_dir / GETTING_STARTED, language).read_text(encoding="utf-8").strip()
     except FileNotFoundError:
         return ""

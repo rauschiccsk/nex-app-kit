@@ -29,8 +29,8 @@ nej — cesta, ktorá chýba alebo pribudla len na jednej strane, je červená.
 | `POST /auth/change-password` | heslo | Zmena vlastného hesla: `current_password`, `new_password`. |
 | `PUT /auth/language` | heslo | Jazyk prihláseného: `language` (jeden z jazykov aplikácie); vráti prihláseného s jeho jazykom. Spustenej aplikácii jazyk povie NEX Manager. |
 | `GET /users` | heslo | Zoznam používateľov (len admin). |
-| `POST /users` | heslo | Nový používateľ: `username`, `email`, `password`, `role`, `first_name`, `last_name`, `is_active`. |
-| `PATCH /users/{id}` | heslo | Úprava používateľa: `email`, `role`, `first_name`, `last_name`, `is_active`. |
+| `POST /users` | heslo | Nový používateľ: `username`, `email`, `password`, `role`, `first_name`, `last_name`, `is_active`, voliteľne `language` (od v0.16.0). |
+| `PATCH /users/{id}` | heslo | Úprava používateľa: `email`, `role`, `first_name`, `last_name`, `is_active`, voliteľne `language` (od v0.16.0; bez neho sa jazyk nemení). |
 | `DELETE /users/{id}` | heslo | Zmazanie používateľa. |
 | `POST /users/{id}/password` | heslo | Nové heslo inému používateľovi (admin): `new_password`. |
 | `GET /sessions` | vždy | Relácie — kto je prihlásený, odkedy, naposledy aktívny, prehliadač; `current` = táto. |
@@ -121,6 +121,8 @@ pomocnú funkciu (DEV-316).
 - Aktualizácie: `docs/specs/versions/v<verzia>/RELEASE_NOTES.md`, dátumy v
   `docs/specs/versions/release-dates.json` (`{"v1.4.2": "2026-10-28"}`); úvodný nadpis s verziou sa vynechá.
 - Ako začať: `docs/AKO_ZACAT.md` — návod pre človeka, ktorý aplikáciu ešte nevidel.
+- Iné jazyky (od v0.16.0, DEV-415): oba dokumenty sú v hlavnom jazyku aplikácie; vedľa nich súbor jazyka —
+  `RELEASE_NOTES.hu.md`, `AKO_ZACAT.en.md` — dostane človek, ktorý číta v tom jazyku. Kde chýba, ukáže sa hlavný súbor.
 
 ## Jazyk (DEV-394)
 
@@ -130,3 +132,11 @@ pomocnú funkciu (DEV-316).
   v identite — pole `language`), inak jazyk inštalácie (`NEX_LANGUAGE`), inak hlavný jazyk aplikácie.
 - Klient (nex-shared ≥ 0.37.0) pošle jazyk pri každej požiadavke v hlavičke `Accept-Language`; server podľa nej píše
   hlášky (`{"detail": …}`) — ak ten jazyk aplikácia nemá, jazykom inštalácie.
+- Vlastné hlášky servera aplikácie (od v0.16.0, DEV-415): katalóg pre každý jazyk aplikácie v `backend/app/locales/<jazyk>.json`
+  (kľúče `app.…`, hlavný jazyk je zdroj kľúčov, hodnoty v `{…}` rovnaké vo všetkých jazykoch), načítané
+  `load_server_messages` a odovzdané `AppKit(server_messages=…)`. Odmietnutie `KitError(409, "APP-…", "app.server.…",
+  params={…})` server povie v jazyku človeka; záznam ostane po slovensky (bez slovenčiny v hlavnom jazyku). Katalóg, ktorý
+  nesedí s hlavným, aplikáciu nespustí. Vlastnú výnimku aplikácia preloží `tr(request_language(request), kľúč, hodnoty)`.
+- Správca mení jazyk človeka v Nastavenia → Používatelia (od v0.16.0, DEV-415): stĺpec Jazyk a voľba v úprave človeka;
+  človek, ktorý si jazyk nevybral, ostáva bez neho a nasleduje jazyk inštalácie.
+- Rám nastaví jazyk stránky (`lang` na `<html>`) podľa jazyka, ktorým obrazovky práve hovoria (od v0.16.0).

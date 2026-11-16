@@ -792,6 +792,8 @@ function AccountTab() {
 function UsersTab() {
   const t = useKitT();
   const { api, isAdmin, manifest } = useFrame();
+  const installation = useInstallationIdentity();
+  const defaultLanguage = chooseLanguage(manifest.languages, null, installation?.language);
   const roleOptions = STANDARD_ROLES.map((r) => ({ value: r.value, label: t(r.label) }));
   const [users, setUsers] = useState5([]);
   useEffect4(() => {
@@ -806,6 +808,8 @@ function UsersTab() {
       roleOptions,
       canManage: isAdmin,
       fieldSchema: USER_FIELDS,
+      languages: manifest.languages,
+      defaultLanguage,
       onCreate: async (d) => {
         const row = await api.createUser({
           username: d.username,
@@ -814,7 +818,8 @@ function UsersTab() {
           role: d.role,
           first_name: d.first_name,
           last_name: d.last_name,
-          is_active: d.is_active
+          is_active: d.is_active,
+          ...d.language ? { language: d.language } : {}
         });
         setUsers((prev) => [...prev, row]);
       },
@@ -825,7 +830,8 @@ function UsersTab() {
             role: d.role,
             first_name: d.first_name,
             last_name: d.last_name,
-            is_active: d.is_active
+            is_active: d.is_active,
+            ...d.language ? { language: d.language } : {}
           })
         );
       },
@@ -1285,6 +1291,9 @@ function TemplateApp({ manifest, client, frontendVersion, overview, children }) 
   }
   const language = chooseLanguage(manifest.languages, user?.language, installation?.language);
   const messages = useMemo4(() => mergeMessages(manifest.messages), [manifest.messages]);
+  useEffect8(() => {
+    document.documentElement.lang = language;
+  }, [language]);
   return /* @__PURE__ */ jsx13(I18nProvider, { language, messages, children: /* @__PURE__ */ jsx13(ThemeProvider, { username: user?.username, children: /* @__PURE__ */ jsx13(InstallationContext.Provider, { value: installation, children: screen }) }) });
 }
 export {

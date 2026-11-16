@@ -175,6 +175,12 @@ export function TemplateApp({ manifest, client, frontendVersion, overview, child
   // sign-in, where nobody is known yet.
   const language = chooseLanguage(manifest.languages, user?.language, installation?.language);
   const messages = useMemo(() => mergeMessages(manifest.messages), [manifest.messages]);
+  // DEV-415: the page says which language it is in — the browser offers no translation from Slovak to a Hungarian
+  // reader, a screen reader reads it with the right voice, spelling is checked in it. Until 0.16.0 index.html said
+  // „sk“ whatever the person read.
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
   return (
     <I18nProvider language={language} messages={messages}>
       <ThemeProvider username={user?.username}>

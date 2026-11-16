@@ -35,7 +35,8 @@ import {
   type AgentModelOption,
   type SessionRead,
 } from "../../../standard-api";
-import { useKitT } from "../../../i18n";
+import { chooseLanguage, useKitT } from "../../../i18n";
+import { useInstallationIdentity } from "../../../frame/installation";
 
 
 /** The cockpit's effort levels — never `ultracode`, which is a setting, not a level. */
@@ -217,6 +218,9 @@ function AccountTab() {
 function UsersTab() {
   const t = useKitT();
   const { api, isAdmin, manifest } = useFrame();
+  // DEV-415: each person's language — the language of whoever chose none is the installation's.
+  const installation = useInstallationIdentity();
+  const defaultLanguage = chooseLanguage(manifest.languages, null, installation?.language);
   const roleOptions = STANDARD_ROLES.map((r) => ({ value: r.value, label: t(r.label) }));
   const [users, setUsers] = useState<UserRead[]>([]);
 
@@ -236,6 +240,8 @@ function UsersTab() {
       roleOptions={roleOptions}
       canManage={isAdmin}
       fieldSchema={USER_FIELDS}
+      languages={manifest.languages}
+      defaultLanguage={defaultLanguage}
       onCreate={async (d) => {
         const row = await api.createUser({
           username: d.username,
@@ -245,6 +251,7 @@ function UsersTab() {
           first_name: d.first_name,
           last_name: d.last_name,
           is_active: d.is_active,
+          ...(d.language ? { language: d.language } : {}),
         });
         setUsers((prev) => [...prev, row]);
       }}
@@ -256,6 +263,7 @@ function UsersTab() {
             first_name: d.first_name,
             last_name: d.last_name,
             is_active: d.is_active,
+            ...(d.language ? { language: d.language } : {}),
           }),
         );
       }}

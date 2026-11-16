@@ -19,7 +19,7 @@ and read its settings with ``kit.settings.get_int("search_limit")``."""
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -30,6 +30,7 @@ from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.orm import Session as Db
 
 from .errors import KitError, forbidden, kit_error_handler, not_signed_in
+from .i18n import DEFAULT_LANGUAGE, check_server_messages, use_app_messages
 from .installation import Installation
 from .manager import ManagerLink
 from .manifest import Manifest
@@ -73,15 +74,19 @@ class AppKit:
         after_launch: str = "/",
         on_setting_change: SettingChanged | None = None,
         on_account_change: AccountChanged | None = None,
+        server_messages: Mapping[str, Mapping[str, str]] | None = None,
     ) -> None:
         definitions = list(settings)
         problems = check_definitions(definitions)
+        # DEV-415: the app's own server sentences, in every language it speaks — or it does not start.
+        problems.extend(check_server_messages(server_messages or {}, list(manifest.languages)))
         if manifest.auth == "password" and manager is not None:
             problems.append(
                 "Aplikácia má vlastné heslo (auth: password), prepojenie s NEX Managerom (manager) nepatrí k nej."
             )
         if problems:
             raise ValueError("AppKit nie je nastavený správne:\n- " + "\n- ".join(problems))
+        use_app_messages(server_messages or {}, manifest.languages[0] if manifest.languages else DEFAULT_LANGUAGE)
         if manifest.auth == "manager" and manager is None:
             # The first deploy of a launched app often comes before its NEX Manager is paired (the cockpit says so as
             # a warning). The app starts; the launch says the pairing is missing.
