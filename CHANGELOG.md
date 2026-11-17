@@ -7,6 +7,12 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.16.1
+- `[oprava]` **Ako začať v každom jazyku aj v obraze aplikácie.** Server kostry kopíroval do obrazu len
+  `docs/AKO_ZACAT.md`, takže `AKO_ZACAT.<jazyk>.md` sa k človeku v inom jazyku nedostal, hoci ho šablóna od v0.16.0
+  vie povedať. Kostra teraz kopíruje `AKO_ZACAT*.md`. Aplikácia založená na staršej kostre si riadok v
+  `backend/Dockerfile` upraví sama (DEV-418).
+
 ## v0.16.0
 - `[nové]` **Správca mení jazyk človeka v Používateľoch.** Pri každom človeku je jeho jazyk a v úprave človeka voľba jazyka
   (nex-shared v0.39.0); server ho prijme pri úprave aj založení človeka (`language`) a jazyk, ktorým aplikácia nehovorí,

@@ -10,7 +10,8 @@ COPY alembic.ini ./
 COPY alembic ./alembic
 COPY app ./app
 COPY --from=frontend app.manifest.json /app/app.manifest.json
-COPY --from=docs AKO_ZACAT.md /app/docs/AKO_ZACAT.md
+# The getting-started guide in every language the app speaks: AKO_ZACAT.md, AKO_ZACAT.<language>.md (DEV-418).
+COPY --from=docs AKO_ZACAT*.md /app/docs/
 COPY --from=docs specs/versions /app/docs/specs/versions
 ENV APP_MANIFEST_PATH=/app/app.manifest.json APP_DOCS_DIR=/app/docs
 USER 1000

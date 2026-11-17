@@ -3,6 +3,7 @@ the manifest. The cockpit gives the languages of the project (DEV-395); without 
 
 from __future__ import annotations
 
+import fnmatch
 import json
 import sys
 from pathlib import Path
@@ -67,3 +68,27 @@ def test_an_app_without_languages_gets_the_slovak_server_catalog(tmp_path):
     render.render("nsv-standard", VALUES, tmp_path)
 
     assert sorted(p.name for p in (tmp_path / "backend" / "app" / "locales").iterdir()) == ["sk.json"]
+
+
+def test_the_image_carries_the_guide_and_the_notes_in_every_language(tmp_path):
+    """DEV-418 — the kit says Ako začať and Aktualizácie in the person's language from AKO_ZACAT.<language>.md and
+    RELEASE_NOTES.<language>.md (0.16.0), but the server image took only AKO_ZACAT.md: the guide in another language
+    never reached the app."""
+    render.render("nsv-standard", {**VALUES, "languages": ["sk", "hu", "en"]}, tmp_path)
+
+    copies = [
+        line.split()[2:]
+        for line in (tmp_path / "backend" / "Dockerfile").read_text(encoding="utf-8").splitlines()
+        if line.startswith("COPY --from=docs ")
+    ]
+
+    def carried(name: str) -> bool:
+        return any(
+            (fnmatch.fnmatch(name, source) and (destination.endswith("/") or destination.endswith("/" + name)))
+            or name.startswith(source + "/")
+            for source, destination in copies
+        )
+
+    assert [n for n in ("AKO_ZACAT.md", "AKO_ZACAT.hu.md", "AKO_ZACAT.en.md") if not carried(n)] == []
+    assert carried("specs/versions/v0.1.0/RELEASE_NOTES.hu.md")
+    assert not carried("specs.md"), "only what people read in the app goes into the image"
