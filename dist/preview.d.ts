@@ -18,6 +18,13 @@ interface PreviewOptions {
     /** Ako začať — Markdown. */
     gettingStarted?: string;
 }
+/**
+ * DEV-421 — the server's own catalogs, the same files it says the template's settings from. The template's settings
+ * carry keys since 0.14.0 (DEV-394) and the server says them in the person's language; the preview has no server, and
+ * until 0.16.2 it passed the keys on — „kit.setting.idle.label“ on Nastavenia → Systém in every language (NEX Manager
+ * 1.7.0, 17.11.2026).
+ */
+declare const SERVER_CATALOGS: Readonly<Record<string, Readonly<Record<string, string>>>>;
 declare function previewHandlers(options: PreviewOptions): HttpHandler[];
 
-export { type PreviewOptions, previewHandlers };
+export { type PreviewOptions, SERVER_CATALOGS, previewHandlers };

@@ -13,6 +13,9 @@ import { HttpResponse, http, type HttpHandler } from "msw";
 import type { ReleaseNote, SystemSettingRead, UserRead } from "nex-shared";
 
 import kitSettings from "../server/src/nex_app_kit/kit_settings.json";
+import serverEn from "../server/src/nex_app_kit/locales/en.json";
+import serverHu from "../server/src/nex_app_kit/locales/hu.json";
+import serverSk from "../server/src/nex_app_kit/locales/sk.json";
 import type { AppManifest } from "./manifest";
 import {
   STANDARD_ENDPOINTS,
@@ -54,6 +57,29 @@ const KIT_SETTINGS: SystemSettingRead[] = kitSettings.map((d) => ({
   updated_by_username: null,
   is_default: true,
 }));
+
+/**
+ * DEV-421 — the server's own catalogs, the same files it says the template's settings from. The template's settings
+ * carry keys since 0.14.0 (DEV-394) and the server says them in the person's language; the preview has no server, and
+ * until 0.16.2 it passed the keys on — „kit.setting.idle.label“ on Nastavenia → Systém in every language (NEX Manager
+ * 1.7.0, 17.11.2026).
+ */
+export const SERVER_CATALOGS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
+  sk: serverSk,
+  hu: serverHu,
+  en: serverEn,
+};
+
+/** A word of a setting as the server says it (``i18n.tr``): in the person's language, else the app's main one, else
+ *  Slovak, else as it stands — an app's own words are no keys and stay as they are. */
+function saidAs<T extends string | null | undefined>(text: T, language: string | null | undefined, main: string): T {
+  if (!text) return text;
+  for (const code of [language, main, "sk"]) {
+    const said = code ? SERVER_CATALOGS[code]?.[text] : undefined;
+    if (said) return said as T;
+  }
+  return text;
+}
 
 type Answer = (args: { params: Record<string, string | readonly string[] | undefined>; body: unknown }) => Response;
 
@@ -115,6 +141,15 @@ export function previewHandlers(options: PreviewOptions): HttpHandler[] {
     current: true,
   };
   const settings = [...KIT_SETTINGS, ...(options.settings ?? [])];
+  // DEV-421: a setting as the server lists it — its words in the language of the person signed in to the preview.
+  const main = manifest.languages?.[0] ?? "sk";
+  const saidIn = (row: SystemSettingRead): SystemSettingRead => ({
+    ...row,
+    label: saidAs(row.label, me.language, main),
+    description: saidAs(row.description, me.language, main),
+    unit: saidAs(row.unit, me.language, main),
+    choices: row.choices ? row.choices.map((c) => ({ ...c, label: saidAs(c.label, me.language, main) })) : row.choices,
+  });
   const roles = manifest.ai ? manifest.ai.roles : [];
   let layout: UserLayout = {
     sidebar_width: null,
@@ -148,10 +183,10 @@ export function previewHandlers(options: PreviewOptions): HttpHandler[] {
     setUserPassword: () => noContent(),
     listSessions: () => json([session]),
     revokeSession: () => noContent(),
-    listSystemSettings: () => json(settings),
+    listSystemSettings: () => json(settings.map(saidIn)),
     updateSystemSetting: ({ params, body }) => {
       const row = settings.find((s) => s.key === params.key) ?? settings[0];
-      return json({ ...row, value: (body as { value: string }).value, is_default: false, updated_at: NOW, updated_by_username: me.username });
+      return json({ ...(row && saidIn(row)), value: (body as { value: string }).value, is_default: false, updated_at: NOW, updated_by_username: me.username });
     },
     listAgentSettings: () => json(roles.map((r) => agents[r.id])),
     listAgentModels: () =>

@@ -7,6 +7,13 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.16.2
+- `[oprava]` **Náhľad Vizuálu hovorí názvy nastavení šablóny v jazyku človeka.** Od v0.14.0 nesú nastavenia šablóny
+  (odhlásenie po nečinnosti, najdlhšie prihlásenie) kľúče, ktoré do jazyka človeka prekladá server. Náhľad server
+  nemá a v Nastavenia → Systém ukazoval holé kľúče (`kit.setting.idle.label`) v každom jazyku. Teraz ich povie z tých
+  istých katalógov ako server a rovnako ustúpi: jazyk človeka, hlavný jazyk aplikácie, slovenčina. Skutočná aplikácia
+  ich hovorila správne aj predtým (DEV-421).
+
 ## v0.16.1
 - `[oprava]` **Ako začať v každom jazyku aj v obraze aplikácie.** Server kostry kopíroval do obrazu len
   `docs/AKO_ZACAT.md`, takže `AKO_ZACAT.<jazyk>.md` sa k človeku v inom jazyku nedostal, hoci ho šablóna od v0.16.0
