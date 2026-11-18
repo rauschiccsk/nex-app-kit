@@ -7,6 +7,15 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.16.4
+- `[oprava]` **Nová aplikácia dostane overené verzie balíkov.** Kostra šablóny nemala zámok balíkov frontendu, takže
+  aplikácia si pri založení brala najnovšie verzie z toho dňa. 18.11.2026 tak dostala Rollup 4.68.6, vydaný v to ráno,
+  ktorý v obraze frontendu (node:22-alpine) neprečíta react-dom/client.js — frontend novej aplikácie sa nepostavil a
+  CI v0.16.3 bolo červené. Kostra teraz nesie `frontend/package-lock.json` s verziami, s ktorými prešli kontroly
+  šablóny (`scaffold/lock.py`, verzie k zvolenému dňu); pri vyplnení sa doplní len nex-app-kit, ostatné verzie ostanú
+  — stráži to CI (`scaffold/check_lock.py`). Verzie sa povyšujú vedome pri vydaní šablóny. Nesie aj opravu v0.16.3
+  (úprava človeka bez e-mailu) (DEV-428, DEV-422).
+
 ## v0.16.3
 - `[oprava]` **Správca zmení človeka, ktorý nemá e-mail.** Server šablóny pri každej úprave človeka vyžadoval e-mail, takže
   človeku bez neho (založenému skôr, než bol povinný, alebo NEX Managerom) správca nezmenil jazyk, rolu ani meno, kým mu

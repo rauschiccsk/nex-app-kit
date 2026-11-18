@@ -78,8 +78,8 @@ jobs:
           APP="$RUNNER_TEMP/app-$AUTH"
           python -m pip install pytest ruff
           python -m pytest scaffold/tests -q -p no:cacheprovider
-          ruff check --no-cache --config server/pyproject.toml scaffold/render.py scaffold/tests
-          ruff format --no-cache --check --config server/pyproject.toml scaffold/render.py scaffold/tests
+          ruff check --no-cache --config server/pyproject.toml scaffold/*.py scaffold/tests
+          ruff format --no-cache --check --config server/pyproject.toml scaffold/*.py scaffold/tests
       # DEV-394: the app launched from NEX Manager speaks Hungarian and Slovak — its catalogs are typed against each
       # other and its tests run the hard-text rule (nex-check-texts); the password app speaks Slovak only.
       - name: Fill the scaffold as the cockpit does, with this commit of the kit
@@ -103,6 +103,9 @@ jobs:
           APP="$RUNNER_TEMP/app-$AUTH"
           cd "$APP/frontend"
           npm install --no-audit --no-fund
+          # DEV-428: filling keeps every version of the scaffold's lock — nex-app-kit is the one package it adds.
+          python "$GITHUB_WORKSPACE/scaffold/check_lock.py" \
+            "$GITHUB_WORKSPACE/scaffold/nsv-standard/frontend/package-lock.json" package-lock.json
           npm run type-check
           npm run lint
           npx vitest run
