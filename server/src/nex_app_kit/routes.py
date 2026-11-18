@@ -382,7 +382,10 @@ def build_router(kit: AppKit) -> APIRouter:
             # is never left without an active admin.
             if user.id == admin.id and (role != user.role or not body.is_active):
                 raise conflict("kit.server.selfRole", "KIT-SELF")
-            user.email = clean_email(body.email)
+            # DEV-422 — a person who has no e-mail (made before it was required, or by NEX Manager) is changed
+            # without one; an e-mail given is checked as ever, and one the person has is not taken away.
+            if body.email.strip() or user.email:
+                user.email = clean_email(body.email)
             user.role = role
             user.first_name = clean_name(body.first_name, "kit.server.field.firstName")
             user.last_name = clean_name(body.last_name, "kit.server.field.lastName")

@@ -7,6 +7,12 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.16.3
+- `[oprava]` **Správca zmení človeka, ktorý nemá e-mail.** Server šablóny pri každej úprave človeka vyžadoval e-mail, takže
+  človeku bez neho (založenému skôr, než bol povinný, alebo NEX Managerom) správca nezmenil jazyk, rolu ani meno, kým mu
+  e-mail nedoplnil. Úprava takého človeka e-mail nevyžaduje; zadaný e-mail sa overuje ako doteraz, kto e-mail má, nestratí
+  ho, a nový človek ho potrebuje. Formulár Používateľov to dovolí od nex-shared v0.39.1 (DEV-422).
+
 ## v0.16.2
 - `[oprava]` **Náhľad Vizuálu hovorí názvy nastavení šablóny v jazyku človeka.** Od v0.14.0 nesú nastavenia šablóny
   (odhlásenie po nečinnosti, najdlhšie prihlásenie) kľúče, ktoré do jazyka človeka prekladá server. Náhľad server
