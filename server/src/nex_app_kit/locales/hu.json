@@ -1,5 +1,6 @@
 {
   "kit.server.accountInactive": "Ez a fiók ki van kapcsolva. Fordulj az alkalmazás rendszergazdájához.",
+  "kit.server.adminDelete": "Rendszergazda nem törölhető — az adatait módosíthatod.",
   "kit.server.adminOnly": "Ezt csak az alkalmazás rendszergazdája teheti meg.",
   "kit.server.agentRoleUnknown": "Az alkalmazásnak nincs „{role}“ ügynök-szerepköre.",
   "kit.server.emailInvalid": "„{email}“ nem érvényes e-mail-cím.",
@@ -33,10 +34,7 @@
   "kit.server.passwordChangeFirst": "Előbb módosítsd a jelszavadat.",
   "kit.server.passwordEmpty": "A jelszó nem lehet üres.",
   "kit.server.passwordSame": "Az új jelszónak különböznie kell a jelenlegitől.",
-  "kit.server.passwordWrong": "A jelenlegi jelszó hibás.",
   "kit.server.roleInvalid": "A szerepkör „admin“ (rendszergazda) vagy „user“ (felhasználó) lehet, nem „{role}“.",
-  "kit.server.selfDelete": "A saját fiókodat nem törölheted — ezt egy másik rendszergazda teheti meg.",
-  "kit.server.selfPassword": "A saját jelszavadat a Saját fiókban módosítsd.",
   "kit.server.selfRole": "A saját szerepkörödet nem módosíthatod, és a saját fiókodat nem kapcsolhatod ki — ezt egy másik rendszergazda teheti meg.",
   "kit.server.sessionUnknown": "Nincs ilyen munkamenet — lehet, hogy már véget ért.",
   "kit.server.setting.choice": "„{label}“ értéke csak a választékból lehet — „{value}“ nincs benne.",

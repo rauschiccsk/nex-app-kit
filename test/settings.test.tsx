@@ -120,7 +120,6 @@ describe("Moje konto", () => {
     const { calls } = renderApp({ path: "/settings", user: ADMIN });
     fireEvent.click(await screen.findByRole("tab", { name: "Moje konto" }));
 
-    fireEvent.change(screen.getByLabelText("Súčasné heslo"), { target: { value: "stare-heslo" } });
     fireEvent.change(screen.getByLabelText("Nové heslo"), { target: { value: "nove-heslo-1" } });
     fireEvent.change(screen.getByLabelText("Zopakuj nové heslo"), { target: { value: "nove-heslo-1" } });
     fireEvent.click(screen.getByRole("button", { name: "Zmeniť heslo" }));
@@ -129,7 +128,7 @@ describe("Moje konto", () => {
       expect(calls).toContainEqual({
         method: "POST",
         path: "/auth/change-password",
-        body: { current_password: "stare-heslo", new_password: "nove-heslo-1" },
+        body: { current_password: "", new_password: "nove-heslo-1" },
       }),
     );
   });
@@ -140,7 +139,6 @@ describe("Moje konto", () => {
     fireEvent.click(await screen.findByRole("tab", { name: "Moje konto" }));
 
     expect(screen.getByLabelText("Nové heslo")).not.toHaveAttribute("placeholder", expect.stringMatching(/min\./));
-    fireEvent.change(screen.getByLabelText("Súčasné heslo"), { target: { value: "stare-heslo" } });
     fireEvent.change(screen.getByLabelText("Nové heslo"), { target: { value: "a" } });
     fireEvent.change(screen.getByLabelText("Zopakuj nové heslo"), { target: { value: "a" } });
     fireEvent.click(screen.getByRole("button", { name: "Zmeniť heslo" }));
@@ -149,7 +147,7 @@ describe("Moje konto", () => {
       expect(calls).toContainEqual({
         method: "POST",
         path: "/auth/change-password",
-        body: { current_password: "stare-heslo", new_password: "a" },
+        body: { current_password: "", new_password: "a" },
       }),
     );
   });

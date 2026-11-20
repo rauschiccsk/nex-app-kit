@@ -273,8 +273,8 @@ def test_a_password_change_due_lets_in_only_to_change_it(make_app):
 @pytest.mark.parametrize(
     "current,new,sentence",
     [
-        ("zle", "nove-heslo-1", "Súčasné heslo je nesprávne."),
         ("heslo-123", "heslo-123", "Nové heslo musí byť iné ako súčasné."),
+        ("", "heslo-123", "Nové heslo musí byť iné ako súčasné."),  # DEV-439: told without the current one too
         ("heslo-123", "", "Heslo nesmie byť prázdne."),  # DEV-296: any length, only empty is refused
     ],
 )
@@ -287,6 +287,30 @@ def test_a_password_change_says_what_is_wrong(make_app, current, new, sentence):
 
     assert response.status_code == 422
     assert detail(response) == sentence
+
+
+# DEV-439 — the Director, 20.11.2026: „V Moje konto zadanie starého hesla treba odstrániť“.
+def test_the_signed_in_person_changes_their_password_without_the_current_one(make_app):
+    app = make_app()
+    app.user("eva")
+    app.login("eva")
+
+    changed = app.client.post("/api/v1/auth/change-password", json={"new_password": "nove-heslo-1"})
+
+    assert changed.status_code == 204
+    assert app.login("eva", "nove-heslo-1", client=app.other_browser()).status_code == 200
+
+
+def test_a_wrong_current_password_from_an_older_frame_is_ignored(make_app):
+    app = make_app()
+    app.user("eva")
+    app.login("eva")
+
+    changed = app.client.post(
+        "/api/v1/auth/change-password", json={"current_password": "zle", "new_password": "nove-heslo-1"}
+    )
+
+    assert changed.status_code == 204
 
 
 def test_a_new_password_signs_out_the_other_browsers_but_not_this_one(make_app):

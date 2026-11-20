@@ -7,6 +7,19 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.17.0
+- `[oprava]` **Správca si v Používateľoch zmení meno aj heslo.** V Orthodox Hermenia správca menil svoje meno, prehliadač
+  mu do prázdneho poľa hesla vložil uložené heslo a uloženie skončilo hláškou „Svoje heslo si zmeň v Moje konto.“ Pole
+  hesla prehliadač sám nevyplní (nex-shared v0.40.0) a správca smie zmeniť heslo komukoľvek, aj sebe: inému je to
+  inicializačné heslo, ktoré si pri prihlásení zmení, sebe riadne heslo — jeho ostatné prehliadače sa prihlásia znovu.
+- `[nové]` **Oko pri hesle ukáže, čo človek práve píše.** V Moje konto a pri prvom vlastnom hesle pre každého; v
+  Používateľoch len pri vlastnom účte správcu — inému správca len zadá nové inicializačné heslo. Uložené heslo sa
+  zobraziť nedá, preto tam oko nie je.
+- `[API]` **Moje konto a prvé vlastné heslo sa nepýtajú na súčasné heslo.** `POST /auth/change-password` ho nežiada
+  (`current_password` staršieho rámu sa ignoruje); heslo, ktoré človek má, znovu nevyberie.
+- `[API]` **Správcu nemožno vymazať, ani seba** (`KIT-ADMIN`). Používatelia mu vymazanie neponúkajú, len zmenu údajov;
+  vo vlastnom riadku sa neponúka ani deaktivácia. Kto má odísť, dostane najprv inú rolu (DEV-439).
+
 ## v0.16.4
 - `[oprava]` **Nová aplikácia dostane overené verzie balíkov.** Kostra šablóny nemala zámok balíkov frontendu, takže
   aplikácia si pri založení brala najnovšie verzie z toho dňa. 18.11.2026 tak dostala Rollup 4.68.6, vydaný v to ráno,

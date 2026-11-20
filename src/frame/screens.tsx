@@ -1,7 +1,7 @@
 // The screens before the frame (DEV-252): signing in with the app's own password, the sentence that a launched app
 // is opened again from NEX Manager, the password change due at the first sign-in, and a server that does not answer.
 import { useState, type FormEvent, type ReactNode } from "react";
-import { Brand, Button, Card, Input, LoginForm } from "nex-shared";
+import { Brand, Button, Card, LoginForm, PasswordInput } from "nex-shared";
 
 import type { AppManifest } from "../manifest";
 import type { CurrentUser, StandardApi } from "../standard-api";
@@ -110,7 +110,6 @@ export function ChangePasswordScreen({
   onLogout: () => void;
 }) {
   const t = useKitT();
-  const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [again, setAgain] = useState("");
   const [busy, setBusy] = useState(false);
@@ -125,7 +124,8 @@ export function ChangePasswordScreen({
     }
     setBusy(true);
     try {
-      await api.changePassword(current, next);
+      // DEV-439: the person signed in a moment ago — the server asks for no current password.
+      await api.changePassword("", next);
       onChanged();
     } catch (err) {
       setError(errorText(err, t("kit.password.failed")));
@@ -140,19 +140,13 @@ export function ChangePasswordScreen({
       <p className="mb-4 text-sm text-[var(--color-text-secondary)]">{t("kit.password.why")}</p>
       <form onSubmit={submit} className="space-y-3">
         <div>
-          <label htmlFor="kit-current" className={label}>
-            {t("account.currentPassword")}
-          </label>
-          <Input id="kit-current" type="password" autoComplete="current-password" value={current} onChange={(e) => setCurrent(e.target.value)} />
-        </div>
-        <div>
           <label htmlFor="kit-new" className={label}>
             {t("password.new")}
           </label>
-          <Input
+          <PasswordInput
             id="kit-new"
-            type="password"
-            autoComplete="new-password"
+            reveal
+            revealLabel={t("password.new")}
             value={next}
             onChange={(e) => setNext(e.target.value)}
           />
@@ -161,7 +155,13 @@ export function ChangePasswordScreen({
           <label htmlFor="kit-again" className={label}>
             {t("account.repeatPassword")}
           </label>
-          <Input id="kit-again" type="password" autoComplete="new-password" value={again} onChange={(e) => setAgain(e.target.value)} />
+          <PasswordInput
+            id="kit-again"
+            reveal
+            revealLabel={t("account.repeatPassword")}
+            value={again}
+            onChange={(e) => setAgain(e.target.value)}
+          />
         </div>
         {error && (
           <p role="alert" className="text-sm text-[var(--color-status-error)]">
@@ -172,7 +172,7 @@ export function ChangePasswordScreen({
           <button type="button" onClick={onLogout} className="text-xs text-[var(--color-text-muted)] hover:underline">
             {t("user.logout")}
           </button>
-          <Button type="submit" disabled={busy || !current || !next || !again}>
+          <Button type="submit" disabled={busy || !next || !again}>
             {busy ? t("common.saving") : t("kit.password.submit")}
           </Button>
         </div>

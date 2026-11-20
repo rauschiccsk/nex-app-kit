@@ -210,14 +210,16 @@ function AccountTab() {
       onSaveProfile={async ({ email, first_name, last_name }) => {
         setUser(await api.updateMe({ email, first_name, last_name }));
       }}
-      onChangePassword={(current, next) => api.changePassword(current, next)}
+      // DEV-439: the signed-in person changes their password without the current one; the eye shows what they type.
+      askCurrentPassword={false}
+      onChangePassword={(_current, next) => api.changePassword("", next)}
     />
   );
 }
 
 function UsersTab() {
   const t = useKitT();
-  const { api, isAdmin, manifest } = useFrame();
+  const { api, isAdmin, manifest, user } = useFrame();
   // DEV-415: each person's language — the language of whoever chose none is the installation's.
   const installation = useInstallationIdentity();
   const defaultLanguage = chooseLanguage(manifest.languages, null, installation?.language);
@@ -239,6 +241,10 @@ function UsersTab() {
       rowActions={manifest.userActions}
       roleOptions={roleOptions}
       canManage={isAdmin}
+      // DEV-439: one's own row offers no delete or deactivation and its password has the eye; the app's admin is never
+      // offered for deletion — only their details change (the server refuses it too).
+      currentUserId={user?.id}
+      mayDelete={(u) => u.role !== ADMIN_ROLE}
       fieldSchema={USER_FIELDS}
       languages={manifest.languages}
       defaultLanguage={defaultLanguage}

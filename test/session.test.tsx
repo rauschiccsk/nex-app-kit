@@ -62,7 +62,6 @@ describe("before the frame", () => {
 
     await screen.findByRole("heading", { name: "Nastav si vlastné heslo" });
     expect(document.querySelector("aside")).toBeNull();
-    typeInto("Súčasné heslo", "pociatocne");
     typeInto("Nové heslo", "nove-heslo-1");
     typeInto("Zopakuj nové heslo", "nove-heslo-1");
     fireEvent.click(screen.getByRole("button", { name: "Nastaviť heslo" }));
@@ -71,7 +70,7 @@ describe("before the frame", () => {
     expect(calls).toContainEqual({
       method: "POST",
       path: "/auth/change-password",
-      body: { current_password: "pociatocne", new_password: "nove-heslo-1" },
+      body: { current_password: "", new_password: "nove-heslo-1" },
     });
   });
 
@@ -81,7 +80,6 @@ describe("before the frame", () => {
 
     await screen.findByRole("heading", { name: "Nastav si vlastné heslo" });
     expect(screen.getByLabelText("Nové heslo")).not.toHaveAttribute("placeholder", expect.stringMatching(/aspoň/));
-    typeInto("Súčasné heslo", "pociatocne");
     typeInto("Nové heslo", "a");
     typeInto("Zopakuj nové heslo", "a");
     fireEvent.click(screen.getByRole("button", { name: "Nastaviť heslo" }));
@@ -90,7 +88,7 @@ describe("before the frame", () => {
     expect(calls).toContainEqual({
       method: "POST",
       path: "/auth/change-password",
-      body: { current_password: "pociatocne", new_password: "a" },
+      body: { current_password: "", new_password: "a" },
     });
   });
 
@@ -98,7 +96,6 @@ describe("before the frame", () => {
     const { calls } = renderApp({ user: { ...ADMIN, must_change_password: true } });
 
     await screen.findByRole("heading", { name: "Nastav si vlastné heslo" });
-    typeInto("Súčasné heslo", "pociatocne");
     typeInto("Nové heslo", "nove-heslo-1");
     typeInto("Zopakuj nové heslo", "nove-heslo-2");
     fireEvent.click(screen.getByRole("button", { name: "Nastaviť heslo" }));
@@ -110,16 +107,15 @@ describe("before the frame", () => {
   it("a refused password change says the server's sentence", async () => {
     renderApp({
       user: { ...ADMIN, must_change_password: true },
-      answers: { "POST /auth/change-password": new ApiError(422, "Súčasné heslo je nesprávne.", {}) },
+      answers: { "POST /auth/change-password": new ApiError(422, "Nové heslo musí byť iné ako súčasné.", {}) },
     });
 
     await screen.findByRole("heading", { name: "Nastav si vlastné heslo" });
-    typeInto("Súčasné heslo", "zle");
     typeInto("Nové heslo", "nove-heslo-1");
     typeInto("Zopakuj nové heslo", "nove-heslo-1");
     fireEvent.click(screen.getByRole("button", { name: "Nastaviť heslo" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Súčasné heslo je nesprávne.");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Nové heslo musí byť iné ako súčasné.");
   });
 
   it("a server that does not answer is said, and asked again on request", async () => {

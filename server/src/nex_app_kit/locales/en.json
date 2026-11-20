@@ -1,5 +1,6 @@
 {
   "kit.server.accountInactive": "This account is switched off. Contact the app's administrator.",
+  "kit.server.adminDelete": "An administrator cannot be deleted — you can change their details.",
   "kit.server.adminOnly": "Only the app's administrator may do this.",
   "kit.server.agentRoleUnknown": "The app has no agent role “{role}”.",
   "kit.server.emailInvalid": "“{email}” is not a valid e-mail.",
@@ -33,10 +34,7 @@
   "kit.server.passwordChangeFirst": "First change your password.",
   "kit.server.passwordEmpty": "The password must not be empty.",
   "kit.server.passwordSame": "The new password must differ from the current one.",
-  "kit.server.passwordWrong": "The current password is wrong.",
   "kit.server.roleInvalid": "The role is “admin” (administrator) or “user”, not “{role}”.",
-  "kit.server.selfDelete": "You cannot delete your own account — another administrator will do it.",
-  "kit.server.selfPassword": "Change your own password in My account.",
   "kit.server.selfRole": "You cannot change your own role or switch off your own account — another administrator will do it.",
   "kit.server.sessionUnknown": "There is no such session — perhaps it has already ended.",
   "kit.server.setting.choice": "“{label}” must be one of the choices — “{value}” is not among them.",

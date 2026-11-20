@@ -26,13 +26,13 @@ nej — cesta, ktorá chýba alebo pribudla len na jednej strane, je červená.
 | `GET /health` | vždy | Stav aplikácie: `status`, `version`, `checks` (napr. `database`). |
 | `GET /auth/me` | vždy | Prihlásený používateľ (rovnaké polia ako riadok používateľa, navyše `must_change_password`). |
 | `PATCH /auth/me` | heslo | Moje konto: zmena e-mailu, mena a priezviska vlastného účtu. |
-| `POST /auth/change-password` | heslo | Zmena vlastného hesla: `current_password`, `new_password`. |
+| `POST /auth/change-password` | heslo | Zmena vlastného hesla: `new_password` (od v0.17.0 bez súčasného hesla; `current_password` staršieho rámu sa ignoruje). Heslo, ktoré človek má, znovu nevyberie (`KIT-PASSWORD-SAME`). |
 | `PUT /auth/language` | heslo | Jazyk prihláseného: `language` (jeden z jazykov aplikácie); vráti prihláseného s jeho jazykom. Spustenej aplikácii jazyk povie NEX Manager. |
 | `GET /users` | heslo | Zoznam používateľov (len admin). |
 | `POST /users` | heslo | Nový používateľ: `username`, `email`, `password`, `role`, `first_name`, `last_name`, `is_active`, voliteľne `language` (od v0.16.0). |
 | `PATCH /users/{id}` | heslo | Úprava používateľa: `email`, `role`, `first_name`, `last_name`, `is_active`, voliteľne `language` (od v0.16.0; bez neho sa jazyk nemení). |
-| `DELETE /users/{id}` | heslo | Zmazanie používateľa. |
-| `POST /users/{id}/password` | heslo | Nové heslo inému používateľovi (admin): `new_password`. |
+| `DELETE /users/{id}` | heslo | Zmazanie používateľa. Správcu nie, ani seba (`KIT-ADMIN`, od v0.17.0) — najprv mu treba dať inú rolu. |
+| `POST /users/{id}/password` | heslo | Nové heslo človeku (admin): `new_password`. Inému je to inicializačné heslo (pri prihlásení si ho zmení); od v0.17.0 aj sebe — vtedy je to riadne heslo, ostatné prehliadače sa prihlásia znovu, tento ostane. |
 | `GET /sessions` | vždy | Relácie — kto je prihlásený, odkedy, naposledy aktívny, prehliadač; `current` = táto. |
 | `DELETE /sessions/{id}` | vždy | Zrušenie relácie — prestane platiť hneď. |
 | `GET /system-settings` | vždy | Systémové nastavenia aplikácie: kľúč, hodnota, typ, popis, predvolená hodnota, ponuka (`choices`). |

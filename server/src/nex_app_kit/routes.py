@@ -26,6 +26,7 @@ from . import docs
 from .errors import KitError, conflict, invalid, not_found, request_language
 from .i18n import tr
 from .installation import Installation
+from .kit import ADMIN_ROLE
 from .layout import SIDEBAR_WIDTH
 from .manager import LaunchRefused, ManagerUnavailable, admission_problem, ticket_expiry
 from .models import AgentSetting, Session, UsedLaunchToken, User, UserLayout
@@ -59,7 +60,9 @@ class ProfileBody(BaseModel):
 
 
 class ChangePasswordBody(BaseModel):
-    current_password: str
+    #: DEV-439 — no longer asked: the signed-in person changes their password without the current one. A frame of an
+    #: older template still sends it; it is ignored.
+    current_password: str = ""
     new_password: str
 
 
@@ -312,11 +315,10 @@ def build_router(kit: AppKit) -> APIRouter:
         def change_password(
             body: ChangePasswordBody, request: Request, user: User = Depends(kit.signed_in), db: Db = db_dep
         ) -> Response:
-            if not verify_password(body.current_password, user.password_hash):
-                raise invalid("kit.server.passwordWrong", "KIT-PASSWORD-WRONG")
-            if body.new_password == body.current_password:
-                raise invalid("kit.server.passwordSame", "KIT-PASSWORD-SAME")
             check_new_password(body.new_password)
+            # The password the person has now — the initial one from the admin above all — is not chosen again.
+            if verify_password(body.new_password, user.password_hash):
+                raise invalid("kit.server.passwordSame", "KIT-PASSWORD-SAME")
             user.password_hash = hash_password(body.new_password, kit.bcrypt_rounds)
             user.must_change_password = False
             user.updated_at = kit.clock()
@@ -402,8 +404,10 @@ def build_router(kit: AppKit) -> APIRouter:
         @router.delete("/users/{user_id}", status_code=204)
         def delete_user(user_id: str, admin: User = Depends(kit.require_admin), db: Db = db_dep) -> Response:
             user = find_user(db, user_id)
-            if user.id == admin.id:
-                raise conflict("kit.server.selfDelete", "KIT-SELF")
+            # DEV-439 — the app's admin is never deleted, oneself included; only their details change. A person who is
+            # to go is first given another role.
+            if user.role == ADMIN_ROLE:
+                raise conflict("kit.server.adminDelete", "KIT-ADMIN")
             kit.sessions.end_all(db, user.id, event=AccountEvent.DELETED)
             db.delete(user)
             try:
@@ -415,18 +419,27 @@ def build_router(kit: AppKit) -> APIRouter:
 
         @router.post("/users/{user_id}/password", status_code=204)
         def set_user_password(
-            user_id: str, body: PasswordBody, admin: User = Depends(kit.require_admin), db: Db = db_dep
+            user_id: str,
+            body: PasswordBody,
+            request: Request,
+            admin: User = Depends(kit.require_admin),
+            db: Db = db_dep,
         ) -> Response:
             user = find_user(db, user_id)
-            if user.id == admin.id:
-                raise conflict("kit.server.selfPassword", "KIT-SELF")
             check_new_password(body.new_password)
             user.password_hash = hash_password(body.new_password, kit.bcrypt_rounds)
-            user.must_change_password = True
-            user.failed_logins = 0
-            user.locked_until = None
             user.updated_at = kit.clock()
-            kit.sessions.end_all(db, user.id, event=AccountEvent.PASSWORD_SET)
+            if user.id == admin.id:
+                # DEV-439 — the admin's own password set here is their regular password, as in Moje konto: no change is
+                # asked of them, their other browsers sign in again, this one stays.
+                user.must_change_password = False
+                kit.sessions.end_all(db, user.id, keep=request.state.kit_session, event=AccountEvent.PASSWORD_CHANGED)
+            else:
+                # Another person's password from the admin is an initial one: they choose their own at the next sign-in.
+                user.must_change_password = True
+                user.failed_logins = 0
+                user.locked_until = None
+                kit.sessions.end_all(db, user.id, event=AccountEvent.PASSWORD_SET)
             db.commit()
             return Response(status_code=204)
 

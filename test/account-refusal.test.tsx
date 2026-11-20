@@ -9,7 +9,7 @@ import { ApiError } from "nex-shared";
 import { ADMIN, renderApp } from "./helpers";
 
 const MALFORMED = "„zly“ nie je platný e-mail.";
-const WRONG = "Súčasné heslo je nesprávne.";
+const SAME = "Nové heslo musí byť iné ako súčasné.";
 
 async function openAccount(answers: Record<string, unknown>) {
   renderApp({ path: "/settings", user: ADMIN, answers });
@@ -29,15 +29,14 @@ describe("Moje konto — the server's reason (DEV-309)", () => {
 
   it("a refused password shows the server's sentence", async () => {
     await openAccount({
-      "POST /auth/change-password": new ApiError(422, WRONG, { detail: WRONG, code: "KIT-PASSWORD-WRONG" }),
+      "POST /auth/change-password": new ApiError(422, SAME, { detail: SAME, code: "KIT-PASSWORD-SAME" }),
     });
 
-    fireEvent.change(screen.getByLabelText("Súčasné heslo"), { target: { value: "zle-heslo" } });
     fireEvent.change(screen.getByLabelText("Nové heslo"), { target: { value: "nove-heslo" } });
     fireEvent.change(screen.getByLabelText("Zopakuj nové heslo"), { target: { value: "nove-heslo" } });
     fireEvent.click(screen.getByRole("button", { name: "Zmeniť heslo" }));
 
-    expect(await screen.findByText(WRONG)).toBeInTheDocument();
+    expect(await screen.findByText(SAME)).toBeInTheDocument();
   });
 
   it("without the server's sentence the panel says its own and guesses no reason", async () => {
@@ -49,7 +48,6 @@ describe("Moje konto — the server's reason (DEV-309)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Uložiť" }));
     expect(await screen.findByText("Uloženie zlyhalo. Skús to znova.")).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText("Súčasné heslo"), { target: { value: "stare" } });
     fireEvent.change(screen.getByLabelText("Nové heslo"), { target: { value: "nove" } });
     fireEvent.change(screen.getByLabelText("Zopakuj nové heslo"), { target: { value: "nove" } });
     fireEvent.click(screen.getByRole("button", { name: "Zmeniť heslo" }));

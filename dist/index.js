@@ -166,7 +166,7 @@ function createLayoutStore(api) {
 
 // src/frame/screens.tsx
 import { useState as useState2 } from "react";
-import { Brand, Button, Card, Input, LoginForm } from "nex-shared";
+import { Brand, Button, Card, LoginForm, PasswordInput } from "nex-shared";
 
 // src/frame/installation.tsx
 import { createContext as createContext2, useContext as useContext2, useEffect, useState } from "react";
@@ -486,7 +486,6 @@ function ChangePasswordScreen({
   onLogout
 }) {
   const t = useKitT();
-  const [current, setCurrent] = useState2("");
   const [next, setNext] = useState2("");
   const [again, setAgain] = useState2("");
   const [busy, setBusy] = useState2(false);
@@ -500,7 +499,7 @@ function ChangePasswordScreen({
     }
     setBusy(true);
     try {
-      await api.changePassword(current, next);
+      await api.changePassword("", next);
       onChanged();
     } catch (err) {
       setError(errorText(err, t("kit.password.failed")));
@@ -513,17 +512,13 @@ function ChangePasswordScreen({
     /* @__PURE__ */ jsx2("p", { className: "mb-4 text-sm text-[var(--color-text-secondary)]", children: t("kit.password.why") }),
     /* @__PURE__ */ jsxs("form", { onSubmit: submit, className: "space-y-3", children: [
       /* @__PURE__ */ jsxs("div", { children: [
-        /* @__PURE__ */ jsx2("label", { htmlFor: "kit-current", className: label, children: t("account.currentPassword") }),
-        /* @__PURE__ */ jsx2(Input, { id: "kit-current", type: "password", autoComplete: "current-password", value: current, onChange: (e) => setCurrent(e.target.value) })
-      ] }),
-      /* @__PURE__ */ jsxs("div", { children: [
         /* @__PURE__ */ jsx2("label", { htmlFor: "kit-new", className: label, children: t("password.new") }),
         /* @__PURE__ */ jsx2(
-          Input,
+          PasswordInput,
           {
             id: "kit-new",
-            type: "password",
-            autoComplete: "new-password",
+            reveal: true,
+            revealLabel: t("password.new"),
             value: next,
             onChange: (e) => setNext(e.target.value)
           }
@@ -531,12 +526,21 @@ function ChangePasswordScreen({
       ] }),
       /* @__PURE__ */ jsxs("div", { children: [
         /* @__PURE__ */ jsx2("label", { htmlFor: "kit-again", className: label, children: t("account.repeatPassword") }),
-        /* @__PURE__ */ jsx2(Input, { id: "kit-again", type: "password", autoComplete: "new-password", value: again, onChange: (e) => setAgain(e.target.value) })
+        /* @__PURE__ */ jsx2(
+          PasswordInput,
+          {
+            id: "kit-again",
+            reveal: true,
+            revealLabel: t("account.repeatPassword"),
+            value: again,
+            onChange: (e) => setAgain(e.target.value)
+          }
+        )
       ] }),
       error && /* @__PURE__ */ jsx2("p", { role: "alert", className: "text-sm text-[var(--color-status-error)]", children: error }),
       /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between gap-3 pt-1", children: [
         /* @__PURE__ */ jsx2("button", { type: "button", onClick: onLogout, className: "text-xs text-[var(--color-text-muted)] hover:underline", children: t("user.logout") }),
-        /* @__PURE__ */ jsx2(Button, { type: "submit", disabled: busy || !current || !next || !again, children: busy ? t("common.saving") : t("kit.password.submit") })
+        /* @__PURE__ */ jsx2(Button, { type: "submit", disabled: busy || !next || !again, children: busy ? t("common.saving") : t("kit.password.submit") })
       ] })
     ] })
   ] });
@@ -785,13 +789,14 @@ function AccountTab() {
       onSaveProfile: async ({ email, first_name, last_name }) => {
         setUser(await api.updateMe({ email, first_name, last_name }));
       },
-      onChangePassword: (current, next) => api.changePassword(current, next)
+      askCurrentPassword: false,
+      onChangePassword: (_current, next) => api.changePassword("", next)
     }
   );
 }
 function UsersTab() {
   const t = useKitT();
-  const { api, isAdmin, manifest } = useFrame();
+  const { api, isAdmin, manifest, user } = useFrame();
   const installation = useInstallationIdentity();
   const defaultLanguage = chooseLanguage(manifest.languages, null, installation?.language);
   const roleOptions = STANDARD_ROLES.map((r) => ({ value: r.value, label: t(r.label) }));
@@ -807,6 +812,8 @@ function UsersTab() {
       rowActions: manifest.userActions,
       roleOptions,
       canManage: isAdmin,
+      currentUserId: user?.id,
+      mayDelete: (u) => u.role !== ADMIN_ROLE,
       fieldSchema: USER_FIELDS,
       languages: manifest.languages,
       defaultLanguage,

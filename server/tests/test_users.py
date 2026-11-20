@@ -162,13 +162,27 @@ def test_a_user_is_deleted(make_app):
     assert [u["username"] for u in app.client.get("/api/v1/users").json()] == ["spravca"]
 
 
-def test_an_admin_does_not_delete_themselves(make_app):
+# DEV-439 — the Director, 20.11.2026: the system never offers deleting the administrator, only changing their details.
+def test_an_admin_is_never_deleted_not_even_by_themselves(make_app):
     app, admin = signed_in_admin(make_app)
+    jan = app.user("jan", role="admin")
 
-    response = app.client.delete(f"/api/v1/users/{admin.id}")
+    for who in (admin, jan):
+        response = app.client.delete(f"/api/v1/users/{who.id}")
 
-    assert response.status_code == 409
-    assert response.json()["detail"] == "Vlastný účet nezmažeš — urobí to iný správca."
+        assert response.status_code == 409
+        assert response.json() == {"detail": "Správcu nemožno vymazať — môžeš zmeniť jeho údaje.", "code": "KIT-ADMIN"}
+    assert sorted(u["username"] for u in app.client.get("/api/v1/users").json()) == ["jan", "spravca"]
+
+
+def test_an_admin_given_another_role_can_go(make_app):
+    app, _ = signed_in_admin(make_app)
+    jan = app.user("jan", role="admin")
+    same = {"email": "jan@firma.sk", "first_name": "", "last_name": "", "is_active": True}
+
+    assert app.client.patch(f"/api/v1/users/{jan.id}", json={**same, "role": "user"}).status_code == 200
+
+    assert app.client.delete(f"/api/v1/users/{jan.id}").status_code == 204
 
 
 def test_a_user_the_app_s_records_point_at_is_switched_off_instead(make_app, migrated):
@@ -219,13 +233,20 @@ def test_a_new_password_from_the_admin_signs_out_and_must_be_changed(make_app):
         assert verify_password("nove-heslo-1", db.get(User, eva.id).password_hash)
 
 
-def test_own_password_is_changed_in_moje_konto_not_here(make_app):
+# DEV-439 — the Director, 20.11.2026: the admin changes anyone's password, their own too; another's is an initial one,
+# their own is their regular password.
+def test_the_admin_sets_their_own_password_here_as_their_regular_one(make_app):
     app, admin = signed_in_admin(make_app)
+    phone = app.other_browser()
+    app.login("spravca", client=phone)
 
     response = app.client.post(f"/api/v1/users/{admin.id}/password", json={"new_password": "nove-heslo-1"})
 
-    assert response.status_code == 409
-    assert response.json()["detail"] == "Svoje heslo si zmeň v Moje konto."
+    assert response.status_code == 204
+    assert app.client.get("/api/v1/auth/me").json()["must_change_password"] is False
+    assert app.client.get("/api/v1/users").status_code == 200, "this browser stays signed in"
+    assert phone.get("/api/v1/users").status_code == 401, "the other browsers sign in again"
+    assert app.login("spravca", "nove-heslo-1", client=phone).json()["must_change_password"] is False
 
 
 # ── Relácie ─────────────────────────────────────────────────────────────────────────────────────────

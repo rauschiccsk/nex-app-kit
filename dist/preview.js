@@ -32,6 +32,7 @@ var kit_settings_default = [
 // server/src/nex_app_kit/locales/en.json
 var en_default = {
   "kit.server.accountInactive": "This account is switched off. Contact the app's administrator.",
+  "kit.server.adminDelete": "An administrator cannot be deleted \u2014 you can change their details.",
   "kit.server.adminOnly": "Only the app's administrator may do this.",
   "kit.server.agentRoleUnknown": "The app has no agent role \u201C{role}\u201D.",
   "kit.server.emailInvalid": "\u201C{email}\u201D is not a valid e-mail.",
@@ -65,10 +66,7 @@ var en_default = {
   "kit.server.passwordChangeFirst": "First change your password.",
   "kit.server.passwordEmpty": "The password must not be empty.",
   "kit.server.passwordSame": "The new password must differ from the current one.",
-  "kit.server.passwordWrong": "The current password is wrong.",
   "kit.server.roleInvalid": "The role is \u201Cadmin\u201D (administrator) or \u201Cuser\u201D, not \u201C{role}\u201D.",
-  "kit.server.selfDelete": "You cannot delete your own account \u2014 another administrator will do it.",
-  "kit.server.selfPassword": "Change your own password in My account.",
   "kit.server.selfRole": "You cannot change your own role or switch off your own account \u2014 another administrator will do it.",
   "kit.server.sessionUnknown": "There is no such session \u2014 perhaps it has already ended.",
   "kit.server.setting.choice": "\u201C{label}\u201D must be one of the choices \u2014 \u201C{value}\u201D is not among them.",
@@ -95,6 +93,7 @@ var en_default = {
 // server/src/nex_app_kit/locales/hu.json
 var hu_default = {
   "kit.server.accountInactive": "Ez a fi\xF3k ki van kapcsolva. Fordulj az alkalmaz\xE1s rendszergazd\xE1j\xE1hoz.",
+  "kit.server.adminDelete": "Rendszergazda nem t\xF6r\xF6lhet\u0151 \u2014 az adatait m\xF3dos\xEDthatod.",
   "kit.server.adminOnly": "Ezt csak az alkalmaz\xE1s rendszergazd\xE1ja teheti meg.",
   "kit.server.agentRoleUnknown": "Az alkalmaz\xE1snak nincs \u201E{role}\u201C \xFCgyn\xF6k-szerepk\xF6re.",
   "kit.server.emailInvalid": "\u201E{email}\u201C nem \xE9rv\xE9nyes e-mail-c\xEDm.",
@@ -128,10 +127,7 @@ var hu_default = {
   "kit.server.passwordChangeFirst": "El\u0151bb m\xF3dos\xEDtsd a jelszavadat.",
   "kit.server.passwordEmpty": "A jelsz\xF3 nem lehet \xFCres.",
   "kit.server.passwordSame": "Az \xFAj jelsz\xF3nak k\xFCl\xF6nb\xF6znie kell a jelenlegit\u0151l.",
-  "kit.server.passwordWrong": "A jelenlegi jelsz\xF3 hib\xE1s.",
   "kit.server.roleInvalid": "A szerepk\xF6r \u201Eadmin\u201C (rendszergazda) vagy \u201Euser\u201C (felhaszn\xE1l\xF3) lehet, nem \u201E{role}\u201C.",
-  "kit.server.selfDelete": "A saj\xE1t fi\xF3kodat nem t\xF6r\xF6lheted \u2014 ezt egy m\xE1sik rendszergazda teheti meg.",
-  "kit.server.selfPassword": "A saj\xE1t jelszavadat a Saj\xE1t fi\xF3kban m\xF3dos\xEDtsd.",
   "kit.server.selfRole": "A saj\xE1t szerepk\xF6r\xF6det nem m\xF3dos\xEDthatod, \xE9s a saj\xE1t fi\xF3kodat nem kapcsolhatod ki \u2014 ezt egy m\xE1sik rendszergazda teheti meg.",
   "kit.server.sessionUnknown": "Nincs ilyen munkamenet \u2014 lehet, hogy m\xE1r v\xE9get \xE9rt.",
   "kit.server.setting.choice": "\u201E{label}\u201C \xE9rt\xE9ke csak a v\xE1laszt\xE9kb\xF3l lehet \u2014 \u201E{value}\u201C nincs benne.",
@@ -158,6 +154,7 @@ var hu_default = {
 // server/src/nex_app_kit/locales/sk.json
 var sk_default = {
   "kit.server.accountInactive": "Tento \xFA\u010Det je vypnut\xFD. Obr\xE1\u0165 sa na spr\xE1vcu aplik\xE1cie.",
+  "kit.server.adminDelete": "Spr\xE1vcu nemo\u017Eno vymaza\u0165 \u2014 m\xF4\u017Ee\u0161 zmeni\u0165 jeho \xFAdaje.",
   "kit.server.adminOnly": "Toto smie len spr\xE1vca aplik\xE1cie.",
   "kit.server.agentRoleUnknown": "Rolu agenta \u201E{role}\u201C aplik\xE1cia nem\xE1.",
   "kit.server.emailInvalid": "\u201E{email}\u201C nie je platn\xFD e-mail.",
@@ -191,10 +188,7 @@ var sk_default = {
   "kit.server.passwordChangeFirst": "Najprv si zme\u0148 heslo.",
   "kit.server.passwordEmpty": "Heslo nesmie by\u0165 pr\xE1zdne.",
   "kit.server.passwordSame": "Nov\xE9 heslo mus\xED by\u0165 in\xE9 ako s\xFA\u010Dasn\xE9.",
-  "kit.server.passwordWrong": "S\xFA\u010Dasn\xE9 heslo je nespr\xE1vne.",
   "kit.server.roleInvalid": "Rola je \u201Eadmin\u201C (spr\xE1vca) alebo \u201Euser\u201C (pou\u017E\xEDvate\u013E), nie \u201E{role}\u201C.",
-  "kit.server.selfDelete": "Vlastn\xFD \xFA\u010Det nezma\u017Ee\u0161 \u2014 urob\xED to in\xFD spr\xE1vca.",
-  "kit.server.selfPassword": "Svoje heslo si zme\u0148 v Moje konto.",
   "kit.server.selfRole": "Vlastn\xFA rolu si nezmen\xED\u0161 a vlastn\xFD \xFA\u010Det nevypne\u0161 \u2014 urob\xED to in\xFD spr\xE1vca.",
   "kit.server.sessionUnknown": "Tak\xE1 rel\xE1cia nie je \u2014 mo\u017Eno u\u017E skon\u010Dila.",
   "kit.server.setting.choice": "\u201E{label}\u201C mus\xED by\u0165 z ponuky \u2014 \u201E{value}\u201C v nej nie je.",

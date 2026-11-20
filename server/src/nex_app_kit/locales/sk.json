@@ -1,5 +1,6 @@
 {
   "kit.server.accountInactive": "Tento účet je vypnutý. Obráť sa na správcu aplikácie.",
+  "kit.server.adminDelete": "Správcu nemožno vymazať — môžeš zmeniť jeho údaje.",
   "kit.server.adminOnly": "Toto smie len správca aplikácie.",
   "kit.server.agentRoleUnknown": "Rolu agenta „{role}“ aplikácia nemá.",
   "kit.server.emailInvalid": "„{email}“ nie je platný e-mail.",
@@ -33,10 +34,7 @@
   "kit.server.passwordChangeFirst": "Najprv si zmeň heslo.",
   "kit.server.passwordEmpty": "Heslo nesmie byť prázdne.",
   "kit.server.passwordSame": "Nové heslo musí byť iné ako súčasné.",
-  "kit.server.passwordWrong": "Súčasné heslo je nesprávne.",
   "kit.server.roleInvalid": "Rola je „admin“ (správca) alebo „user“ (používateľ), nie „{role}“.",
-  "kit.server.selfDelete": "Vlastný účet nezmažeš — urobí to iný správca.",
-  "kit.server.selfPassword": "Svoje heslo si zmeň v Moje konto.",
   "kit.server.selfRole": "Vlastnú rolu si nezmeníš a vlastný účet nevypneš — urobí to iný správca.",
   "kit.server.sessionUnknown": "Taká relácia nie je — možno už skončila.",
   "kit.server.setting.choice": "„{label}“ musí byť z ponuky — „{value}“ v nej nie je.",
