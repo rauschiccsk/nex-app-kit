@@ -3,7 +3,7 @@
 # them.
 FROM python:3.12-slim
 WORKDIR /app
-COPY pyproject.toml ./
+{{CLAUDE_CODE_INSTALL}}COPY pyproject.toml ./
 RUN python -c "import tomllib; print('\n'.join(tomllib.load(open('pyproject.toml', 'rb'))['project']['dependencies']))" > /tmp/requirements.txt \
     && pip install --no-cache-dir -r /tmp/requirements.txt
 COPY alembic.ini ./

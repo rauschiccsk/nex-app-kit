@@ -110,6 +110,25 @@ kokpitu) vyzerá ako doteraz.
 
 Cesty, kto ich smie a pravidlá relácie opisuje [KONTRAKT.md](KONTRAKT.md).
 
+**Claude len cez predplatné (DEV-460).** Aplikácia s AI volá Clauda výhradne cez `nex_app_kit.claude` — Claude Code
+s ročným kódom predplatného Claude (`claude setup-token`) v `CLAUDE_CODE_OAUTH_TOKEN`, nikdy knižnicou `anthropic`
+s kľúčom API (štandard ICC D-001). Vlastný prístup ku Claudovi aplikácia nepíše. Kostra aplikácie s AI dostane Claude
+Code v obraze servera a v `.env.example` povinné tajomstvo zákazníka „Ročný kód predplatného Claude“.
+
+```python
+from nex_app_kit import claude
+
+answer = claude.ask(prompt, family=kit.agent_choice("assistant").model or "sonnet", system=SYSTEM,
+                    schema=Result.model_json_schema(), images=[claude.Image(png, "image/png")], timeout=300)
+answer.data, answer.model, answer.usage, answer.cost_usd     # štruktúrovaný výstup, presný model, spotreba
+status = claude.check(language)                               # „ok“ alebo kód chyby a veta pre človeka
+```
+
+Rodina je `fable`, `opus`, `sonnet` alebo `haiku` (nikdy pevná verzia). Zlyhanie je `claude.ClaudeFailure` s kódom
+(`token_missing`, `token_rejected`, `limit`, `timeout`, `unavailable`, `bad_answer`) a vetou v jazyku človeka
+(`failure.sentence(language)`). Volanie je synchrónne — z asynchrónnej cesty ho aplikácia spúšťa cez
+`asyncio.to_thread` alebo vo svojom workeri.
+
 ## Kostra nového projektu
 
 `scaffold/<šablóna>/` je to, čo kokpit zapíše do nového projektu na šablóne: frontend s rámom a náhľadom Vizuálu,

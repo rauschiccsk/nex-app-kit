@@ -161,6 +161,18 @@ def catalogs(values: dict) -> dict[str, str]:
     return files
 
 
+#: DEV-460: an app with AI calls Claude through the subscription — Claude Code in its server image
+#: (``nex_app_kit.claude``).
+CLAUDE_CODE_INSTALL = """# DEV-460: Claude through the subscription (Claude Code, the yearly code), never an API key.
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl \\
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \\
+    && apt-get install -y --no-install-recommends nodejs \\
+    && npm install -g @anthropic-ai/claude-code \\
+    && claude --version \\
+    && rm -rf /var/lib/apt/lists/*
+"""
+
+
 def substitutions(values: dict) -> dict[str, str]:
     return {
         "{{BACKEND_AUTH_ENV}}": AUTH_ENV[values["auth"]],
@@ -173,6 +185,7 @@ def substitutions(values: dict) -> dict[str, str]:
         "{{DB_PORT}}": str(values["db_port"]),
         "{{KIT_FRONTEND}}": values["kit_frontend"],
         "{{KIT_SERVER}}": values["kit_server"],
+        "{{CLAUDE_CODE_INSTALL}}": CLAUDE_CODE_INSTALL if values["ai"] else "",
     }
 
 
@@ -205,6 +218,8 @@ def render(template: str, values: dict, target: Path) -> list[Path]:
         out.write_text(text, encoding="utf-8")
         written.append(out)
     block = fill((source / "env" / f"{values['auth']}.env").read_text(encoding="utf-8"), subs)
+    if values["ai"]:  # DEV-460: the yearly code of the Claude subscription — the customer secret of an app with AI
+        block += fill((source / "env" / "ai.env").read_text(encoding="utf-8"), subs)
     left += [f"env/{values['auth']}.env: {m}" for m in PLACEHOLDER.findall(block)]
     if left:
         raise ScaffoldError([f"Nevyplnené miesto v kostre — {x}" for x in left])

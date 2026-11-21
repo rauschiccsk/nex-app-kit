@@ -104,6 +104,7 @@ def test_a_placeholder_the_renderer_does_not_know_is_refused(tmp_path, monkeypat
     (source / "x" / "env").mkdir(parents=True)
     (source / "x" / "a.txt").write_text("{{NEZNAME}}", encoding="utf-8")
     (source / "x" / "env" / "password.env").write_text("", encoding="utf-8")
+    (source / "x" / "env" / "ai.env").write_text("", encoding="utf-8")  # DEV-460: the block of an app with AI
     monkeypatch.setattr(render, "HERE", source)
 
     with pytest.raises(render.ScaffoldError) as caught:
@@ -168,3 +169,26 @@ def test_the_command_line_says_the_problems_and_ends_with_1(tmp_path, capsys):
 
     assert render.main(["nsv-standard", "--values", str(values), "--out", str(tmp_path / "out")]) == 1
     assert "Prihlásenie je „password“ alebo „manager“, nie „token“." in capsys.readouterr().err
+
+
+def test_an_app_with_ai_gets_claude_code_and_the_yearly_code_never_an_api_key(tmp_path):
+    """DEV-460 — 21.11.2026 Orthodox Hermenia called Claude with an Anthropic API key and nothing with AI worked in
+    PROD; an app with AI reaches Claude through the subscription: Claude Code in its image, the yearly code as its
+    secret."""
+    render.render("nsv-standard", VALUES, tmp_path)
+
+    dockerfile = (tmp_path / "backend" / "Dockerfile").read_text("utf-8")
+    block = (tmp_path / ".env.example.template-block").read_text("utf-8")
+    assert "npm install -g @anthropic-ai/claude-code" in dockerfile and "claude --version" in dockerfile
+    assert (
+        "# @customer-secret required: „Ročný kód predplatného Claude (claude setup-token)“\nCLAUDE_CODE_OAUTH_TOKEN="
+        in block
+    )
+    assert "ANTHROPIC_API_KEY" not in block + dockerfile
+
+
+def test_an_app_without_ai_gets_neither(tmp_path):
+    render.render("nsv-standard", {**VALUES, "ai": False}, tmp_path)
+
+    assert "claude-code" not in (tmp_path / "backend" / "Dockerfile").read_text("utf-8")
+    assert "CLAUDE_CODE_OAUTH_TOKEN" not in (tmp_path / ".env.example.template-block").read_text("utf-8")

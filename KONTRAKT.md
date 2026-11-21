@@ -38,7 +38,7 @@ nej — cesta, ktorá chýba alebo pribudla len na jednej strane, je červená.
 | `GET /system-settings` | vždy | Systémové nastavenia aplikácie: kľúč, hodnota, typ, popis, predvolená hodnota, ponuka (`choices`). |
 | `PATCH /system-settings/{key}` | vždy | Zmena jedného nastavenia: `value`; pri nastavení s ponukou len hodnota z nej. |
 | `GET /agent-settings` | AI | Model a úsilie pre každú rolu agenta z manifestu. |
-| `GET /agent-settings/models` | AI | Modely na výber (rodina — opus, sonnet, haiku —, nikdy verzia). |
+| `GET /agent-settings/models` | AI | Modely na výber (rodina — fable, opus, sonnet, haiku —, nikdy verzia; fable od v0.18.0). |
 | `PUT /agent-settings/{role}` | AI | Uloženie modelu a úsilia pre rolu: `model`, `effort`. |
 | `GET /user-layout` | vždy | Rozloženie obrazovky prihláseného používateľa: `sidebar_width`, `sidebar_collapsed` a hranice šírky `limits.sidebar_width` (`min`, `max`, `default`). |
 | `PUT /user-layout` | vždy | Uloženie rozloženia; posielajú sa len zmenené polia, šírka `null` = predvolená, šírka mimo hraníc = 422. |

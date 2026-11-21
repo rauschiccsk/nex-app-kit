@@ -7,6 +7,18 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.18.0
+- `[nové]` **Claude cez predplatné pre každú aplikáciu s AI.** Šablóna dodá spoločný prístup ku Claudovi
+  (`nex_app_kit.claude`): Claude Code s ročným kódom predplatného Claude (`CLAUDE_CODE_OAUTH_TOKEN`) — rodina modelu,
+  štruktúrovaný výstup podľa schémy, obrázky na vstupe, časový strop, presný model a spotreba z výsledku behu, chyby
+  s vetou v jazyku človeka (kód chýba, kód odmietnutý, limit predplatného, strop, nedostupné) a overenie spojenia.
+  Orthodox Hermenia si prístup napísala sama, knižnicou `anthropic` s kľúčom API, proti štandardu ICC „len predplatné
+  Claude“ — ročný kód z karty zákazníka bol odmietnutý a v PROD nefungovalo nič, čo potrebuje AI. Aplikácia už vlastný
+  prístup nepíše (DEV-460).
+- `[nové]` **Kostra aplikácie s AI** má Claude Code v obraze servera a v `.env.example` povinné tajomstvo zákazníka
+  „Ročný kód predplatného Claude (claude setup-token)“.
+- `[API]` **Agenti si vyberajú aj rodinu Fable** (`GET /agent-settings/models`: fable, opus, sonnet, haiku).
+
 ## v0.17.0
 - `[oprava]` **Správca si v Používateľoch zmení meno aj heslo.** V Orthodox Hermenia správca menil svoje meno, prehliadač
   mu do prázdneho poľa hesla vložil uložené heslo a uloženie skončilo hláškou „Svoje heslo si zmeň v Moje konto.“ Pole

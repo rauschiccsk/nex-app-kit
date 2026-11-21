@@ -22,7 +22,7 @@ from sqlalchemy import delete, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as Db
 
-from . import docs
+from . import claude, docs
 from .errors import KitError, conflict, invalid, not_found, request_language
 from .i18n import tr
 from .installation import Installation
@@ -38,7 +38,8 @@ if TYPE_CHECKING:
     from .kit import AppKit
 
 ROLES = ("admin", "user")
-MODEL_FAMILIES = (("opus", "Opus"), ("sonnet", "Sonnet"), ("haiku", "Haiku"))
+#: DEV-460: the agents choose from the families Claude is called with (``claude.FAMILIES``) — Fable among them.
+MODEL_FAMILIES = tuple((family, family.capitalize()) for family in claude.FAMILIES)
 EFFORTS = ("low", "medium", "high", "xhigh", "max")
 USERNAME = re.compile(r"^[A-Za-z0-9._@-]{3,50}$")
 NAME_MAX = 100

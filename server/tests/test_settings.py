@@ -187,7 +187,7 @@ def test_each_role_of_the_manifest_has_a_row_empty_until_chosen(make_app):
         {"role": "assistant", "model": "", "effort": ""},
         {"role": "reviewer", "model": "", "effort": ""},
     ]
-    assert [m["id"] for m in models] == ["opus", "sonnet", "haiku"]
+    assert [m["id"] for m in models] == ["fable", "opus", "sonnet", "haiku"]  # DEV-460
 
 
 def test_an_admin_chooses_model_and_effort_and_the_app_reads_them(make_app):
@@ -206,7 +206,12 @@ def test_an_admin_chooses_model_and_effort_and_the_app_reads_them(make_app):
 @pytest.mark.parametrize(
     "role,body,status,sentence",
     [
-        ("assistant", {"model": "claude-opus-4"}, 422, "Model je jeden z: opus, sonnet, haiku — nie „claude-opus-4“."),
+        (
+            "assistant",
+            {"model": "claude-opus-4"},
+            422,
+            "Model je jeden z: fable, opus, sonnet, haiku — nie „claude-opus-4“.",
+        ),
         (
             "assistant",
             {"effort": "ultracode"},

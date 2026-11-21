@@ -286,7 +286,7 @@ interface SessionRead extends UserSessionRead {
 }
 interface AgentSettingRead {
     role: string;
-    /** A model family (opus, sonnet, haiku), never a version; empty = the app's default. */
+    /** A model family (fable, opus, sonnet, haiku), never a version; empty = the app's default. */
     model: string;
     effort: string;
 }
