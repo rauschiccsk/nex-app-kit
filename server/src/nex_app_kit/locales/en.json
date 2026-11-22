@@ -5,6 +5,7 @@
   "kit.server.agentRoleUnknown": "The app has no agent role “{role}”.",
   "kit.server.claudeBadAnswer": "Claude answered in the wrong shape. Try again.",
   "kit.server.claudeLimit": "The Claude subscription has reached its limit. Try again later.",
+  "kit.server.claudeModelUnavailable": "The application's Claude Code does not know the Claude {family} model. Choose another model in Settings or update the application.",
   "kit.server.claudeTimeout": "Claude did not answer within {seconds} s. Try again.",
   "kit.server.claudeTokenMissing": "The yearly Claude subscription code is not set. The administrator enters it at the customer in the cockpit and deploys the app again.",
   "kit.server.claudeTokenRejected": "Claude refused the yearly subscription code — it is invalid or revoked. The administrator enters a new one at the customer in the cockpit and deploys the app again.",

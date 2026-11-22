@@ -25,7 +25,7 @@ OK = {
     "total_cost_usd": 0.0008,
     "duration_ms": 1500,
     "usage": {"input_tokens": 2, "output_tokens": 55, "cache_creation_input_tokens": 10, "cache_read_input_tokens": 0},
-    "modelUsage": {"claude-haiku-5-5": {}},
+    "modelUsage": {"claude-haiku-5-5": {}, "claude-sonnet-5-5": {}},
 }
 REJECTED = {
     "type": "result",
@@ -172,3 +172,32 @@ def test_check_says_ok_with_the_model_or_the_sentence(fake):
     status = claude.check("hu")
     assert (status.state, status.model) == (claude.TOKEN_REJECTED, None)
     assert status.sentence.startswith("A Claude elutasította")
+
+
+# ── DEV-490: the model of the asked family — never the helper listed first, never a quiet substitute ───────────────
+
+#: As Claude Code 2.1.197 answered in Orthodox Hermenia's image (measured 22.11.2026): its helper Haiku listed first.
+SONNET_WITH_HELPER = {**OK, "modelUsage": {"claude-haiku-4-5-20251001": {}, "claude-sonnet-5": {}}}
+#: „fable“ on the same Claude Code: it does not know the family and ran its default Opus 4.8.
+FABLE_ON_AN_OLD_CLAUDE_CODE = {**OK, "modelUsage": {"claude-haiku-4-5-20251001": {}, "claude-opus-4-8": {}}}
+
+
+def test_the_model_is_the_one_of_the_asked_family_not_the_helper_listed_first(fake):
+    """22.11.2026 Orthodox Hermenia's protocol said Haiku for every task on Sonnet — the first model listed."""
+    fake(SONNET_WITH_HELPER)
+
+    assert claude.ask("x", family="sonnet").model == "claude-sonnet-5"
+
+
+def test_a_family_claude_code_does_not_know_fails_aloud_never_a_quiet_substitute(fake):
+    """22.11.2026 „fable“ ran on Opus 4.8 and the app said nothing — it runs the model it is set to, or says so."""
+    fake(FABLE_ON_AN_OLD_CLAUDE_CODE)
+
+    with pytest.raises(claude.ClaudeFailure) as failure:
+        claude.ask("x", family="fable")
+
+    assert failure.value.code == claude.MODEL_UNAVAILABLE
+    assert failure.value.sentence("sk") == (
+        "Nástroj Claude Code v aplikácii nepozná model Claude Fable. "
+        "Zvoľte v Nastaveniach iný model alebo aplikáciu aktualizujte."
+    )

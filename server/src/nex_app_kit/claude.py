@@ -47,6 +47,9 @@ LIMIT = "limit"
 TIMEOUT = "timeout"
 UNAVAILABLE = "unavailable"
 BAD_ANSWER = "bad_answer"
+#: DEV-490: Claude Code answered with another model than the asked family — it does not know the family (an older
+#: Claude Code runs its own default instead: 22.11.2026 Orthodox Hermenia's „fable“ ran on Opus 4.8).
+MODEL_UNAVAILABLE = "model_unavailable"
 
 _SENTENCES = {
     TOKEN_MISSING: "kit.server.claudeTokenMissing",
@@ -55,6 +58,7 @@ _SENTENCES = {
     TIMEOUT: "kit.server.claudeTimeout",
     UNAVAILABLE: "kit.server.claudeUnavailable",
     BAD_ANSWER: "kit.server.claudeBadAnswer",
+    MODEL_UNAVAILABLE: "kit.server.claudeModelUnavailable",
 }
 
 
@@ -176,7 +180,7 @@ def ask(
             raise ClaudeFailure(TIMEOUT, f"no answer in {timeout:.0f} s", {"seconds": int(timeout)}) from None
         except OSError as exc:
             raise ClaudeFailure(UNAVAILABLE, str(exc)) from exc
-    return _answer(done, schema is not None)
+    return _answer(done, schema is not None, family)
 
 
 def _result_event(stdout: str) -> dict[str, Any] | None:
@@ -190,7 +194,13 @@ def _result_event(stdout: str) -> dict[str, Any] | None:
     return None
 
 
-def _answer(done: subprocess.CompletedProcess, structured: bool) -> Answer:
+def _served(model_usage: dict[str, Any], family: str) -> str | None:
+    """The model of the asked family among those that worked on the turn — Claude Code lists a helper model too
+    (``claude-haiku-…`` beside ``claude-sonnet-5``); the first one listed is not the one that answered (DEV-490)."""
+    return next((model for model in model_usage if family in model.lower()), None)
+
+
+def _answer(done: subprocess.CompletedProcess, structured: bool, family: str) -> Answer:
     result = _result_event(done.stdout)
     if result is None:
         raise ClaudeFailure(UNAVAILABLE, f"exit {done.returncode}: {(done.stderr or done.stdout).strip()}")
@@ -198,10 +208,19 @@ def _answer(done: subprocess.CompletedProcess, structured: bool) -> Answer:
     if result.get("is_error") or done.returncode != 0:
         raise ClaudeFailure(_failure_code(result.get("api_error_status"), text), text)
     usage = result.get("usage") or {}
+    model_usage = result.get("modelUsage") or {}
+    model = _served(model_usage, family)
+    if model_usage and model is None:
+        # DEV-490: never a quiet substitute — the app runs the model it is set to, or says it cannot.
+        raise ClaudeFailure(
+            MODEL_UNAVAILABLE,
+            f"asked for {family}, answered by {', '.join(model_usage)}",
+            {"family": family.capitalize()},
+        )
     answer = Answer(
         text=text,
         data=result.get("structured_output"),
-        model=next(iter(result.get("modelUsage") or {}), None),
+        model=model,
         usage={
             key: int(usage.get(key) or 0)
             for key in ("input_tokens", "output_tokens", "cache_creation_input_tokens", "cache_read_input_tokens")

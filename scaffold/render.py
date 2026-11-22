@@ -162,14 +162,19 @@ def catalogs(values: dict) -> dict[str, str]:
 
 
 #: DEV-460: an app with AI calls Claude through the subscription — Claude Code in its server image
-#: (``nex_app_kit.claude``).
+#: (``nex_app_kit.claude``). Node.js comes first: it seldom changes and its layer stays.
 CLAUDE_CODE_INSTALL = """# DEV-460: Claude through the subscription (Claude Code, the yearly code), never an API key.
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl \\
     && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \\
     && apt-get install -y --no-install-recommends nodejs \\
-    && npm install -g @anthropic-ai/claude-code \\
-    && claude --version \\
     && rm -rf /var/lib/apt/lists/*
+"""
+#: DEV-490: Claude Code itself after the app's code and documents — a new version of the app (or any change of its
+#: code) builds this layer again and takes the newest Claude Code. Installed first, its layer stayed in the build
+#: cache: 22.11.2026 Orthodox Hermenia, built the day before, still ran Claude Code 2.1.197 from early November —
+#: „opus“ was Opus 4.8 and „fable“ unknown. The families resolve to the newest models only with a current Claude Code.
+CLAUDE_CODE_LATEST = """# DEV-490: the newest Claude Code with every new version of the app.
+RUN npm install -g @anthropic-ai/claude-code@latest && claude --version
 """
 
 
@@ -186,6 +191,7 @@ def substitutions(values: dict) -> dict[str, str]:
         "{{KIT_FRONTEND}}": values["kit_frontend"],
         "{{KIT_SERVER}}": values["kit_server"],
         "{{CLAUDE_CODE_INSTALL}}": CLAUDE_CODE_INSTALL if values["ai"] else "",
+        "{{CLAUDE_CODE_LATEST}}": CLAUDE_CODE_LATEST if values["ai"] else "",
     }
 
 

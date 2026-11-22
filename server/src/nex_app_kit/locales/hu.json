@@ -5,6 +5,7 @@
   "kit.server.agentRoleUnknown": "Az alkalmazásnak nincs „{role}“ ügynök-szerepköre.",
   "kit.server.claudeBadAnswer": "A Claude rossz formában válaszolt. Próbálja újra.",
   "kit.server.claudeLimit": "A Claude-előfizetés elérte a korlátját. Próbálja újra később.",
+  "kit.server.claudeModelUnavailable": "Az alkalmazásban lévő Claude Code eszköz nem ismeri a Claude {family} modellt. Válasszon másik modellt a Beállításokban, vagy frissítse az alkalmazást.",
   "kit.server.claudeTimeout": "A Claude {seconds} másodpercen belül nem válaszolt. Próbálja újra.",
   "kit.server.claudeTokenMissing": "A Claude-előfizetés éves kódja nincs megadva. A rendszergazda a vezérlőpulton az ügyfélnél adja meg, majd újra telepíti az alkalmazást.",
   "kit.server.claudeTokenRejected": "A Claude elutasította az előfizetés éves kódját — érvénytelen vagy visszavonták. A rendszergazda a vezérlőpulton az ügyfélnél ad meg újat, majd újra telepíti az alkalmazást.",

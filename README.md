@@ -124,10 +124,13 @@ answer.data, answer.model, answer.usage, answer.cost_usd     # štruktúrovaný 
 status = claude.check(language)                               # „ok“ alebo kód chyby a veta pre človeka
 ```
 
-Rodina je `fable`, `opus`, `sonnet` alebo `haiku` (nikdy pevná verzia). Zlyhanie je `claude.ClaudeFailure` s kódom
-(`token_missing`, `token_rejected`, `limit`, `timeout`, `unavailable`, `bad_answer`) a vetou v jazyku človeka
-(`failure.sentence(language)`). Volanie je synchrónne — z asynchrónnej cesty ho aplikácia spúšťa cez
-`asyncio.to_thread` alebo vo svojom workeri.
+Rodina je `fable`, `opus`, `sonnet` alebo `haiku` (nikdy pevná verzia) — na najnovší model ju preloží Claude Code,
+preto ho kostra inštaluje v obraze až za kódom aplikácie a každá nová verzia vezme najnovší (od v0.19.0, DEV-490).
+`answer.model` je model zvolenej rodiny, ktorý naozaj odpovedal (nie pomocný model, ktorý Claude Code uvedie vedľa).
+Rodinu, ktorú Claude Code nepozná, nikdy nenahradí iný model: volanie zlyhá kódom `model_unavailable`. Zlyhanie je
+`claude.ClaudeFailure` s kódom (`token_missing`, `token_rejected`, `limit`, `timeout`, `unavailable`, `bad_answer`,
+`model_unavailable`) a vetou v jazyku človeka (`failure.sentence(language)`). Volanie je synchrónne — z asynchrónnej
+cesty ho aplikácia spúšťa cez `asyncio.to_thread` alebo vo svojom workeri.
 
 ## Kostra nového projektu
 

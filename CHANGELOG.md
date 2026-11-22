@@ -7,6 +7,18 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.19.0
+- `[oprava]` **Každá nová verzia aplikácie vezme najnovší Claude Code.** Kostra aplikácie s AI inštaluje Node.js vpredu
+  obrazu servera a samotný Claude Code až za kódom a dokumentmi aplikácie — nová verzia (aj zmena kódu) tú vrstvu
+  postaví znova. Doteraz stál hneď na začiatku a jeho vrstva ostávala v pamäti stavby: Orthodox Hermenia postavená
+  21.11.2026 mala Claude Code zo začiatku novembra a rodina „opus“ v nej spúšťala starší Opus 4.8 (DEV-490).
+  Existujúca aplikácia to dostane úpravou svojho `backend/Dockerfile` podľa kostry.
+- `[oprava]` **Model, ktorý naozaj odpovedal.** `answer.model` je model zvolenej rodiny — Claude Code vedľa neho uvádza
+  aj pomocný model a šablóna doteraz brala prvý uvedený, takže protokol pri úlohe na Sonnete či Opuse hlásil Haiku.
+- `[oprava]` **Žiadna tichá náhrada modelu.** Keď Claude Code zvolenú rodinu nepozná a odpovie iným modelom, volanie
+  zlyhá kódom `model_unavailable` s vetou pre človeka (sk, hu, en) — aplikácia spustí presne model z Nastavení, alebo
+  povie, že to nejde.
+
 ## v0.18.0
 - `[nové]` **Claude cez predplatné pre každú aplikáciu s AI.** Šablóna dodá spoločný prístup ku Claudovi
   (`nex_app_kit.claude`): Claude Code s ročným kódom predplatného Claude (`CLAUDE_CODE_OAUTH_TOKEN`) — rodina modelu,

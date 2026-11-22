@@ -187,6 +187,33 @@ def test_an_app_with_ai_gets_claude_code_and_the_yearly_code_never_an_api_key(tm
     assert "ANTHROPIC_API_KEY" not in block + dockerfile
 
 
+def test_claude_code_is_installed_after_the_apps_code_so_a_new_version_takes_the_newest(tmp_path):
+    """DEV-490 — installed first, the layer of Claude Code stayed in the build cache: 22.11.2026 Orthodox Hermenia,
+    built the day before, ran Claude Code 2.1.197 from early November („opus“ was Opus 4.8, „fable“ unknown). Node.js
+    stays in front (it seldom changes); Claude Code comes after the app's code and documents, before the app's user."""
+    render.render("nsv-standard", VALUES, tmp_path)
+
+    lines = (tmp_path / "backend" / "Dockerfile").read_text("utf-8").splitlines()
+    at = {
+        key: next(i for i, line in enumerate(lines) if key in line)
+        for key in (
+            "nodesource.com/setup_20.x",
+            "COPY pyproject.toml",
+            "COPY app ./app",
+            "COPY --from=docs specs/versions",
+            "npm install -g @anthropic-ai/claude-code@latest",
+            "USER 1000",
+        )
+    }
+
+    assert at["nodesource.com/setup_20.x"] < at["COPY pyproject.toml"], "Node.js in front, where its layer stays"
+    assert at["COPY app ./app"] < at["npm install -g @anthropic-ai/claude-code@latest"]
+    assert (
+        at["COPY --from=docs specs/versions"] < at["npm install -g @anthropic-ai/claude-code@latest"] < at["USER 1000"]
+    )
+    assert sum("@anthropic-ai/claude-code" in line for line in lines) == 1, "installed once, after the code"
+
+
 def test_an_app_without_ai_gets_neither(tmp_path):
     render.render("nsv-standard", {**VALUES, "ai": False}, tmp_path)
 

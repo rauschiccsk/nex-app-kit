@@ -5,6 +5,7 @@
   "kit.server.agentRoleUnknown": "Rolu agenta „{role}“ aplikácia nemá.",
   "kit.server.claudeBadAnswer": "Claude odpovedal v nesprávnom tvare. Skúste to znova.",
   "kit.server.claudeLimit": "Predplatné Claude vyčerpalo svoj limit. Skúste to znova neskôr.",
+  "kit.server.claudeModelUnavailable": "Nástroj Claude Code v aplikácii nepozná model Claude {family}. Zvoľte v Nastaveniach iný model alebo aplikáciu aktualizujte.",
   "kit.server.claudeTimeout": "Claude neodpovedal do {seconds} s. Skúste to znova.",
   "kit.server.claudeTokenMissing": "Ročný kód predplatného Claude nie je zadaný. Správca ho zadá pri zákazníkovi v kokpite a aplikáciu nasadí znova.",
   "kit.server.claudeTokenRejected": "Claude odmietol ročný kód predplatného — je neplatný alebo zrušený. Správca zadá nový pri zákazníkovi v kokpite a aplikáciu nasadí znova.",
