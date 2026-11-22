@@ -7,6 +7,14 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.19.1
+- `[oprava]` **Aplikácia prijme veľký súbor.** Webový server kostry (`frontend/nginx.conf`) prijme súbor až do 2000 MB a
+  veľké nahrávanie dostane čas dôjsť k serveru; o skutočnom limite rozhoduje nastavenie aplikácie, ktoré väčší súbor
+  odmietne vetou. Doteraz kostra veľkosť neuvádzala, platil predvolený 1 MB nginx a každý väčší súbor skončil holou
+  chybou 413 — Orthodox Hermenia 22.11.2026 neprijala ani jedno PDF etalónu (DEV-495). CI šablóny teraz pošle 2 MB cez
+  skutočný webový server vyplnenej aplikácie. Existujúca aplikácia to dostane úpravou svojho `frontend/nginx.conf`
+  podľa kostry.
+
 ## v0.19.0
 - `[oprava]` **Každá nová verzia aplikácie vezme najnovší Claude Code.** Kostra aplikácie s AI inštaluje Node.js vpredu
   obrazu servera a samotný Claude Code až za kódom a dokumentmi aplikácie — nová verzia (aj zmena kódu) tú vrstvu

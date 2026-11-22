@@ -122,6 +122,19 @@ jobs:
           docker compose run --rm test
           docker compose up -d --wait backend frontend
           docker compose exec -T backend python -c "import json, urllib.request; h = json.load(urllib.request.urlopen('http://127.0.0.1:8000/health')); print(h); assert h['checks']['database'] == 'ok'"
+          # DEV-495: a file over 1 MB passes the app's real nginx to the backend (nginx alone answered 413 before).
+          docker compose exec -T backend python - <<'PY'
+          import urllib.error
+          import urllib.request
+
+          probe = urllib.request.Request("http://frontend/api/v1/__upload_probe", data=b"0" * 2_000_000, method="POST")
+          try:
+              code = urllib.request.urlopen(probe, timeout=60).status
+          except urllib.error.HTTPError as refused:
+              code = refused.code
+          print("2 MB through the app nginx:", code)
+          assert code != 413, code
+          PY
       - name: What the filled app's services said (only when the run failed)
         if: ${{ failure() }}
         run: |

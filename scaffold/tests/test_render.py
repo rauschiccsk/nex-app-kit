@@ -219,3 +219,22 @@ def test_an_app_without_ai_gets_neither(tmp_path):
 
     assert "claude-code" not in (tmp_path / "backend" / "Dockerfile").read_text("utf-8")
     assert "CLAUDE_CODE_OAUTH_TOKEN" not in (tmp_path / ".env.example.template-block").read_text("utf-8")
+
+
+def _directive(conf: str, name: str) -> list[str]:
+    """The values of an nginx directive in the order they stand (``name value;``)."""
+    return [line.split(None, 1)[1].rstrip(";").strip() for line in conf.splitlines() if line.strip().startswith(name)]
+
+
+def test_the_apps_web_server_takes_a_file_as_large_as_an_app_may_allow(tmp_path):
+    """DEV-495 — 22.11.2026 Orthodox Hermenia could not take a single etalon PDF (11–347 MiB): its nginx, filled from
+    this scaffold, set no size and refused everything over 1 MB (nginx's default) with a bare 413. The scaffold allows
+    up to 2000 MB, so the app's own setting decides the limit; a large upload gets time to reach the backend. (The CI
+    sends 2 MB through the filled app's real nginx — this test only keeps the lines from going missing.)"""
+    render.render("nsv-standard", VALUES, tmp_path)
+
+    conf = (tmp_path / "frontend" / "nginx.conf").read_text("utf-8")
+
+    assert _directive(conf, "client_max_body_size") == ["2000m"]
+    assert _directive(conf, "proxy_read_timeout") == ["300s"]
+    assert _directive(conf, "proxy_send_timeout") == ["300s"]
