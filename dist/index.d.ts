@@ -2,7 +2,7 @@ import { A as AppManifest, U as UserLayout, a as UserLayoutChanges, S as Standar
 export { b as ADMIN_ROLE, c as AgentModelOption, d as AgentRole, e as AgentSettingRead, f as AiConfig, g as AppAuthMode, h as AppManifestInput, E as EndpointId, i as EndpointScope, G as GettingStartedRead, H as HealthRead, L as LayoutLimit, M as ManifestError, N as NAV_LABEL_MAX, j as NavEntry, k as NewUser, P as PASSWORD_MIN_LENGTH, l as ProfileChanges, m as STANDARD_ENDPOINTS, n as STANDARD_ROLES, o as TEMPLATE_IDS, p as TEMPLATE_PATHS, q as UserChanges, r as createStandardApi, s as defineApp } from './standard-api-C1iIU1e6.js';
 import * as react from 'react';
 import { ReactNode, ComponentType } from 'react';
-import { ApiClient, Translate, AppMessages, Language } from 'nex-shared';
+import { ApiClient, PageWidth, DataTableProps, Translate, AppMessages, Language } from 'nex-shared';
 import { StoreApi } from 'zustand';
 
 interface ModuleDefinition {
@@ -27,6 +27,32 @@ interface TemplateAppProps {
     children?: ReactNode;
 }
 declare function TemplateApp({ manifest, client, frontendVersion, overview, children }: TemplateAppProps): react.JSX.Element;
+
+interface KitPageProps {
+    title: ReactNode;
+    /** The screen's name for the back link of the next screen, when the title is not plain text. */
+    crumb?: string;
+    subtitle?: ReactNode;
+    actions?: ReactNode;
+    width?: PageWidth;
+    children?: ReactNode;
+}
+/** „← <previous screen>“ — nothing on a screen that starts a walk. */
+declare function KitBackLink({ label }: {
+    label: string;
+}): react.JSX.Element | null;
+declare function KitPage({ title, crumb, subtitle, actions, width, children }: KitPageProps): react.JSX.Element;
+
+declare const TIGHT_ROWS = "[&_th]:px-2 [&_th]:py-1 [&_td]:px-2 [&_td]:py-0.5 [&_td]:leading-tight [&_td_button]:py-0.5 [&_td_input]:py-0.5 [&_td_select]:py-0.5";
+declare function KitTable<Row>({ className, ...props }: DataTableProps<Row>): react.JSX.Element;
+interface KitFieldsProps {
+    rows: {
+        label: ReactNode;
+        value: ReactNode;
+    }[];
+}
+/** A label–value list of a document header or a summary, as tight as the table. */
+declare function KitFields({ rows }: KitFieldsProps): react.JSX.Element;
 
 interface LayoutState {
     /** `null` until read from the server; the screen keeps its defaults meanwhile. */
@@ -72,6 +98,7 @@ interface TemplateProps {
 declare const TEMPLATES: Readonly<Record<TemplateId, ComponentType<TemplateProps>>>;
 
 declare const kitSk: {
+    "kit.back.to": string;
     "kit.error.reload": string;
     "kit.error.text": string;
     "kit.error.title": string;
@@ -125,4 +152,4 @@ declare function useKitT(): Translate;
 /** The person's language: their own choice, else the installation's, else the app's first — one it speaks. */
 declare function chooseLanguage(offered: readonly Language[], personal: string | null | undefined, installation: string | null | undefined): Language;
 
-export { AppManifest, CurrentUser, type Frame, KIT_MESSAGES, type KitMessageKey, MODULES, type ModuleDefinition, StandardApi, TEMPLATES, TemplateApp, type TemplateAppProps, TemplateId, type TemplateProps, UserLayout, UserLayoutChanges, chooseLanguage, mergeMessages, personName, roleLabel, useFrame, useKitT };
+export { AppManifest, CurrentUser, type Frame, KIT_MESSAGES, KitBackLink, KitFields, type KitFieldsProps, type KitMessageKey, KitPage, type KitPageProps, KitTable, MODULES, type ModuleDefinition, StandardApi, TEMPLATES, TIGHT_ROWS, TemplateApp, type TemplateAppProps, TemplateId, type TemplateProps, UserLayout, UserLayoutChanges, chooseLanguage, mergeMessages, personName, roleLabel, useFrame, useKitT };

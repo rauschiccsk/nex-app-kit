@@ -2,6 +2,7 @@
 import type { Message } from "nex-shared";
 
 export const kitSk = {
+  "kit.back.to": "Späť na: {screen}",
   "kit.error.reload": "Obnoviť",
   "kit.error.text": "Túto stránku sa nepodarilo zobraziť. Skús ju obnoviť; ak sa to opakuje, povedz o tom správcovi aplikácie.",
   "kit.error.title": "⚠️ Stránka narazila na chybu",

@@ -23,6 +23,10 @@ export type {
   UserLayoutChanges,
 } from "./standard-api";
 export { TemplateApp } from "./TemplateApp";
+export { KitBackLink, KitPage } from "./screens/KitPage";
+export type { KitPageProps } from "./screens/KitPage";
+export { KitFields, KitTable, TIGHT_ROWS } from "./screens/KitTable";
+export type { KitFieldsProps } from "./screens/KitTable";
 export type { TemplateAppProps } from "./TemplateApp";
 export { useFrame } from "./frame/FrameContext";
 export type { Frame } from "./frame/FrameContext";

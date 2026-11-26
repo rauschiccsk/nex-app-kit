@@ -7,6 +7,15 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.20.0
+- `[nové]` **Šípka späť na predchádzajúcu obrazovku a tesné riadky pre každú aplikáciu.** `KitPage` je obrazovka
+  aplikácie: keď na ňu človek prišiel z inej, nad nadpisom má „← názov predchádzajúcej obrazovky“ a vráti sa ním aj
+  s filtrom a záložkou, postupne cez viac krokov; položka ľavého panela začína novú cestu (`KitBackLink`, pamäť cesty
+  v karte prehliadača). `KitTable` je DataTable z nex-shared s tesnými riadkami — tlačidlá a polia v bunke riadok
+  nenaťahujú — a `KitFields` zoznam pole–hodnota hlavičky dokladu. Kostra nového projektu stavia Prehľad cez
+  `KitPage`. Doteraz si to každý projekt staval sám, až keď to Manažér vo Vizuáli vypýtal — NEX DualBook 0.1.0
+  26.11.2026 (DEV-517). Existujúca aplikácia prejde na tieto časti vo svojej ďalšej verzii.
+
 ## v0.19.1
 - `[oprava]` **Aplikácia prijme veľký súbor.** Webový server kostry (`frontend/nginx.conf`) prijme súbor až do 2000 MB a
   veľké nahrávanie dostane čas dôjsť k serveru; o skutočnom limite rozhoduje nastavenie aplikácie, ktoré väčší súbor

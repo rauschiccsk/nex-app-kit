@@ -177,6 +177,7 @@ import { createTranslator as createTranslator2, useLanguage, useT } from "nex-sh
 
 // src/locales/en.ts
 var kitEn = {
+  "kit.back.to": "Back to: {screen}",
   "kit.error.reload": "Reload",
   "kit.error.text": "This page could not be shown. Try reloading it; if it happens again, tell the app's administrator.",
   "kit.error.title": "\u26A0\uFE0F The page ran into an error",
@@ -222,6 +223,7 @@ var kitEn = {
 
 // src/locales/hu.ts
 var kitHu = {
+  "kit.back.to": "Vissza ide: {screen}",
   "kit.error.reload": "Friss\xEDt\xE9s",
   "kit.error.text": "Ezt az oldalt nem siker\xFClt megjelen\xEDteni. Pr\xF3b\xE1ld friss\xEDteni; ha ism\xE9tl\u0151dik, sz\xF3lj az alkalmaz\xE1s rendszergazd\xE1j\xE1nak.",
   "kit.error.title": "\u26A0\uFE0F Hiba t\xF6rt\xE9nt az oldalon",
@@ -267,6 +269,7 @@ var kitHu = {
 
 // src/locales/sk.ts
 var kitSk = {
+  "kit.back.to": "Sp\xE4\u0165 na: {screen}",
   "kit.error.reload": "Obnovi\u0165",
   "kit.error.text": "T\xFAto str\xE1nku sa nepodarilo zobrazi\u0165. Sk\xFAs ju obnovi\u0165; ak sa to opakuje, povedz o tom spr\xE1vcovi aplik\xE1cie.",
   "kit.error.title": "\u26A0\uFE0F Str\xE1nka narazila na chybu",
@@ -1303,9 +1306,84 @@ function TemplateApp({ manifest, client, frontendVersion, overview, children }) 
   }, [language]);
   return /* @__PURE__ */ jsx13(I18nProvider, { language, messages, children: /* @__PURE__ */ jsx13(ThemeProvider, { username: user?.username, children: /* @__PURE__ */ jsx13(InstallationContext.Provider, { value: installation, children: screen }) }) });
 }
+
+// src/screens/KitPage.tsx
+import { useEffect as useEffect9, useMemo as useMemo5 } from "react";
+import { useLocation as useLocation4, useNavigate as useNavigate2 } from "react-router-dom";
+import { Page as Page3 } from "nex-shared";
+
+// src/screens/navHistory.ts
+import { create } from "zustand";
+var useNavHistory = create((set) => ({
+  stack: [],
+  visit: (screen, startsWalk) => set(({ stack }) => {
+    if (startsWalk) return { stack: [screen] };
+    const at = stack.findIndex((s) => s.pathname === screen.pathname);
+    if (at >= 0) return { stack: [...stack.slice(0, at), screen] };
+    return { stack: [...stack, screen] };
+  })
+}));
+
+// src/screens/KitPage.tsx
+import { Fragment as Fragment3, jsx as jsx14, jsxs as jsxs9 } from "react/jsx-runtime";
+function KitBackLink({ label }) {
+  const t = useKitT();
+  const { manifest } = useFrame();
+  const location = useLocation4();
+  const navigate = useNavigate2();
+  const { stack, visit } = useNavHistory();
+  const path = `${location.pathname}${location.search}`;
+  const starts = useMemo5(
+    () => /* @__PURE__ */ new Set([...TEMPLATE_PATHS, ...manifest.nav.map((entry) => entry.path)]),
+    [manifest.nav]
+  );
+  useEffect9(() => {
+    visit({ pathname: location.pathname, path, label }, starts.has(location.pathname));
+  }, [location.pathname, path, label, starts, visit]);
+  const at = stack.findIndex((s) => s.pathname === location.pathname);
+  const previous = at > 0 ? stack[at - 1] : null;
+  if (!previous) return null;
+  return /* @__PURE__ */ jsxs9(
+    "button",
+    {
+      type: "button",
+      onClick: () => navigate(previous.path),
+      className: "mb-2 flex items-center gap-1 text-sm text-[var(--color-accent,#2563eb)] hover:underline",
+      "aria-label": t("kit.back.to", { screen: previous.label }),
+      children: [
+        /* @__PURE__ */ jsx14("span", { "aria-hidden": "true", children: "\u2190" }),
+        /* @__PURE__ */ jsx14("span", { children: previous.label })
+      ]
+    }
+  );
+}
+function KitPage({ title, crumb, subtitle, actions, width, children }) {
+  return /* @__PURE__ */ jsxs9(Fragment3, { children: [
+    /* @__PURE__ */ jsx14(KitBackLink, { label: crumb ?? (typeof title === "string" ? title : "") }),
+    /* @__PURE__ */ jsx14(Page3, { title, subtitle, actions, width, children })
+  ] });
+}
+
+// src/screens/KitTable.tsx
+import { DataTable } from "nex-shared";
+import { jsx as jsx15, jsxs as jsxs10 } from "react/jsx-runtime";
+var TIGHT_ROWS = "[&_th]:px-2 [&_th]:py-1 [&_td]:px-2 [&_td]:py-0.5 [&_td]:leading-tight [&_td_button]:py-0.5 [&_td_input]:py-0.5 [&_td_select]:py-0.5";
+function KitTable({ className = "", ...props }) {
+  return /* @__PURE__ */ jsx15(DataTable, { ...props, className: `${TIGHT_ROWS} ${className}`.trim() });
+}
+function KitFields({ rows }) {
+  return /* @__PURE__ */ jsx15("dl", { className: "grid grid-cols-1 gap-x-8 text-sm leading-tight sm:grid-cols-2 xl:grid-cols-3", children: rows.map((row, i) => /* @__PURE__ */ jsxs10("div", { className: "flex justify-between gap-4 border-b border-[var(--color-border,#e5e7eb)] py-0.5", children: [
+    /* @__PURE__ */ jsx15("dt", { className: "text-[var(--color-text-secondary)]", children: row.label }),
+    /* @__PURE__ */ jsx15("dd", { className: "text-right", children: row.value })
+  ] }, i)) });
+}
 export {
   ADMIN_ROLE,
   KIT_MESSAGES,
+  KitBackLink,
+  KitFields,
+  KitPage,
+  KitTable,
   MODULES,
   ManifestError,
   NAV_LABEL_MAX,
@@ -1315,6 +1393,7 @@ export {
   TEMPLATES,
   TEMPLATE_IDS,
   TEMPLATE_PATHS,
+  TIGHT_ROWS,
   TemplateApp,
   chooseLanguage,
   createStandardApi,

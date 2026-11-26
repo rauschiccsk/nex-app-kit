@@ -70,6 +70,26 @@ getToken: () => null })`) a cookie ide s nimi sama.
 
 Aplikácia inštaluje aj `@tailwindcss/typography` (Ako začať je v tvare Markdown).
 
+
+## Obrazovky a tabuľky (DEV-517, od v0.20.0)
+
+Každú obrazovku aplikácie stavaj cez `KitPage` (namiesto `Page` z nex-shared): keď na ňu človek prišiel z inej
+obrazovky, má nad nadpisom „← názov predchádzajúcej obrazovky“ a vráti sa ním aj s filtrom a záložkou, postupne cez
+viac krokov; položka ľavého panela (aj obrazovky šablóny) začína novú cestu. Keď nadpis nie je obyčajný text, daj
+obrazovke meno pre šípku ďalšej obrazovky v `crumb`.
+
+```tsx
+<KitPage title={invoice.number} actions={<Button>Upraviť</Button>}>
+  <KitFields rows={[{ label: "Dodávateľ", value: invoice.supplier }]} />
+  <KitTable columns={columns} rows={invoice.items} getRowKey={(i) => i.id} />
+</KitPage>
+```
+
+Tabuľky stavaj cez `KitTable` (DataTable z nex-shared s tesnými riadkami — tlačidlá a polia v bunke riadok
+nenaťahujú) a zoznam pole–hodnota (hlavička dokladu, súhrn) cez `KitFields`. Riadky sú čo najnižšie pri čitateľnom
+texte. Vzniklo vo Vizuáli NEX DualBook 0.1.0 (26.11.2026) na pokyn: „…pre všetky nové projekty a ne riešiť ich
+osobitne.“
+
 ## Server
 
 Python balík `nex_app_kit` v priečinku `server/` (FastAPI, SQLAlchemy 2, Alembic):

@@ -5,6 +5,7 @@ import type { Message } from "nex-shared";
 import type { KitMessageKey } from "./sk";
 
 export const kitHu: Record<KitMessageKey, Message> = {
+  "kit.back.to": "Vissza ide: {screen}",
   "kit.error.reload": "Frissítés",
   "kit.error.text": "Ezt az oldalt nem sikerült megjeleníteni. Próbáld frissíteni; ha ismétlődik, szólj az alkalmazás rendszergazdájának.",
   "kit.error.title": "⚠️ Hiba történt az oldalon",

@@ -5,6 +5,7 @@ import type { Message } from "nex-shared";
 import type { KitMessageKey } from "./sk";
 
 export const kitEn: Record<KitMessageKey, Message> = {
+  "kit.back.to": "Back to: {screen}",
   "kit.error.reload": "Reload",
   "kit.error.text": "This page could not be shown. Try reloading it; if it happens again, tell the app's administrator.",
   "kit.error.title": "⚠️ The page ran into an error",
