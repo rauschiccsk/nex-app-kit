@@ -7,6 +7,13 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.21.0
+- `[vzhľad]` **Nová aplikácia má polia so šírkou podľa údaja.** Kostra aj kit sú na `nex-shared` v0.41.0: pole a výber
+  už nie sú roztiahnuté cez celú obrazovku — čas je úzky, dátum, číslo a telefón o niečo širšie, bežné pole vyplní
+  svoj stĺpec najviac do rozumnej šírky a výber je široký ako jeho možnosti; dlhý text dostane `width="full"`.
+  NEX HelpDesk 26.11.2026 mal čas „08:00“ cez celú obrazovku a druhý čas za jej okrajom (DEV-518). Existujúca
+  aplikácia to dostane vo svojej ďalšej verzii, keď Manažér povýši nex-shared.
+
 ## v0.20.0
 - `[nové]` **Šípka späť na predchádzajúcu obrazovku a tesné riadky pre každú aplikáciu.** `KitPage` je obrazovka
   aplikácie: keď na ňu človek prišiel z inej, nad nadpisom má „← názov predchádzajúcej obrazovky“ a vráti sa ním aj
