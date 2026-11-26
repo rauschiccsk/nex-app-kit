@@ -34,7 +34,7 @@ describe("saving a form (DEV-520)", () => {
     const { calls } = renderApp({ path: "/settings", user: ADMIN, answers: { "PATCH /auth/me": (body: unknown) => ({ ...ADMIN, ...(body as object) }) } });
     fireEvent.click(await screen.findByRole("tab", { name: "Moje konto" }));
     const save = screen.getByRole("button", { name: "Uložiť" });
-    const cancel = screen.getAllByRole("button", { name: "Zrušiť" })[0];
+    const cancel = screen.getAllByRole("button", { name: "Zrušiť" })[0] as HTMLElement;
     const name = screen.getByLabelText("Meno") as HTMLInputElement;
 
     expect(save).toBeDisabled();
