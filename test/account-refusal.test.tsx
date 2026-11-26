@@ -45,6 +45,8 @@ describe("Moje konto — the server's reason (DEV-309)", () => {
       "POST /auth/change-password": new ApiError(500, "Internal Server Error", null),
     });
 
+    // Since DEV-520 Uložiť is active only after a change (the Director 26.11.2026).
+    fireEvent.change(screen.getByLabelText("Meno"), { target: { value: "Jano" } });
     fireEvent.click(screen.getByRole("button", { name: "Uložiť" }));
     expect(await screen.findByText("Uloženie zlyhalo. Skús to znova.")).toBeInTheDocument();
 

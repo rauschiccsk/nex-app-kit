@@ -87,8 +87,11 @@ describe("the admin sets a person's language in Používatelia", () => {
     const { calls } = await users();
     const editEva = () => fireEvent.click(within(screen.getByText("eva").closest("tr") as HTMLElement).getByTitle("Upraviť"));
 
+    // Since DEV-520 a person is saved only after a change (the Director 26.11.2026) — the first save changes the name,
+    // not the language, and must not send it.
     editEva();
-    fireEvent.click(await screen.findByRole("button", { name: "Uložiť" }));
+    fireEvent.change(await screen.findByLabelText("Meno"), { target: { value: "Evka" } });
+    fireEvent.click(screen.getByRole("button", { name: "Uložiť" }));
     await waitFor(() => expect(calls.filter((c) => c.method === "PATCH")).toHaveLength(1));
     editEva();
     fireEvent.change(await screen.findByLabelText("Jazyk"), { target: { value: "hu" } });

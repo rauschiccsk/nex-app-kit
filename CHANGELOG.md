@@ -7,6 +7,14 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.22.0
+- `[vzhľad]` **Každý formulár ukladá rovnako.** Kit aj kostra sú na `nex-shared` v0.42.1: pod formulárom sú Zrušiť a
+  Uložiť, obe aktívne len pri zmene (`SaveBar`, `hasChanges`); Zrušiť zahodí zmeny, v okne ho zavrie. Pri tlačidle sa
+  „Uložené“ už nepíše — `announceSaved()` ukáže „✓ Uložené“ zelenou vpravo hore a rám aplikácie mu dáva miesto.
+  Nastavenia šablóny (Systém, Agenti, Moje konto, Používatelia) tak ukladajú už teraz. NEX HelpDesk 26.11.2026
+  ukazoval „Uložené.“ pri tlačidle aj po zmene, ktorá uložená nebola (DEV-520). Existujúca aplikácia to dostane vo
+  svojej ďalšej verzii, keď Manažér povýši nex-shared; vlastnú lištu formulára nahradí `SaveBar`.
+
 ## v0.21.0
 - `[vzhľad]` **Nová aplikácia má polia so šírkou podľa údaja.** Kostra aj kit sú na `nex-shared` v0.41.2: pole a výber
   už nie sú roztiahnuté cez celú obrazovku — čas je úzky, dátum, číslo a telefón o niečo širšie, bežné pole vyplní
