@@ -117,5 +117,42 @@
     "problems": [
       "Zoznam jazykov (languages) je prázdny — aplikácia hovorí aspoň jedným."
     ]
+  },
+  {
+    "why": "DEV-523: an app with its own password may have a web",
+    "input": {
+      "template": "nsv-standard",
+      "name": "Orthodox Register",
+      "initials": "OR",
+      "auth": "password",
+      "web": true
+    },
+    "problems": []
+  },
+  {
+    "why": "DEV-523: a web only with the app's own password, and web is true or false",
+    "input": {
+      "template": "nsv-standard",
+      "name": "Orthodox Register",
+      "initials": "OR",
+      "auth": "manager",
+      "web": true
+    },
+    "problems": [
+      "Webový frontend (web) má len aplikácia s vlastným heslom (auth „password“) — web sa prihlasuje e-mailom."
+    ]
+  },
+  {
+    "why": "DEV-523: web is true or false",
+    "input": {
+      "template": "nsv-standard",
+      "name": "Orthodox Register",
+      "initials": "OR",
+      "auth": "password",
+      "web": "áno"
+    },
+    "problems": [
+      "Webový frontend (web) je true alebo false."
+    ]
   }
 ]

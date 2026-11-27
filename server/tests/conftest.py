@@ -79,8 +79,10 @@ class Clock:
         self.now += timedelta(**delta)
 
 
-def manifest(auth: str = "password", ai: bool = False, languages: list[str] | None = None):
+def manifest(auth: str = "password", ai: bool = False, languages: list[str] | None = None, web: bool = False):
     data = {"template": "nsv-standard", "name": "NEX Skúška", "initials": "NS", "auth": auth}
+    if web:
+        data["web"] = True
     if languages is not None:
         data["languages"] = languages
     if ai:
@@ -197,6 +199,7 @@ def make_app(factory: sessionmaker) -> Callable[..., App]:
         on_account_change=None,
         languages: list[str] | None = None,
         server_messages: dict | None = None,
+        web: bool = False,
     ) -> App:
         clock = Clock()
         fake = FakeManager() if auth == "manager" else None
@@ -213,7 +216,7 @@ def make_app(factory: sessionmaker) -> Callable[..., App]:
             else None
         )
         kit = AppKit(
-            manifest=manifest(auth, ai, languages),
+            manifest=manifest(auth, ai, languages, web),
             version="1.2.3",
             session_factory=factory,
             settings=settings,
@@ -233,3 +236,25 @@ def make_app(factory: sessionmaker) -> Callable[..., App]:
 
 def new_id() -> str:
     return str(uuid.uuid4())
+
+
+def down_to(connection, target: str) -> None:
+    """Run the kit's own downgrades on *connection* down to *target* — as ``migrate._run`` runs its upgrades. A test
+    that needs a database of an older kit gets exactly that, the web's tables (DEV-523) and every later change undone;
+    a hand-written undo forgets what came after it."""
+    from alembic.operations import Operations
+    from alembic.runtime.migration import MigrationContext
+    from alembic.script import ScriptDirectory
+
+    from nex_app_kit.migrate import MIGRATIONS, VERSION_TABLE
+
+    script = ScriptDirectory(str(MIGRATIONS))
+
+    def to_target(revision, _context):
+        return script._downgrade_revs(target, revision)
+
+    context = MigrationContext.configure(
+        connection, opts={"script": script, "fn": to_target, "version_table": VERSION_TABLE}
+    )
+    with Operations.context(context):
+        context.run_migrations()

@@ -123,16 +123,17 @@ def test_the_kit_migrates_first_from_inside_the_app_s_own_alembic(tmp_path, migr
     with migrated.begin() as connection:
         connection.execute(text("DROP TABLE IF EXISTS app_notes"))
         connection.execute(text("DROP TABLE IF EXISTS alembic_version"))
-        for table in (
-            "kit_user_layouts",
-            "kit_agent_settings",
-            "kit_system_settings",
-            "kit_used_launch_tokens",
-            "kit_sessions",
-            "kit_users",
-            "kit_alembic_version",
-        ):
-            connection.execute(text(f"DROP TABLE {table} CASCADE"))
+        # Every table of the kit, read from the database — a list here forgot the web's tables (DEV-523).
+        kit_tables = (
+            connection.execute(
+                text("SELECT tablename FROM pg_tables WHERE schemaname = current_schema() AND tablename LIKE 'kit\\_%'")
+            )
+            .scalars()
+            .all()
+        )
+        assert "kit_users" in kit_tables and "kit_alembic_version" in kit_tables
+        for table in kit_tables:
+            connection.execute(text(f'DROP TABLE IF EXISTS "{table}" CASCADE'))
     (tmp_path / "versions").mkdir()
     (tmp_path / "env.py").write_text(APP_ENV, encoding="utf-8")
     (tmp_path / "versions" / "app_0001.py").write_text(APP_MIGRATION, encoding="utf-8")

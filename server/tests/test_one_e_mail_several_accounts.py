@@ -16,7 +16,7 @@ from sqlalchemy import inspect, select, text
 from nex_app_kit import User
 from nex_app_kit.migrate import MIGRATIONS
 
-from .conftest import password_kit
+from .conftest import down_to, password_kit
 from .test_launch import launch, ticket
 from .test_users import NEW, signed_in_admin
 
@@ -80,11 +80,11 @@ def test_the_database_holds_no_rule_on_the_e_mail(migrated):
 
 def test_a_database_migrated_before_loses_the_rule(migrated, factory):
     """What every installed app has: kit_0001 with ``uq_kit_users_email``."""
+    # The kit's own migrations take the database back to kit_0001 — every later one undone, the web's tables
+    # (DEV-523, kit_0004) included; a hand-written undo here forgot them.
     with migrated.begin() as connection:
-        connection.execute(text("ALTER TABLE kit_users ADD CONSTRAINT uq_kit_users_email UNIQUE (email)"))
-        # kit_0001 had no person's language either (DEV-394, kit_0003)
-        connection.execute(text("ALTER TABLE kit_users DROP COLUMN language"))
-        connection.execute(text("UPDATE kit_alembic_version SET version_num = 'kit_0001'"))
+        down_to(connection, "kit_0001")
+        assert connection.execute(text("SELECT version_num FROM kit_alembic_version")).scalars().all() == ["kit_0001"]
 
     password_kit(factory).upgrade_database(migrated)
 

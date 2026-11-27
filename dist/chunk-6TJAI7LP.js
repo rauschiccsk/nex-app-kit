@@ -37,8 +37,24 @@ var STANDARD_ENDPOINTS = [
   // DEV-377: whom the installation serves — and its installed-app description, which the browser reads by the link in
   // the page's head (the frame points the link there and never calls it itself).
   { id: "installation", method: "GET", path: "/installation", scope: "always" },
-  { id: "installationManifest", method: "GET", path: "/installation/manifest.webmanifest", scope: "always" }
+  { id: "installationManifest", method: "GET", path: "/installation/manifest.webmanifest", scope: "always" },
+  // DEV-523: the web (web/) — its own accounts signed in by e-mail, a registration request the admin decides.
+  { id: "webRegister", method: "POST", path: "/web/auth/register", scope: "web" },
+  { id: "webLogin", method: "POST", path: "/web/auth/login", scope: "web" },
+  { id: "webMe", method: "GET", path: "/web/auth/me", scope: "web" },
+  { id: "webLogout", method: "POST", path: "/web/auth/logout", scope: "web" },
+  { id: "listWebAccounts", method: "GET", path: "/web-accounts", scope: "web" },
+  { id: "approveWebAccount", method: "POST", path: "/web-accounts/{id}/approve", scope: "web" },
+  { id: "rejectWebAccount", method: "POST", path: "/web-accounts/{id}/reject", scope: "web" },
+  { id: "disableWebAccount", method: "POST", path: "/web-accounts/{id}/disable", scope: "web" },
+  { id: "enableWebAccount", method: "POST", path: "/web-accounts/{id}/enable", scope: "web" }
 ];
+var WEB_ACTION_ENDPOINT = {
+  approve: "approveWebAccount",
+  reject: "rejectWebAccount",
+  disable: "disableWebAccount",
+  enable: "enableWebAccount"
+};
 function createStandardApi(client) {
   function call(id, params = {}, body) {
     const endpoint = STANDARD_ENDPOINTS.find((e) => e.id === id);
@@ -85,7 +101,13 @@ function createStandardApi(client) {
     getLayout: () => call("getLayout"),
     saveLayout: (changes) => call("saveLayout", {}, changes),
     releaseNotes: () => call("releaseNotes"),
-    gettingStarted: () => call("gettingStarted")
+    gettingStarted: () => call("gettingStarted"),
+    webRegister: (registration) => call("webRegister", {}, registration),
+    webLogin: (email, password) => call("webLogin", {}, { email, password }),
+    webMe: () => call("webMe"),
+    webLogout: () => call("webLogout"),
+    listWebAccounts: () => call("listWebAccounts"),
+    decideWebAccount: (id, action) => call(WEB_ACTION_ENDPOINT[action], { id })
   };
 }
 

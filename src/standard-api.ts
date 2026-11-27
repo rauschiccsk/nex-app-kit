@@ -17,8 +17,8 @@ export const ADMIN_ROLE = "admin";
 export const PASSWORD_MIN_LENGTH = 1;
 
 /** When an app has the endpoint: always, with its own password (users live in the app), launched from NEX Manager,
- *  or with AI agents — the column „kedy“ of KONTRAKT.md. */
-export type EndpointScope = "always" | "password" | "manager" | "ai";
+ *  with AI agents, or with a web (DEV-523) — the column „kedy“ of KONTRAKT.md. */
+export type EndpointScope = "always" | "password" | "manager" | "ai" | "web";
 
 export const STANDARD_ENDPOINTS = [
   { id: "login", method: "POST", path: "/auth/login", scope: "password" },
@@ -52,6 +52,16 @@ export const STANDARD_ENDPOINTS = [
   // the page's head (the frame points the link there and never calls it itself).
   { id: "installation", method: "GET", path: "/installation", scope: "always" },
   { id: "installationManifest", method: "GET", path: "/installation/manifest.webmanifest", scope: "always" },
+  // DEV-523: the web (web/) — its own accounts signed in by e-mail, a registration request the admin decides.
+  { id: "webRegister", method: "POST", path: "/web/auth/register", scope: "web" },
+  { id: "webLogin", method: "POST", path: "/web/auth/login", scope: "web" },
+  { id: "webMe", method: "GET", path: "/web/auth/me", scope: "web" },
+  { id: "webLogout", method: "POST", path: "/web/auth/logout", scope: "web" },
+  { id: "listWebAccounts", method: "GET", path: "/web-accounts", scope: "web" },
+  { id: "approveWebAccount", method: "POST", path: "/web-accounts/{id}/approve", scope: "web" },
+  { id: "rejectWebAccount", method: "POST", path: "/web-accounts/{id}/reject", scope: "web" },
+  { id: "disableWebAccount", method: "POST", path: "/web-accounts/{id}/disable", scope: "web" },
+  { id: "enableWebAccount", method: "POST", path: "/web-accounts/{id}/enable", scope: "web" },
 ] as const satisfies readonly { id: string; method: string; path: string; scope: EndpointScope }[];
 
 export type EndpointId = (typeof STANDARD_ENDPOINTS)[number]["id"];
@@ -149,6 +159,29 @@ export interface InstallationRead {
   languages?: string[];
 }
 
+/** DEV-523 — an account of the web: `pending` (the request waits for the admin), `active`, `rejected`, `disabled`. */
+export type WebAccountStatus = "pending" | "active" | "rejected" | "disabled";
+
+export interface WebAccountRead {
+  id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  status: WebAccountStatus;
+  created_at: string | null;
+  decided_at: string | null;
+}
+
+export interface WebRegistration {
+  email: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+}
+
+/** What the admin does with an account of the web — each allowed from one state (KONTRAKT.md → Web). */
+export type WebAccountAction = "approve" | "reject" | "disable" | "enable";
+
 export interface StandardApi {
   login(username: string, password: string): Promise<CurrentUser>;
   logout(): Promise<void>;
@@ -174,7 +207,20 @@ export interface StandardApi {
   saveLayout(changes: UserLayoutChanges): Promise<UserLayout>;
   releaseNotes(): Promise<ReleaseNote[]>;
   gettingStarted(): Promise<GettingStartedRead>;
+  webRegister(registration: WebRegistration): Promise<WebAccountRead>;
+  webLogin(email: string, password: string): Promise<WebAccountRead>;
+  webMe(): Promise<WebAccountRead>;
+  webLogout(): Promise<void>;
+  listWebAccounts(): Promise<WebAccountRead[]>;
+  decideWebAccount(id: string, action: WebAccountAction): Promise<WebAccountRead>;
 }
+
+const WEB_ACTION_ENDPOINT: Record<WebAccountAction, EndpointId> = {
+  approve: "approveWebAccount",
+  reject: "rejectWebAccount",
+  disable: "disableWebAccount",
+  enable: "enableWebAccount",
+};
 
 /** The frame's calls, each to the path and method its row in {@link STANDARD_ENDPOINTS} names. */
 export function createStandardApi(client: ApiClient): StandardApi {
@@ -226,5 +272,11 @@ export function createStandardApi(client: ApiClient): StandardApi {
     saveLayout: (changes) => call("saveLayout", {}, changes),
     releaseNotes: () => call("releaseNotes"),
     gettingStarted: () => call("gettingStarted"),
+    webRegister: (registration) => call("webRegister", {}, registration),
+    webLogin: (email, password) => call("webLogin", {}, { email, password }),
+    webMe: () => call("webMe"),
+    webLogout: () => call("webLogout"),
+    listWebAccounts: () => call("listWebAccounts"),
+    decideWebAccount: (id, action) => call(WEB_ACTION_ENDPOINT[action], { id }),
   };
 }

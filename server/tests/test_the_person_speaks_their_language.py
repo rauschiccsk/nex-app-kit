@@ -11,7 +11,7 @@ import json
 import re
 from pathlib import Path
 
-from sqlalchemy import inspect, text
+from sqlalchemy import inspect
 
 from nex_app_kit.i18n import CATALOGS, LANGUAGES, language_of, tr
 from nex_app_kit.manifest import ManifestError, manifest_from_data
@@ -128,11 +128,11 @@ def test_the_templates_settings_are_named_in_the_persons_language(make_app):
 
 
 def test_a_database_from_before_gets_the_persons_language(migrated, factory):
-    from .conftest import password_kit
+    from .conftest import down_to, password_kit
 
     with migrated.begin() as connection:
-        connection.execute(text("ALTER TABLE kit_users DROP COLUMN language"))
-        connection.execute(text("UPDATE kit_alembic_version SET version_num = 'kit_0002'"))
+        down_to(connection, "kit_0002")  # the kit's own downgrades — the web's tables (DEV-523) undone too
+    assert "language" not in {c["name"] for c in inspect(migrated).get_columns("kit_users")}
 
     password_kit(factory).upgrade_database(migrated)
 

@@ -5,6 +5,7 @@
 //   Moje konto   — always; launched from NEX Manager it shows the account, which is changed in NEX Manager
 //   Používatelia — an app with its own password; for an admin only
 //   Relácie      — always; only an admin ends one
+//   Kontá webu   — an app with a web (DEV-523); for an admin only: the requests to decide, accounts off and on
 // Each tab loads its data when it is opened (SettingsShell mounts only the active tab).
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -37,6 +38,7 @@ import {
 } from "../../../standard-api";
 import { chooseLanguage, useKitT } from "../../../i18n";
 import { useInstallationIdentity } from "../../../frame/installation";
+import { WebAccountsTab } from "./WebAccountsTab";
 
 
 /** The cockpit's effort levels — never `ultracode`, which is a setting, not a level. */
@@ -62,11 +64,12 @@ export function settingsConfig(manifest: AppManifest): SettingsKitConfig {
   tabs.push("konto");
   if (manifest.auth === "password") tabs.push("users");
   tabs.push("sessions");
+  if (manifest.web) tabs.push("web");
   return {
     tabs,
     // DEV-394: the tabs are named by nex-shared, in the person's language.
     labels: {},
-    tabVisibleForRole: (tab, role) => (tab === "users" || tab === "agents" ? role === ADMIN_ROLE : true),
+    tabVisibleForRole: (tab, role) => (tab === "users" || tab === "agents" || tab === "web" ? role === ADMIN_ROLE : true),
   };
 }
 
@@ -352,6 +355,7 @@ export function SettingsPage() {
         konto: <AccountTab />,
         users: <UsersTab />,
         sessions: <SessionsTab />,
+        web: <WebAccountsTab />,
       }}
     />
   );

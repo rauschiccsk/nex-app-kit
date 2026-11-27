@@ -1,5 +1,5 @@
-import { A as AppManifest, U as UserLayout, a as UserLayoutChanges, S as StandardApi, C as CurrentUser, T as TemplateId } from './standard-api-C1iIU1e6.js';
-export { b as ADMIN_ROLE, c as AgentModelOption, d as AgentRole, e as AgentSettingRead, f as AiConfig, g as AppAuthMode, h as AppManifestInput, E as EndpointId, i as EndpointScope, G as GettingStartedRead, H as HealthRead, L as LayoutLimit, M as ManifestError, N as NAV_LABEL_MAX, j as NavEntry, k as NewUser, P as PASSWORD_MIN_LENGTH, l as ProfileChanges, m as STANDARD_ENDPOINTS, n as STANDARD_ROLES, o as TEMPLATE_IDS, p as TEMPLATE_PATHS, q as UserChanges, r as createStandardApi, s as defineApp } from './standard-api-C1iIU1e6.js';
+import { A as AppManifest, W as WebAccountRead, S as StandardApi, U as UserLayout, a as UserLayoutChanges, C as CurrentUser, T as TemplateId } from './standard-api-untOWPZ1.js';
+export { b as ADMIN_ROLE, c as AgentModelOption, d as AgentRole, e as AgentSettingRead, f as AiConfig, g as AppAuthMode, h as AppManifestInput, E as EndpointId, i as EndpointScope, G as GettingStartedRead, H as HealthRead, L as LayoutLimit, M as ManifestError, N as NAV_LABEL_MAX, j as NavEntry, k as NewUser, P as PASSWORD_MIN_LENGTH, l as ProfileChanges, m as STANDARD_ENDPOINTS, n as STANDARD_ROLES, o as TEMPLATE_IDS, p as TEMPLATE_PATHS, q as UserChanges, r as WebAccountAction, s as WebAccountStatus, t as WebRegistration, u as createStandardApi, v as defineApp } from './standard-api-untOWPZ1.js';
 import * as react from 'react';
 import { ReactNode, ComponentType } from 'react';
 import { ApiClient, PageWidth, DataTableProps, Translate, AppMessages, Language } from 'nex-shared';
@@ -27,6 +27,23 @@ interface TemplateAppProps {
     children?: ReactNode;
 }
 declare function TemplateApp({ manifest, client, frontendVersion, overview, children }: TemplateAppProps): react.JSX.Element;
+
+interface WebAppProps {
+    manifest: AppManifest;
+    /** The web's API client; by default one for the same address, prefix /api/v1, with the session cookie. */
+    client?: ApiClient;
+    /** The first page of the signed-in person. */
+    home: ReactNode;
+    /** The web's own pages as <Route> elements — for the signed-in person. */
+    children?: ReactNode;
+}
+interface WebFrame {
+    account: WebAccountRead;
+    api: StandardApi;
+}
+/** The account signed in to the web and the standard interface — for the app's own web pages. */
+declare function useWebAccount(): WebFrame;
+declare function WebApp({ manifest, client, home, children }: WebAppProps): react.JSX.Element;
 
 interface KitPageProps {
     title: ReactNode;
@@ -140,6 +157,38 @@ declare const kitSk: {
     "kit.uat": string;
     "kit.unavailable": string;
     "kit.updates.failed": string;
+    "kit.web.accounts.hint": string;
+    "kit.web.accounts.loadFailed": string;
+    "kit.web.accounts.empty": string;
+    "kit.web.accounts.waiting": string;
+    "kit.web.accounts.name": string;
+    "kit.web.accounts.email": string;
+    "kit.web.accounts.status": string;
+    "kit.web.accounts.requested": string;
+    "kit.web.accounts.actionFailed": string;
+    "kit.web.status.pending": string;
+    "kit.web.status.active": string;
+    "kit.web.status.rejected": string;
+    "kit.web.status.disabled": string;
+    "kit.web.action.approve": string;
+    "kit.web.action.reject": string;
+    "kit.web.action.disable": string;
+    "kit.web.action.enable": string;
+    "kit.web.signIn.title": string;
+    "kit.web.signIn.email": string;
+    "kit.web.signIn.password": string;
+    "kit.web.signIn.submit": string;
+    "kit.web.signIn.failed": string;
+    "kit.web.signIn.noAccount": string;
+    "kit.web.signIn.toRegister": string;
+    "kit.web.register.title": string;
+    "kit.web.register.firstName": string;
+    "kit.web.register.lastName": string;
+    "kit.web.register.submit": string;
+    "kit.web.register.failed": string;
+    "kit.web.register.sent": string;
+    "kit.web.register.toSignIn": string;
+    "kit.web.signOut": string;
 };
 type KitMessageKey = keyof typeof kitSk;
 
@@ -152,4 +201,4 @@ declare function useKitT(): Translate;
 /** The person's language: their own choice, else the installation's, else the app's first — one it speaks. */
 declare function chooseLanguage(offered: readonly Language[], personal: string | null | undefined, installation: string | null | undefined): Language;
 
-export { AppManifest, CurrentUser, type Frame, KIT_MESSAGES, KitBackLink, KitFields, type KitFieldsProps, type KitMessageKey, KitPage, type KitPageProps, KitTable, MODULES, type ModuleDefinition, StandardApi, TEMPLATES, TIGHT_ROWS, TemplateApp, type TemplateAppProps, TemplateId, type TemplateProps, UserLayout, UserLayoutChanges, chooseLanguage, mergeMessages, personName, roleLabel, useFrame, useKitT };
+export { AppManifest, CurrentUser, type Frame, KIT_MESSAGES, KitBackLink, KitFields, type KitFieldsProps, type KitMessageKey, KitPage, type KitPageProps, KitTable, MODULES, type ModuleDefinition, StandardApi, TEMPLATES, TIGHT_ROWS, TemplateApp, type TemplateAppProps, TemplateId, type TemplateProps, UserLayout, UserLayoutChanges, WebAccountRead, WebApp, type WebAppProps, chooseLanguage, mergeMessages, personName, roleLabel, useFrame, useKitT, useWebAccount };

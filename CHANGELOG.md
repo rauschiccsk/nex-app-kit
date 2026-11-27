@@ -7,6 +7,19 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.23.0
+- `[nové]` **Aplikácia môže mať web.** Okrem administrácie (`frontend/`, prihlásenie menom) môže mať aplikácia na
+  šablóne aj web (`web/`) na tom istom serveri — manifest `"web": true`, len s vlastným heslom. Web má vlastné kontá:
+  prihlasujú sa e-mailom, ktorý je medzi kontami webu jedinečný, a nezávisia od kont administrácie (tam môže byť jeden
+  e-mail na viacerých kontách). Registrácia je žiadosť: správca ju v administrácii (Nastavenia → Kontá webu) schváli
+  alebo zamietne a aktívne konto môže vypnúť a znova zapnúť. Server: tabuľky `kit_web_accounts` a `kit_web_sessions`
+  (migrácia `kit_0004`), cesty `/web/auth/*` a `/web-accounts` (KONTRAKT.md → Web), vlastné cookie relácie webu.
+  Knižnica: `WebApp` — rám webu s prihlásením e-mailom, žiadosťou o registráciu a hornou lištou — a `useWebAccount`;
+  náhľad Vizuálu odpovedá aj za web. Kostra: `web/` vznikne z vyplneného `frontend/` s rámom webu a vlastným
+  manifestom a textami, `docker-compose.yml` dostane službu `web`; `render.py --add-web` dá web aj projektu, ktorý už
+  na šablóne je, bez zmeny ostatného. Na nex-shared v0.43.0 (záložka „Kontá webu“). Orthodox Register 26.11.2026 —
+  kňazi vo webe, správca v administrácii (DEV-523).
+
 ## v0.22.0
 - `[vzhľad]` **Každý formulár ukladá rovnako.** Kit aj kostra sú na `nex-shared` v0.42.1: pod formulárom sú Zrušiť a
   Uložiť, obe aktívne len pri zmene (`SaveBar`, `hasChanges`); Zrušiť zahodí zmeny, v okne ho zavrie. Pri tlačidle sa

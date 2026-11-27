@@ -39,6 +39,7 @@ from .models import AgentSetting, User
 from .passwords import hash_password
 from .sessions import SAFE_METHODS, AccountChanged, Sessions, same_origin
 from .system_settings import SettingChanged, SettingDefinition, SystemSettings, check_definitions
+from .web import WebSessions
 
 logger = logging.getLogger("nex_app_kit")
 
@@ -101,6 +102,10 @@ class AppKit:
         self._session_factory = session_factory
         self.settings = SystemSettings(definitions, session_factory, clock, on_change=on_setting_change)
         self.sessions = Sessions(self.settings, clock, secure_cookies, manager, on_account_change)
+        # DEV-523: the web's own sessions — used only when the manifest says the app has a web.
+        self.web_sessions = WebSessions(self.settings, clock, secure_cookies)
+        #: The account signed in to the web (a dependency, set when the web is mounted); ``None`` without a web.
+        self.web_account = None
 
         def db() -> Iterator[Db]:
             session = session_factory()
@@ -135,6 +140,10 @@ class AppKit:
         from .routes import build_router
 
         self.router = build_router(self)
+        if manifest.web:
+            from .web import build_web_router
+
+            self.router.include_router(build_web_router(self))
 
     # ── who is asking ──────────────────────────────────────────────────────────────────────────────
     def _signed_in(self, request: Request, db: Db, *, password_change_allowed: bool) -> User:

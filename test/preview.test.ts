@@ -54,7 +54,8 @@ describe("preview answers", () => {
   });
 
   it("the preview covers every endpoint of the table but the launch from NEX Manager", () => {
-    const covered = previewHandlers({ manifest: { ...APP, ai: APP.ai } }).map((h) => `${h.info.method} ${h.info.path}`);
+    // DEV-523: an app with a web — the preview answers the web's endpoints too.
+    const covered = previewHandlers({ manifest: { ...APP, ai: APP.ai, web: true } }).map((h) => `${h.info.method} ${h.info.path}`);
     const wanted = STANDARD_ENDPOINTS.filter((e) => e.scope !== "manager").map(
       (e) => `${e.method} */api/v1${e.path.replace(/\{(\w+)\}/g, ":$1")}`,
     );

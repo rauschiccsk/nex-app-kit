@@ -46,6 +46,25 @@ nej — cesta, ktorá chýba alebo pribudla len na jednej strane, je červená.
 | `GET /getting-started` | vždy | Ako začať: návod k aplikácii v tvare Markdown (`markdown`). |
 | `GET /installation` | vždy | Komu inštalácia slúži: `customer` (meno zákazníka) a `environment` (`uat` / `prod`), obe môžu byť `null`; nastavuje ich kokpit pri nasadení (`NEX_CUSTOMER_NAME`, `NEX_ENVIRONMENT`). DEV-394: aj `languages` (jazyky aplikácie z manifestu) a `language` — jazyk inštalácie pre toho, kto si nevybral (`NEX_LANGUAGE`, ak ho aplikácia má, inak jej hlavný). Aj bez prihlásenia. |
 | `GET /installation/manifest.webmanifest` | vždy | Popis nainštalovanej aplikácie pre túto inštaláciu — meno so zákazníkom a pri UAT so značkou UAT. Aj bez prihlásenia. |
+| `POST /web/auth/register` | web | Žiadosť o konto webu: `email`, `password`, `first_name`, `last_name`; vznikne konto v stave `pending`, ktoré schváli správca; e-mail už použitý vo webe = 409 `KIT-WEB-EMAIL-TAKEN`. |
+| `POST /web/auth/login` | web | Prihlásenie do webu: `email`, `password`; nastaví cookie relácie webu `nex_web_session`; čakajúca, zamietnutá či vypnutá žiadosť = 403 (`KIT-WEB-PENDING`, `KIT-WEB-REJECTED`, `KIT-WEB-DISABLED`). |
+| `GET /web/auth/me` | web | Konto prihlásené do webu: `id`, `email`, `first_name`, `last_name`, `status`. |
+| `POST /web/auth/logout` | web | Odhlásenie z webu v tomto prehliadači. |
+| `GET /web-accounts` | web | Správca: kontá webu so stavom (`pending`, `active`, `rejected`, `disabled`). |
+| `POST /web-accounts/{id}/approve` | web | Správca schváli čakajúcu žiadosť — konto je aktívne. |
+| `POST /web-accounts/{id}/reject` | web | Správca zamietne čakajúcu žiadosť. |
+| `POST /web-accounts/{id}/disable` | web | Správca vypne aktívne konto — odhlási ho vo všetkých prehliadačoch. |
+| `POST /web-accounts/{id}/enable` | web | Správca znova zapne vypnuté konto. |
+
+
+## Web (DEV-523)
+
+Aplikácia s webom (manifest `"web": true`, len s vlastným heslom) má okrem administrácie (`frontend/`, prihlásenie
+menom) aj web (`web/`). Web má **vlastné kontá**: prihlasujú sa e-mailom, ktorý je medzi kontami webu jedinečný
+(veľké a malé písmená sa nerozlišujú), a nezávisia od kont administrácie — tam môže byť jeden e-mail na viacerých
+kontách (DEV-310). Registrácia je **žiadosť**: konto vznikne v stave `pending` a prihlásiť sa dá, až keď ho správca
+v administrácii schváli. Relácia webu má vlastné cookie (`nex_web_session`), rovnaký čas nečinnosti a najdlhší čas ako
+administrácia a do administrácie neprihlási — ani naopak. Vlastné cesty webu aplikácie sa pýtajú `kit.web_account`.
 
 ## Prihlásenie a relácia
 

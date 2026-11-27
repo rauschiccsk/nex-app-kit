@@ -51,6 +51,8 @@ export interface AppManifestInput {
   settings?: { categories?: SettingsCategory[] };
   /** DEV-394 — the languages the app speaks, its main one first (default: Slovak only). */
   languages?: string[];
+  /** DEV-523 — the app has a web (web/) beside its administration: own accounts, sign-in by e-mail. */
+  web?: boolean;
 }
 
 export interface AppManifest {
@@ -70,6 +72,8 @@ export interface AppManifest {
   readonly languages: readonly Language[];
   /** DEV-394 — the app's own texts per language (labels of the left panel, its screens); keys, not words. */
   readonly messages: AppMessages;
+  /** DEV-523 — the app has a web (web/): Nastavenia show its accounts and the requests to decide. */
+  readonly web: boolean;
 }
 
 /** The template's own pages — an app's entry never takes their path. */
@@ -177,6 +181,11 @@ export function defineApp(input: AppManifestInput, extras: AppExtras = {}): AppM
     if (!known.includes(code)) problems.push(`Jazyk „${code}“ šablóna nepozná — pozná tieto: ${known.join(", ")}.`);
   }
   for (const code of duplicates(languages)) problems.push(`Jazyk „${code}“ je uvedený dvakrát.`);
+  const web: unknown = input.web ?? false;
+  if (typeof web !== "boolean") problems.push("Webový frontend (web) je true alebo false.");
+  else if (web && input.auth === "manager") {
+    problems.push("Webový frontend (web) má len aplikácia s vlastným heslom (auth „password“) — web sa prihlasuje e-mailom.");
+  }
   const messages = extras.messages ?? {};
   const main = languages[0] as Language | undefined;
   for (const key of Object.keys((main && messages[main]) ?? {})) {
@@ -200,6 +209,7 @@ export function defineApp(input: AppManifestInput, extras: AppExtras = {}): AppM
     ...(overviewVisible ? { overviewVisible } : {}),
     languages: Object.freeze([...languages]) as Language[],
     messages,
+    web: web === true,
   });
 }
 

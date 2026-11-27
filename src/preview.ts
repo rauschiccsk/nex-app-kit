@@ -24,6 +24,8 @@ import {
   type EndpointId,
   type SessionRead,
   type UserLayout,
+  type WebAccountAction,
+  type WebAccountRead,
 } from "./standard-api";
 
 export interface PreviewOptions {
@@ -160,6 +162,22 @@ export function previewHandlers(options: PreviewOptions): HttpHandler[] {
     roles.map((r) => [r.id, { role: r.id, model: "", effort: "" }]),
   );
 
+  // DEV-523: the web's accounts — one request waiting for the admin, one priest signed in to the web of the preview.
+  let webAccounts: WebAccountRead[] = [
+    { id: "nahlad-ziadost", email: "ziadatel@priklad.sk", first_name: "Ukážkový", last_name: "žiadateľ", status: "pending", created_at: NOW, decided_at: null },
+    { id: "nahlad-web", email: "web@priklad.sk", first_name: "Ukážkový", last_name: "používateľ webu", status: "active", created_at: NOW, decided_at: NOW },
+  ];
+  const WEB_DECISION: Record<WebAccountAction, WebAccountRead["status"]> = {
+    approve: "active",
+    reject: "rejected",
+    disable: "disabled",
+    enable: "active",
+  };
+  const decideWeb = (id: string, action: WebAccountAction) => {
+    webAccounts = webAccounts.map((a) => (a.id === id ? { ...a, status: WEB_DECISION[action], decided_at: NOW } : a));
+    return json(webAccounts.find((a) => a.id === id));
+  };
+
   const answers: Record<EndpointId, Answer | null> = {
     // The browser comes to these from NEX Manager — never inside the preview.
     launch: null,
@@ -216,9 +234,36 @@ export function previewHandlers(options: PreviewOptions): HttpHandler[] {
     // DEV-377: the preview serves no customer — it looks as an app outside the cockpit.
     installation: () => json({ customer: null, environment: null }),
     installationManifest: () => json({ name: manifest.name, short_name: manifest.name, start_url: "/", display: "standalone" }),
+    webRegister: ({ body }) => {
+      const sent = body as { email: string; first_name?: string; last_name?: string };
+      const account: WebAccountRead = {
+        id: `nahlad-ziadost-${webAccounts.length}`,
+        email: sent.email.toLowerCase(),
+        first_name: sent.first_name || null,
+        last_name: sent.last_name || null,
+        status: "pending",
+        created_at: NOW,
+        decided_at: null,
+      };
+      webAccounts = [...webAccounts, account];
+      return json(account, 201);
+    },
+    webLogin: () => json(webAccounts.find((a) => a.status === "active")),
+    webMe: () => json(webAccounts.find((a) => a.status === "active")),
+    webLogout: () => noContent(),
+    listWebAccounts: () => json(webAccounts),
+    approveWebAccount: ({ params }) => decideWeb(String(params.id), "approve"),
+    rejectWebAccount: ({ params }) => decideWeb(String(params.id), "reject"),
+    disableWebAccount: ({ params }) => decideWeb(String(params.id), "disable"),
+    enableWebAccount: ({ params }) => decideWeb(String(params.id), "enable"),
   };
 
-  const allowed = new Set(["always", manifest.auth === "password" ? "password" : "manager", ...(manifest.ai ? ["ai"] : [])]);
+  const allowed = new Set([
+    "always",
+    manifest.auth === "password" ? "password" : "manager",
+    ...(manifest.ai ? ["ai"] : []),
+    ...(manifest.web ? ["web"] : []),
+  ]);
   return STANDARD_ENDPOINTS.filter((e) => allowed.has(e.scope)).flatMap((e) => {
     const answer = answers[e.id];
     if (!answer) return [];

@@ -21,8 +21,15 @@ export type {
   UserChanges,
   UserLayout,
   UserLayoutChanges,
+  WebAccountAction,
+  WebAccountRead,
+  WebAccountStatus,
+  WebRegistration,
 } from "./standard-api";
 export { TemplateApp } from "./TemplateApp";
+// DEV-523: the frame of an app's web (web/) — own accounts signed in by e-mail, a registration the admin decides.
+export { WebApp, useWebAccount } from "./web/WebApp";
+export type { WebAppProps } from "./web/WebApp";
 export { KitBackLink, KitPage } from "./screens/KitPage";
 export type { KitPageProps } from "./screens/KitPage";
 export { KitFields, KitTable, TIGHT_ROWS } from "./screens/KitTable";

@@ -89,6 +89,52 @@ class Session(KitBase):
     user_agent: Mapped[str | None] = mapped_column(String(200))
 
 
+class WebAccount(KitBase):
+    """DEV-523 — a person of the app's web (``web/``): signs in by e-mail, unique among the web's accounts, and a
+    registration is a request the admin decides in the administration. Separate from :class:`User` — the
+    administration signs in by name, and one e-mail may be on several of its accounts (DEV-310). Director 26.11.2026 on
+    the proposal (own web accounts, sign-in by e-mail, a registration request the admin approves): „Súhlasím“."""
+
+    __tablename__ = "kit_web_accounts"
+    __table_args__ = (CheckConstraint("status IN ('pending', 'active', 'rejected', 'disabled')", name="status"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    #: Normalised (``routes.clean_email``) — the one thing the web signs in with.
+    email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    first_name: Mapped[str | None] = mapped_column(String(100))
+    last_name: Mapped[str | None] = mapped_column(String(100))
+    #: ``pending`` (the request waits for the admin) → ``active`` | ``rejected``; an active one may be ``disabled``.
+    status: Mapped[str] = mapped_column(String(10), nullable=False, default="pending")
+    language: Mapped[str | None] = mapped_column(String(8))
+    failed_logins: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    #: Who decided the request (or last switched the account off or on) and when.
+    decided_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("kit_users.id", ondelete="SET NULL")
+    )
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = _now_column()
+    updated_at: Mapped[datetime] = _now_column()
+
+
+class WebSession(KitBase):
+    """DEV-523 — one browser signed in to the web, like :class:`Session` for the administration: the token in a cookie
+    JavaScript cannot read, here only its SHA-256."""
+
+    __tablename__ = "kit_web_sessions"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    account_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("kit_web_accounts.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    created_at: Mapped[datetime] = _now_column()
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    user_agent: Mapped[str | None] = mapped_column(String(200))
+
+
 class UsedLaunchToken(KitBase):
     """A launch ticket from NEX Manager works once — its ``jti`` is kept until it would have expired anyway."""
 

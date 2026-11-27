@@ -35,6 +35,8 @@ class Manifest:
     ai_roles: tuple[AgentRole, ...]
     #: DEV-394 — the languages the app speaks, its main one first.
     languages: tuple[str, ...] = ("sk",)
+    #: DEV-523 — the app has a web (``web/``) beside its administration: own accounts, sign-in by e-mail.
+    web: bool = False
 
     @property
     def ai(self) -> bool:
@@ -94,9 +96,18 @@ def manifest_from_data(data: Any) -> Manifest:
             problems.append(f"Jazyk „{code}“ šablóna nepozná — pozná tieto: {', '.join(KNOWN_LANGUAGES)}.")
     for code in _duplicates(languages):
         problems.append(f"Jazyk „{code}“ je uvedený dvakrát.")
+    web = data.get("web", False)
+    if not isinstance(web, bool):
+        problems.append("Webový frontend (web) je true alebo false.")
+    elif web and auth == "manager":
+        problems.append(
+            "Webový frontend (web) má len aplikácia s vlastným heslom (auth „password“) — web sa prihlasuje e-mailom."
+        )
     if problems:
         raise ManifestError(problems)
-    return Manifest(template=template, name=name, auth=auth, ai_roles=tuple(roles), languages=tuple(languages))
+    return Manifest(
+        template=template, name=name, auth=auth, ai_roles=tuple(roles), languages=tuple(languages), web=web is True
+    )
 
 
 def load_manifest(path: str | Path) -> Manifest:

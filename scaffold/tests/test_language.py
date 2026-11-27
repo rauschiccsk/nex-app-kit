@@ -82,8 +82,12 @@ def cases() -> list[tuple[Path, str]]:
 
 
 def filled(template: Path, auth: str, target: Path) -> Path:
-    """The app the cockpit writes from *template* for one sign-in."""
-    render.render(template.name, {**VALUES, "auth": auth}, target)
+    """The app the cockpit writes from *template* for one sign-in — with its own password also with a web (DEV-523), so
+    the web's files are read too."""
+    web = {"web": True, "web_port": 18005} if auth == "password" else {}
+    render.render(template.name, {**VALUES, "auth": auth, **web}, target)
+    if web:
+        assert (target / "web" / "src" / "App.tsx").is_file()
     return target
 
 

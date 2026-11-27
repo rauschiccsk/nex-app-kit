@@ -1,6 +1,6 @@
 import {
   STANDARD_ENDPOINTS
-} from "./chunk-33ECZEVM.js";
+} from "./chunk-6TJAI7LP.js";
 
 // src/preview.ts
 import { HttpResponse, http } from "msw";
@@ -88,6 +88,17 @@ var en_default = {
   "kit.server.userUnknown": "There is no such user.",
   "kit.server.usernameInvalid": "A username has 3 to 50 characters: letters without diacritics, digits, a dot, a hyphen, an underscore or an at sign.",
   "kit.server.usernameTaken": "Another user already has the username \u201C{username}\u201D.",
+  "kit.server.web.accountNotFound": "There is no such web account.",
+  "kit.server.web.cannot.approve": "Only a waiting request can be approved.",
+  "kit.server.web.cannot.disable": "Only an active account can be switched off.",
+  "kit.server.web.cannot.enable": "Only a switched-off account can be switched on.",
+  "kit.server.web.cannot.reject": "Only a waiting request can be rejected.",
+  "kit.server.web.disabled": "This account is switched off. Contact the administrator.",
+  "kit.server.web.emailTaken": "An account or a registration request already exists for this e-mail.",
+  "kit.server.web.notSignedIn": "You are not signed in to the web \u2014 sign in with your e-mail and password.",
+  "kit.server.web.pending": "Your registration request is still waiting for the administrator's approval.",
+  "kit.server.web.rejected": "The administrator rejected your registration request.",
+  "kit.server.web.wrongCredentials": "Wrong e-mail or password.",
   "kit.server.wrongCredentials": "Wrong username or password.",
   "kit.setting.idle.description": "After how many minutes without work the app signs a person out.",
   "kit.setting.idle.label": "Sign-out after inactivity",
@@ -156,6 +167,17 @@ var hu_default = {
   "kit.server.userUnknown": "Nincs ilyen felhaszn\xE1l\xF3.",
   "kit.server.usernameInvalid": "A felhaszn\xE1l\xF3n\xE9v 3\u201350 karakter: \xE9kezet n\xE9lk\xFCli bet\u0171k, sz\xE1mjegyek, pont, k\xF6t\u0151jel, al\xE1h\xFAz\xE1s vagy kukac.",
   "kit.server.usernameTaken": "A(z) \u201E{username}\u201C felhaszn\xE1l\xF3n\xE9v m\xE1r egy m\xE1sik felhaszn\xE1l\xF3\xE9.",
+  "kit.server.web.accountNotFound": "Ilyen webes fi\xF3k nem l\xE9tezik.",
+  "kit.server.web.cannot.approve": "Csak v\xE1rakoz\xF3 k\xE9relmet lehet j\xF3v\xE1hagyni.",
+  "kit.server.web.cannot.disable": "Csak akt\xEDv fi\xF3kot lehet kikapcsolni.",
+  "kit.server.web.cannot.enable": "Csak kikapcsolt fi\xF3kot lehet bekapcsolni.",
+  "kit.server.web.cannot.reject": "Csak v\xE1rakoz\xF3 k\xE9relmet lehet elutas\xEDtani.",
+  "kit.server.web.disabled": "Ez a fi\xF3k ki van kapcsolva. Forduljon a rendszergazd\xE1hoz.",
+  "kit.server.web.emailTaken": "Ehhez az e-mailhez m\xE1r l\xE9tezik fi\xF3k vagy regisztr\xE1ci\xF3s k\xE9relem.",
+  "kit.server.web.notSignedIn": "Nincs bejelentkezve a webre \u2014 jelentkezzen be e-maillel \xE9s jelsz\xF3val.",
+  "kit.server.web.pending": "Regisztr\xE1ci\xF3s k\xE9relme m\xE9g a rendszergazda j\xF3v\xE1hagy\xE1s\xE1ra v\xE1r.",
+  "kit.server.web.rejected": "Regisztr\xE1ci\xF3s k\xE9relm\xE9t a rendszergazda elutas\xEDtotta.",
+  "kit.server.web.wrongCredentials": "Hib\xE1s e-mail vagy jelsz\xF3.",
   "kit.server.wrongCredentials": "Hib\xE1s felhaszn\xE1l\xF3n\xE9v vagy jelsz\xF3.",
   "kit.setting.idle.description": "H\xE1ny perc t\xE9tlens\xE9g ut\xE1n jelentkezteti ki az alkalmaz\xE1s a felhaszn\xE1l\xF3t.",
   "kit.setting.idle.label": "Kijelentkez\xE9s t\xE9tlens\xE9g ut\xE1n",
@@ -224,6 +246,17 @@ var sk_default = {
   "kit.server.userUnknown": "Tak\xFD pou\u017E\xEDvate\u013E nie je.",
   "kit.server.usernameInvalid": "Prihlasovacie meno m\xE1 3 a\u017E 50 znakov: p\xEDsmen\xE1 bez diakritiky, \u010D\xEDslice, bodku, poml\u010Dku, pod\u010Diarkovn\xEDk alebo zavin\xE1\u010D.",
   "kit.server.usernameTaken": "Prihlasovacie meno \u201E{username}\u201C u\u017E m\xE1 in\xFD pou\u017E\xEDvate\u013E.",
+  "kit.server.web.accountNotFound": "Tak\xE9to konto webu neexistuje.",
+  "kit.server.web.cannot.approve": "Schv\xE1li\u0165 sa d\xE1 len \u017Eiados\u0165, ktor\xE1 \u010Dak\xE1.",
+  "kit.server.web.cannot.disable": "Vypn\xFA\u0165 sa d\xE1 len akt\xEDvne konto.",
+  "kit.server.web.cannot.enable": "Zapn\xFA\u0165 sa d\xE1 len vypnut\xE9 konto.",
+  "kit.server.web.cannot.reject": "Zamietnu\u0165 sa d\xE1 len \u017Eiados\u0165, ktor\xE1 \u010Dak\xE1.",
+  "kit.server.web.disabled": "Toto konto je vypnut\xE9. Obr\xE1\u0165te sa na spr\xE1vcu.",
+  "kit.server.web.emailTaken": "Pre tento e-mail u\u017E konto alebo \u017Eiados\u0165 o registr\xE1ciu existuje.",
+  "kit.server.web.notSignedIn": "Na webe nie ste prihl\xE1sen\xFD \u2014 prihl\xE1ste sa e-mailom a heslom.",
+  "kit.server.web.pending": "Va\u0161a \u017Eiados\u0165 o registr\xE1ciu e\u0161te \u010Dak\xE1 na schv\xE1lenie spr\xE1vcom.",
+  "kit.server.web.rejected": "Va\u0161u \u017Eiados\u0165 o registr\xE1ciu spr\xE1vca zamietol.",
+  "kit.server.web.wrongCredentials": "Nespr\xE1vny e-mail alebo heslo.",
   "kit.server.wrongCredentials": "Nespr\xE1vne meno alebo heslo.",
   "kit.setting.idle.description": "Po ko\u013Ek\xFDch min\xFAtach bez pr\xE1ce aplik\xE1cia \u010Dloveka odhl\xE1si.",
   "kit.setting.idle.label": "Odhl\xE1senie po ne\u010Dinnosti",
@@ -333,6 +366,20 @@ function previewHandlers(options) {
   const agents = Object.fromEntries(
     roles.map((r) => [r.id, { role: r.id, model: "", effort: "" }])
   );
+  let webAccounts = [
+    { id: "nahlad-ziadost", email: "ziadatel@priklad.sk", first_name: "Uk\xE1\u017Ekov\xFD", last_name: "\u017Eiadate\u013E", status: "pending", created_at: NOW, decided_at: null },
+    { id: "nahlad-web", email: "web@priklad.sk", first_name: "Uk\xE1\u017Ekov\xFD", last_name: "pou\u017E\xEDvate\u013E webu", status: "active", created_at: NOW, decided_at: NOW }
+  ];
+  const WEB_DECISION = {
+    approve: "active",
+    reject: "rejected",
+    disable: "disabled",
+    enable: "active"
+  };
+  const decideWeb = (id, action) => {
+    webAccounts = webAccounts.map((a) => a.id === id ? { ...a, status: WEB_DECISION[action], decided_at: NOW } : a);
+    return json(webAccounts.find((a) => a.id === id));
+  };
   const answers = {
     // The browser comes to these from NEX Manager — never inside the preview.
     launch: null,
@@ -384,9 +431,36 @@ function previewHandlers(options) {
     gettingStarted: () => json({ markdown: options.gettingStarted ?? "Uk\xE1\u017Eka \u2014 n\xE1vod pre \u010Dloveka, ktor\xFD aplik\xE1ciu e\u0161te nevidel, nap\xED\u0161e agent do docs/AKO_ZACAT.md." }),
     // DEV-377: the preview serves no customer — it looks as an app outside the cockpit.
     installation: () => json({ customer: null, environment: null }),
-    installationManifest: () => json({ name: manifest.name, short_name: manifest.name, start_url: "/", display: "standalone" })
+    installationManifest: () => json({ name: manifest.name, short_name: manifest.name, start_url: "/", display: "standalone" }),
+    webRegister: ({ body }) => {
+      const sent = body;
+      const account = {
+        id: `nahlad-ziadost-${webAccounts.length}`,
+        email: sent.email.toLowerCase(),
+        first_name: sent.first_name || null,
+        last_name: sent.last_name || null,
+        status: "pending",
+        created_at: NOW,
+        decided_at: null
+      };
+      webAccounts = [...webAccounts, account];
+      return json(account, 201);
+    },
+    webLogin: () => json(webAccounts.find((a) => a.status === "active")),
+    webMe: () => json(webAccounts.find((a) => a.status === "active")),
+    webLogout: () => noContent(),
+    listWebAccounts: () => json(webAccounts),
+    approveWebAccount: ({ params }) => decideWeb(String(params.id), "approve"),
+    rejectWebAccount: ({ params }) => decideWeb(String(params.id), "reject"),
+    disableWebAccount: ({ params }) => decideWeb(String(params.id), "disable"),
+    enableWebAccount: ({ params }) => decideWeb(String(params.id), "enable")
   };
-  const allowed = /* @__PURE__ */ new Set(["always", manifest.auth === "password" ? "password" : "manager", ...manifest.ai ? ["ai"] : []]);
+  const allowed = /* @__PURE__ */ new Set([
+    "always",
+    manifest.auth === "password" ? "password" : "manager",
+    ...manifest.ai ? ["ai"] : [],
+    ...manifest.web ? ["web"] : []
+  ]);
   return STANDARD_ENDPOINTS.filter((e) => allowed.has(e.scope)).flatMap((e) => {
     const answer = answers[e.id];
     if (!answer) return [];

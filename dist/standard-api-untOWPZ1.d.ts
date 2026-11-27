@@ -44,6 +44,8 @@ interface AppManifestInput {
     };
     /** DEV-394 — the languages the app speaks, its main one first (default: Slovak only). */
     languages?: string[];
+    /** DEV-523 — the app has a web (web/) beside its administration: own accounts, sign-in by e-mail. */
+    web?: boolean;
 }
 interface AppManifest {
     readonly template: TemplateId;
@@ -64,6 +66,8 @@ interface AppManifest {
     readonly languages: readonly Language[];
     /** DEV-394 — the app's own texts per language (labels of the left panel, its screens); keys, not words. */
     readonly messages: AppMessages;
+    /** DEV-523 — the app has a web (web/): Nastavenia show its accounts and the requests to decide. */
+    readonly web: boolean;
 }
 /** The template's own pages — an app's entry never takes their path. */
 declare const TEMPLATE_PATHS: readonly ["/", "/getting-started", "/updates", "/settings"];
@@ -101,8 +105,8 @@ declare const ADMIN_ROLE = "admin";
  * DEV-296). The forms say the same before sending. */
 declare const PASSWORD_MIN_LENGTH = 1;
 /** When an app has the endpoint: always, with its own password (users live in the app), launched from NEX Manager,
- *  or with AI agents — the column „kedy“ of KONTRAKT.md. */
-type EndpointScope = "always" | "password" | "manager" | "ai";
+ *  with AI agents, or with a web (DEV-523) — the column „kedy“ of KONTRAKT.md. */
+type EndpointScope = "always" | "password" | "manager" | "ai" | "web";
 declare const STANDARD_ENDPOINTS: readonly [{
     readonly id: "login";
     readonly method: "POST";
@@ -238,6 +242,51 @@ declare const STANDARD_ENDPOINTS: readonly [{
     readonly method: "GET";
     readonly path: "/installation/manifest.webmanifest";
     readonly scope: "always";
+}, {
+    readonly id: "webRegister";
+    readonly method: "POST";
+    readonly path: "/web/auth/register";
+    readonly scope: "web";
+}, {
+    readonly id: "webLogin";
+    readonly method: "POST";
+    readonly path: "/web/auth/login";
+    readonly scope: "web";
+}, {
+    readonly id: "webMe";
+    readonly method: "GET";
+    readonly path: "/web/auth/me";
+    readonly scope: "web";
+}, {
+    readonly id: "webLogout";
+    readonly method: "POST";
+    readonly path: "/web/auth/logout";
+    readonly scope: "web";
+}, {
+    readonly id: "listWebAccounts";
+    readonly method: "GET";
+    readonly path: "/web-accounts";
+    readonly scope: "web";
+}, {
+    readonly id: "approveWebAccount";
+    readonly method: "POST";
+    readonly path: "/web-accounts/{id}/approve";
+    readonly scope: "web";
+}, {
+    readonly id: "rejectWebAccount";
+    readonly method: "POST";
+    readonly path: "/web-accounts/{id}/reject";
+    readonly scope: "web";
+}, {
+    readonly id: "disableWebAccount";
+    readonly method: "POST";
+    readonly path: "/web-accounts/{id}/disable";
+    readonly scope: "web";
+}, {
+    readonly id: "enableWebAccount";
+    readonly method: "POST";
+    readonly path: "/web-accounts/{id}/enable";
+    readonly scope: "web";
 }];
 type EndpointId = (typeof STANDARD_ENDPOINTS)[number]["id"];
 interface HealthRead {
@@ -322,6 +371,25 @@ interface InstallationRead {
     /** DEV-394 — the languages the app speaks (its manifest). */
     languages?: string[];
 }
+/** DEV-523 — an account of the web: `pending` (the request waits for the admin), `active`, `rejected`, `disabled`. */
+type WebAccountStatus = "pending" | "active" | "rejected" | "disabled";
+interface WebAccountRead {
+    id: string;
+    email: string;
+    first_name: string | null;
+    last_name: string | null;
+    status: WebAccountStatus;
+    created_at: string | null;
+    decided_at: string | null;
+}
+interface WebRegistration {
+    email: string;
+    password: string;
+    first_name: string;
+    last_name: string;
+}
+/** What the admin does with an account of the web — each allowed from one state (KONTRAKT.md → Web). */
+type WebAccountAction = "approve" | "reject" | "disable" | "enable";
 interface StandardApi {
     login(username: string, password: string): Promise<CurrentUser>;
     logout(): Promise<void>;
@@ -350,8 +418,14 @@ interface StandardApi {
     saveLayout(changes: UserLayoutChanges): Promise<UserLayout>;
     releaseNotes(): Promise<ReleaseNote[]>;
     gettingStarted(): Promise<GettingStartedRead>;
+    webRegister(registration: WebRegistration): Promise<WebAccountRead>;
+    webLogin(email: string, password: string): Promise<WebAccountRead>;
+    webMe(): Promise<WebAccountRead>;
+    webLogout(): Promise<void>;
+    listWebAccounts(): Promise<WebAccountRead[]>;
+    decideWebAccount(id: string, action: WebAccountAction): Promise<WebAccountRead>;
 }
 /** The frame's calls, each to the path and method its row in {@link STANDARD_ENDPOINTS} names. */
 declare function createStandardApi(client: ApiClient): StandardApi;
 
-export { type AppManifest as A, type CurrentUser as C, type EndpointId as E, type GettingStartedRead as G, type HealthRead as H, type LayoutLimit as L, ManifestError as M, NAV_LABEL_MAX as N, PASSWORD_MIN_LENGTH as P, type StandardApi as S, type TemplateId as T, type UserLayout as U, type UserLayoutChanges as a, ADMIN_ROLE as b, type AgentModelOption as c, type AgentRole as d, type AgentSettingRead as e, type AiConfig as f, type AppAuthMode as g, type AppManifestInput as h, type EndpointScope as i, type NavEntry as j, type NewUser as k, type ProfileChanges as l, STANDARD_ENDPOINTS as m, STANDARD_ROLES as n, TEMPLATE_IDS as o, TEMPLATE_PATHS as p, type UserChanges as q, createStandardApi as r, defineApp as s };
+export { type AppManifest as A, type CurrentUser as C, type EndpointId as E, type GettingStartedRead as G, type HealthRead as H, type LayoutLimit as L, ManifestError as M, NAV_LABEL_MAX as N, PASSWORD_MIN_LENGTH as P, type StandardApi as S, type TemplateId as T, type UserLayout as U, type WebAccountRead as W, type UserLayoutChanges as a, ADMIN_ROLE as b, type AgentModelOption as c, type AgentRole as d, type AgentSettingRead as e, type AiConfig as f, type AppAuthMode as g, type AppManifestInput as h, type EndpointScope as i, type NavEntry as j, type NewUser as k, type ProfileChanges as l, STANDARD_ENDPOINTS as m, STANDARD_ROLES as n, TEMPLATE_IDS as o, TEMPLATE_PATHS as p, type UserChanges as q, type WebAccountAction as r, type WebAccountStatus as s, type WebRegistration as t, createStandardApi as u, defineApp as v };

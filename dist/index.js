@@ -4,7 +4,7 @@ import {
   STANDARD_ENDPOINTS,
   STANDARD_ROLES,
   createStandardApi
-} from "./chunk-33ECZEVM.js";
+} from "./chunk-6TJAI7LP.js";
 
 // src/manifest.ts
 import { createTranslator, LANGUAGES } from "nex-shared";
@@ -97,6 +97,11 @@ function defineApp(input, extras = {}) {
     if (!known.includes(code)) problems.push(`Jazyk \u201E${code}\u201C \u0161abl\xF3na nepozn\xE1 \u2014 pozn\xE1 tieto: ${known.join(", ")}.`);
   }
   for (const code of duplicates(languages)) problems.push(`Jazyk \u201E${code}\u201C je uveden\xFD dvakr\xE1t.`);
+  const web = input.web ?? false;
+  if (typeof web !== "boolean") problems.push("Webov\xFD frontend (web) je true alebo false.");
+  else if (web && input.auth === "manager") {
+    problems.push("Webov\xFD frontend (web) m\xE1 len aplik\xE1cia s vlastn\xFDm heslom (auth \u201Epassword\u201C) \u2014 web sa prihlasuje e-mailom.");
+  }
   const messages = extras.messages ?? {};
   const main = languages[0];
   for (const key of Object.keys((main && messages[main]) ?? {})) {
@@ -117,7 +122,8 @@ function defineApp(input, extras = {}) {
     ...extras.userActions ? { userActions: extras.userActions } : {},
     ...overviewVisible ? { overviewVisible } : {},
     languages: Object.freeze([...languages]),
-    messages
+    messages,
+    web: web === true
   });
 }
 function duplicates(values) {
@@ -128,7 +134,7 @@ function duplicates(values) {
 }
 
 // src/TemplateApp.tsx
-import { useCallback as useCallback4, useEffect as useEffect8, useMemo as useMemo4, useState as useState8 } from "react";
+import { useCallback as useCallback4, useEffect as useEffect9, useMemo as useMemo5, useState as useState9 } from "react";
 import { ApiError, createApiClient, I18nProvider, onServerChange, registerAuthCallback } from "nex-shared";
 
 // src/frame/FrameContext.ts
@@ -218,7 +224,39 @@ var kitEn = {
   "kit.signedOut.passwordExpired": "The sign-in has expired. Sign in again.",
   "kit.uat": "Test environment (UAT)",
   "kit.unavailable": "The app does not answer right now. Try again in a moment.",
-  "kit.updates.failed": "Loading the updates failed."
+  "kit.updates.failed": "Loading the updates failed.",
+  "kit.web.accounts.hint": "The app's web accounts. You approve or reject a registration request; you can switch an active account off and on again.",
+  "kit.web.accounts.loadFailed": "The web accounts could not be loaded.",
+  "kit.web.accounts.empty": "Nobody has registered on the web yet.",
+  "kit.web.accounts.waiting": "Waiting requests: {count}",
+  "kit.web.accounts.name": "Name",
+  "kit.web.accounts.email": "E-mail",
+  "kit.web.accounts.status": "Status",
+  "kit.web.accounts.requested": "Requested",
+  "kit.web.accounts.actionFailed": "The web account could not be changed.",
+  "kit.web.status.pending": "Waiting for approval",
+  "kit.web.status.active": "Active",
+  "kit.web.status.rejected": "Rejected",
+  "kit.web.status.disabled": "Switched off",
+  "kit.web.action.approve": "Approve",
+  "kit.web.action.reject": "Reject",
+  "kit.web.action.disable": "Switch off",
+  "kit.web.action.enable": "Switch on",
+  "kit.web.signIn.title": "Sign in",
+  "kit.web.signIn.email": "E-mail",
+  "kit.web.signIn.password": "Password",
+  "kit.web.signIn.submit": "Sign in",
+  "kit.web.signIn.failed": "Signing in failed.",
+  "kit.web.signIn.noAccount": "No account yet?",
+  "kit.web.signIn.toRegister": "Request registration",
+  "kit.web.register.title": "Registration request",
+  "kit.web.register.firstName": "First name",
+  "kit.web.register.lastName": "Last name",
+  "kit.web.register.submit": "Send the request",
+  "kit.web.register.failed": "The request could not be sent.",
+  "kit.web.register.sent": "We have received your request. You can sign in once the administrator approves it.",
+  "kit.web.register.toSignIn": "Back to sign in",
+  "kit.web.signOut": "Sign out"
 };
 
 // src/locales/hu.ts
@@ -264,7 +302,39 @@ var kitHu = {
   "kit.signedOut.passwordExpired": "A bejelentkez\xE9s lej\xE1rt. Jelentkezz be \xFAjra.",
   "kit.uat": "Tesztk\xF6rnyezet (UAT)",
   "kit.unavailable": "Az alkalmaz\xE1s most nem v\xE1laszol. Pr\xF3b\xE1ld \xFAjra egy kicsit k\xE9s\u0151bb.",
-  "kit.updates.failed": "A friss\xEDt\xE9sek bet\xF6lt\xE9se nem siker\xFClt."
+  "kit.updates.failed": "A friss\xEDt\xE9sek bet\xF6lt\xE9se nem siker\xFClt.",
+  "kit.web.accounts.hint": "Az alkalmaz\xE1s webes fi\xF3kjai. A regisztr\xE1ci\xF3s k\xE9relmet j\xF3v\xE1hagyod vagy elutas\xEDtod; az akt\xEDv fi\xF3kot kikapcsolhatod \xE9s \xFAjra bekapcsolhatod.",
+  "kit.web.accounts.loadFailed": "A webes fi\xF3kokat nem siker\xFClt bet\xF6lteni.",
+  "kit.web.accounts.empty": "A webre m\xE9g senki sem regisztr\xE1lt.",
+  "kit.web.accounts.waiting": "V\xE1rakoz\xF3 k\xE9relmek: {count}",
+  "kit.web.accounts.name": "N\xE9v",
+  "kit.web.accounts.email": "E-mail",
+  "kit.web.accounts.status": "\xC1llapot",
+  "kit.web.accounts.requested": "K\xE9relmezve",
+  "kit.web.accounts.actionFailed": "A webes fi\xF3kot nem siker\xFClt m\xF3dos\xEDtani.",
+  "kit.web.status.pending": "J\xF3v\xE1hagy\xE1sra v\xE1r",
+  "kit.web.status.active": "Akt\xEDv",
+  "kit.web.status.rejected": "Elutas\xEDtva",
+  "kit.web.status.disabled": "Kikapcsolva",
+  "kit.web.action.approve": "J\xF3v\xE1hagy\xE1s",
+  "kit.web.action.reject": "Elutas\xEDt\xE1s",
+  "kit.web.action.disable": "Kikapcsol\xE1s",
+  "kit.web.action.enable": "Bekapcsol\xE1s",
+  "kit.web.signIn.title": "Bejelentkez\xE9s",
+  "kit.web.signIn.email": "E-mail",
+  "kit.web.signIn.password": "Jelsz\xF3",
+  "kit.web.signIn.submit": "Bejelentkez\xE9s",
+  "kit.web.signIn.failed": "A bejelentkez\xE9s nem siker\xFClt.",
+  "kit.web.signIn.noAccount": "Nincs fi\xF3kja?",
+  "kit.web.signIn.toRegister": "Regisztr\xE1ci\xF3 k\xE9r\xE9se",
+  "kit.web.register.title": "Regisztr\xE1ci\xF3s k\xE9relem",
+  "kit.web.register.firstName": "Keresztn\xE9v",
+  "kit.web.register.lastName": "Vezet\xE9kn\xE9v",
+  "kit.web.register.submit": "K\xE9relem elk\xFCld\xE9se",
+  "kit.web.register.failed": "A k\xE9relmet nem siker\xFClt elk\xFCldeni.",
+  "kit.web.register.sent": "A k\xE9relmet megkaptuk. Akkor jelentkezhet be, amikor a rendszergazda j\xF3v\xE1hagyja.",
+  "kit.web.register.toSignIn": "Vissza a bejelentkez\xE9shez",
+  "kit.web.signOut": "Kijelentkez\xE9s"
 };
 
 // src/locales/sk.ts
@@ -310,7 +380,39 @@ var kitSk = {
   "kit.signedOut.passwordExpired": "Prihl\xE1senie vypr\u0161alo. Prihl\xE1s sa znova.",
   "kit.uat": "Sk\xFA\u0161obn\xE9 prostredie (UAT)",
   "kit.unavailable": "Aplik\xE1cia teraz neodpoved\xE1. Sk\xFAs to o chv\xED\u013Eu znova.",
-  "kit.updates.failed": "Na\u010D\xEDtanie aktualiz\xE1ci\xED zlyhalo."
+  "kit.updates.failed": "Na\u010D\xEDtanie aktualiz\xE1ci\xED zlyhalo.",
+  "kit.web.accounts.hint": "Kont\xE1 webu aplik\xE1cie. \u017Diados\u0165 o registr\xE1ciu schv\xE1li\u0161 alebo zamietne\u0161; akt\xEDvne konto m\xF4\u017Ee\u0161 vypn\xFA\u0165 a znova zapn\xFA\u0165.",
+  "kit.web.accounts.loadFailed": "Kont\xE1 webu sa nepodarilo na\u010D\xEDta\u0165.",
+  "kit.web.accounts.empty": "Do webu sa zatia\u013E nikto neregistroval.",
+  "kit.web.accounts.waiting": "\u010Cakaj\xFAce \u017Eiadosti: {count}",
+  "kit.web.accounts.name": "Meno",
+  "kit.web.accounts.email": "E-mail",
+  "kit.web.accounts.status": "Stav",
+  "kit.web.accounts.requested": "Po\u017Eiadal",
+  "kit.web.accounts.actionFailed": "Konto webu sa nepodarilo zmeni\u0165.",
+  "kit.web.status.pending": "\u010Cak\xE1 na schv\xE1lenie",
+  "kit.web.status.active": "Akt\xEDvne",
+  "kit.web.status.rejected": "Zamietnut\xE9",
+  "kit.web.status.disabled": "Vypnut\xE9",
+  "kit.web.action.approve": "Schv\xE1li\u0165",
+  "kit.web.action.reject": "Zamietnu\u0165",
+  "kit.web.action.disable": "Vypn\xFA\u0165",
+  "kit.web.action.enable": "Zapn\xFA\u0165",
+  "kit.web.signIn.title": "Prihl\xE1senie",
+  "kit.web.signIn.email": "E-mail",
+  "kit.web.signIn.password": "Heslo",
+  "kit.web.signIn.submit": "Prihl\xE1si\u0165 sa",
+  "kit.web.signIn.failed": "Prihl\xE1senie sa nepodarilo.",
+  "kit.web.signIn.noAccount": "Nem\xE1te konto?",
+  "kit.web.signIn.toRegister": "Po\u017Eiada\u0165 o registr\xE1ciu",
+  "kit.web.register.title": "\u017Diados\u0165 o registr\xE1ciu",
+  "kit.web.register.firstName": "Meno",
+  "kit.web.register.lastName": "Priezvisko",
+  "kit.web.register.submit": "Odosla\u0165 \u017Eiados\u0165",
+  "kit.web.register.failed": "\u017Diados\u0165 sa nepodarilo odosla\u0165.",
+  "kit.web.register.sent": "\u017Diados\u0165 sme prijali. Prihl\xE1si\u0165 sa budete m\xF4c\u0165, ke\u010F ju spr\xE1vca schv\xE1li.",
+  "kit.web.register.toSignIn": "Sp\xE4\u0165 na prihl\xE1senie",
+  "kit.web.signOut": "Odhl\xE1si\u0165 sa"
 };
 
 // src/i18n.ts
@@ -637,10 +739,10 @@ function NotFoundPage() {
 }
 
 // src/templates/nsv-standard/pages/SettingsPage.tsx
-import { useCallback as useCallback2, useEffect as useEffect4, useMemo as useMemo3, useState as useState5 } from "react";
+import { useCallback as useCallback2, useEffect as useEffect5, useMemo as useMemo4, useState as useState6 } from "react";
 import {
   AgentsPanel,
-  Card as Card2,
+  Card as Card3,
   MyAccountPanel,
   SessionsPanel,
   SettingsShell,
@@ -648,7 +750,113 @@ import {
   UsersPanel,
   useLanguage as useLanguage2
 } from "nex-shared";
+
+// src/templates/nsv-standard/pages/WebAccountsTab.tsx
+import { useEffect as useEffect4, useMemo as useMemo3, useState as useState5 } from "react";
+import { Button as Button2, Card as Card2, StatusBadge, announceSaved } from "nex-shared";
+
+// src/screens/KitTable.tsx
+import { DataTable } from "nex-shared";
 import { jsx as jsx6, jsxs as jsxs4 } from "react/jsx-runtime";
+var TIGHT_ROWS = "[&_th]:px-2 [&_th]:py-1 [&_td]:px-2 [&_td]:py-0.5 [&_td]:leading-tight [&_td_button]:py-0.5 [&_td_input]:py-0.5 [&_td_select]:py-0.5";
+function KitTable({ className = "", ...props }) {
+  return /* @__PURE__ */ jsx6(DataTable, { ...props, className: `${TIGHT_ROWS} ${className}`.trim() });
+}
+function KitFields({ rows }) {
+  return /* @__PURE__ */ jsx6("dl", { className: "grid grid-cols-1 gap-x-8 text-sm leading-tight sm:grid-cols-2 xl:grid-cols-3", children: rows.map((row, i) => /* @__PURE__ */ jsxs4("div", { className: "flex justify-between gap-4 border-b border-[var(--color-border,#e5e7eb)] py-0.5", children: [
+    /* @__PURE__ */ jsx6("dt", { className: "text-[var(--color-text-secondary)]", children: row.label }),
+    /* @__PURE__ */ jsx6("dd", { className: "text-right", children: row.value })
+  ] }, i)) });
+}
+
+// src/templates/nsv-standard/pages/WebAccountsTab.tsx
+import { jsx as jsx7, jsxs as jsxs5 } from "react/jsx-runtime";
+var BADGE = {
+  pending: "warning",
+  active: "success",
+  rejected: "error",
+  disabled: "neutral"
+};
+var ACTIONS = {
+  pending: ["approve", "reject"],
+  active: ["disable"],
+  rejected: [],
+  disabled: ["enable"]
+};
+function fullName(account) {
+  return [account.first_name, account.last_name].filter(Boolean).join(" ") || "\u2014";
+}
+function WebAccountsTab() {
+  const t = useKitT();
+  const { api } = useFrame();
+  const [accounts, setAccounts] = useState5([]);
+  const [loading, setLoading] = useState5(true);
+  const [error, setError] = useState5("");
+  const [busy, setBusy] = useState5(null);
+  useEffect4(() => {
+    api.listWebAccounts().then(setAccounts).catch((e) => setError(errorText(e, t("kit.web.accounts.loadFailed")))).finally(() => setLoading(false));
+  }, [api, t]);
+  const rows = useMemo3(
+    () => [...accounts].sort((a, b) => Number(b.status === "pending") - Number(a.status === "pending")),
+    [accounts]
+  );
+  const waiting = accounts.filter((a) => a.status === "pending").length;
+  async function act(account, action) {
+    setBusy(account.id);
+    setError("");
+    try {
+      const changed = await api.decideWebAccount(account.id, action);
+      setAccounts((prev) => prev.map((a) => a.id === changed.id ? changed : a));
+      announceSaved();
+    } catch (e) {
+      setError(errorText(e, t("kit.web.accounts.actionFailed")));
+    } finally {
+      setBusy(null);
+    }
+  }
+  const columns = [
+    { key: "name", header: t("kit.web.accounts.name"), render: (a) => fullName(a) },
+    { key: "email", header: t("kit.web.accounts.email"), render: (a) => a.email },
+    {
+      key: "status",
+      header: t("kit.web.accounts.status"),
+      render: (a) => /* @__PURE__ */ jsx7(StatusBadge, { status: BADGE[a.status], pulse: a.status === "pending", children: t(`kit.web.status.${a.status}`) })
+    },
+    {
+      key: "requested",
+      header: t("kit.web.accounts.requested"),
+      render: (a) => a.created_at ? new Date(a.created_at).toLocaleDateString() : "\u2014"
+    }
+  ];
+  return /* @__PURE__ */ jsx7("div", { className: "p-6", children: /* @__PURE__ */ jsxs5(Card2, { className: "p-4", children: [
+    /* @__PURE__ */ jsx7("p", { className: "mb-2 text-sm text-[var(--color-text-secondary)]", children: t("kit.web.accounts.hint") }),
+    waiting > 0 && /* @__PURE__ */ jsx7("p", { className: "mb-3 text-sm font-medium text-[var(--color-text-primary)]", children: t("kit.web.accounts.waiting", { count: waiting }) }),
+    error && /* @__PURE__ */ jsx7("p", { className: "mb-3 text-sm text-[var(--color-state-error-fg)]", children: error }),
+    !loading && /* @__PURE__ */ jsx7(
+      KitTable,
+      {
+        columns,
+        rows,
+        getRowKey: (a) => a.id,
+        emptyMessage: t("kit.web.accounts.empty"),
+        rowActions: (a) => /* @__PURE__ */ jsx7("span", { className: "flex justify-end gap-2", children: ACTIONS[a.status].map((action) => /* @__PURE__ */ jsx7(
+          Button2,
+          {
+            size: "sm",
+            variant: action === "approve" || action === "enable" ? "primary" : "secondary",
+            disabled: busy !== null,
+            onClick: () => void act(a, action),
+            children: t(`kit.web.action.${action}`)
+          },
+          action
+        )) })
+      }
+    )
+  ] }) });
+}
+
+// src/templates/nsv-standard/pages/SettingsPage.tsx
+import { jsx as jsx8, jsxs as jsxs6 } from "react/jsx-runtime";
 var EFFORTS = ["low", "medium", "high", "xhigh", "max"];
 var USER_FIELDS = { username: true, names: true, telegram: false, passwordMinLength: PASSWORD_MIN_LENGTH };
 var KIT_SETTINGS_CATEGORIES = [
@@ -666,20 +874,21 @@ function settingsConfig(manifest) {
   tabs.push("konto");
   if (manifest.auth === "password") tabs.push("users");
   tabs.push("sessions");
+  if (manifest.web) tabs.push("web");
   return {
     tabs,
     // DEV-394: the tabs are named by nex-shared, in the person's language.
     labels: {},
-    tabVisibleForRole: (tab, role) => tab === "users" || tab === "agents" ? role === ADMIN_ROLE : true
+    tabVisibleForRole: (tab, role) => tab === "users" || tab === "agents" || tab === "web" ? role === ADMIN_ROLE : true
   };
 }
 function SystemTab() {
   const t = useKitT();
   const { api, manifest, isAdmin } = useFrame();
-  const [settings, setSettings] = useState5([]);
-  const [loading, setLoading] = useState5(true);
-  const [loadError, setLoadError] = useState5("");
-  useEffect4(() => {
+  const [settings, setSettings] = useState6([]);
+  const [loading, setLoading] = useState6(true);
+  const [loadError, setLoadError] = useState6("");
+  useEffect5(() => {
     api.listSystemSettings().then(setSettings).catch((e) => setLoadError(errorText(e, t("kit.settings.loadFailed")))).finally(() => setLoading(false));
   }, [api, t]);
   const save = useCallback2(
@@ -690,7 +899,7 @@ function SystemTab() {
     },
     [api]
   );
-  return /* @__PURE__ */ jsx6(
+  return /* @__PURE__ */ jsx8(
     SystemSettingsPanel,
     {
       settings,
@@ -710,11 +919,11 @@ function AgentsTab() {
   const t = useKitT();
   const { api, manifest } = useFrame();
   const roles = (manifest.ai ? [...manifest.ai.roles] : []).map((r) => ({ ...r, label: t(r.label) }));
-  const [models, setModels] = useState5([]);
-  const [drafts, setDrafts] = useState5(null);
-  const [loadError, setLoadError] = useState5("");
-  const [saveErrors, setSaveErrors] = useState5({});
-  useEffect4(() => {
+  const [models, setModels] = useState6([]);
+  const [drafts, setDrafts] = useState6(null);
+  const [loadError, setLoadError] = useState6("");
+  const [saveErrors, setSaveErrors] = useState6({});
+  useEffect5(() => {
     Promise.all([api.listAgentSettings(), api.listAgentModels()]).then(([rows, options]) => {
       const initial = {};
       for (const r of manifest.ai ? manifest.ai.roles : []) initial[r.id] = { model: "", effort: "" };
@@ -735,7 +944,7 @@ function AgentsTab() {
     },
     [api, t]
   );
-  return /* @__PURE__ */ jsx6(
+  return /* @__PURE__ */ jsx8(
     AgentsPanel,
     {
       roles,
@@ -750,9 +959,9 @@ function AgentsTab() {
   );
 }
 function ReadOnlyField({ label, value }) {
-  return /* @__PURE__ */ jsxs4("div", { children: [
-    /* @__PURE__ */ jsx6("div", { className: "mb-1 text-xs text-[var(--color-text-muted)]", children: label }),
-    /* @__PURE__ */ jsx6("div", { className: "text-sm text-[var(--color-text-secondary)]", children: value || "\u2014" })
+  return /* @__PURE__ */ jsxs6("div", { children: [
+    /* @__PURE__ */ jsx8("div", { className: "mb-1 text-xs text-[var(--color-text-muted)]", children: label }),
+    /* @__PURE__ */ jsx8("div", { className: "text-sm text-[var(--color-text-secondary)]", children: value || "\u2014" })
   ] });
 }
 function AccountTab() {
@@ -761,17 +970,17 @@ function AccountTab() {
   const { api, manifest, user, setUser } = useFrame();
   if (!user) return null;
   if (manifest.auth === "manager") {
-    return /* @__PURE__ */ jsx6("div", { className: "p-6", children: /* @__PURE__ */ jsxs4(Card2, { className: "max-w-3xl", children: [
-      /* @__PURE__ */ jsx6("p", { className: "mb-4 text-sm text-[var(--color-text-secondary)]", children: t("kit.settings.managedByManager") }),
-      /* @__PURE__ */ jsxs4("div", { className: "grid grid-cols-2 gap-3", children: [
-        /* @__PURE__ */ jsx6(ReadOnlyField, { label: t("kit.settings.fullName"), value: personName(user) }),
-        /* @__PURE__ */ jsx6(ReadOnlyField, { label: t("kit.settings.email"), value: user.email }),
-        /* @__PURE__ */ jsx6(ReadOnlyField, { label: t("user.username"), value: user.username }),
-        /* @__PURE__ */ jsx6(ReadOnlyField, { label: t("user.role"), value: roleLabel(user.role, t) })
+    return /* @__PURE__ */ jsx8("div", { className: "p-6", children: /* @__PURE__ */ jsxs6(Card3, { className: "max-w-3xl", children: [
+      /* @__PURE__ */ jsx8("p", { className: "mb-4 text-sm text-[var(--color-text-secondary)]", children: t("kit.settings.managedByManager") }),
+      /* @__PURE__ */ jsxs6("div", { className: "grid grid-cols-2 gap-3", children: [
+        /* @__PURE__ */ jsx8(ReadOnlyField, { label: t("kit.settings.fullName"), value: personName(user) }),
+        /* @__PURE__ */ jsx8(ReadOnlyField, { label: t("kit.settings.email"), value: user.email }),
+        /* @__PURE__ */ jsx8(ReadOnlyField, { label: t("user.username"), value: user.username }),
+        /* @__PURE__ */ jsx8(ReadOnlyField, { label: t("user.role"), value: roleLabel(user.role, t) })
       ] })
     ] }) });
   }
-  return /* @__PURE__ */ jsx6(
+  return /* @__PURE__ */ jsx8(
     MyAccountPanel,
     {
       user: {
@@ -803,12 +1012,12 @@ function UsersTab() {
   const installation = useInstallationIdentity();
   const defaultLanguage = chooseLanguage(manifest.languages, null, installation?.language);
   const roleOptions = STANDARD_ROLES.map((r) => ({ value: r.value, label: t(r.label) }));
-  const [users, setUsers] = useState5([]);
-  useEffect4(() => {
+  const [users, setUsers] = useState6([]);
+  useEffect5(() => {
     api.listUsers().then(setUsers).catch(() => setUsers([]));
   }, [api]);
   const replace = (row) => setUsers((prev) => prev.map((u) => u.id === row.id ? row : u));
-  return /* @__PURE__ */ jsx6(
+  return /* @__PURE__ */ jsx8(
     UsersPanel,
     {
       users,
@@ -868,14 +1077,14 @@ function UsersTab() {
 function SessionsTab() {
   const t = useKitT();
   const { api, isAdmin } = useFrame();
-  const [sessions, setSessions] = useState5([]);
-  const [loading, setLoading] = useState5(true);
-  const [loadError, setLoadError] = useState5("");
-  useEffect4(() => {
+  const [sessions, setSessions] = useState6([]);
+  const [loading, setLoading] = useState6(true);
+  const [loadError, setLoadError] = useState6("");
+  useEffect5(() => {
     api.listSessions().then(setSessions).catch((e) => setLoadError(errorText(e, t("kit.settings.sessionsLoadFailed")))).finally(() => setLoading(false));
   }, [api, t]);
-  const names = useMemo3(() => Object.fromEntries(sessions.map((s) => [s.user_id, s.username ?? s.user_id])), [sessions]);
-  return /* @__PURE__ */ jsx6(
+  const names = useMemo4(() => Object.fromEntries(sessions.map((s) => [s.user_id, s.username ?? s.user_id])), [sessions]);
+  return /* @__PURE__ */ jsx8(
     SessionsPanel,
     {
       sessions,
@@ -894,15 +1103,15 @@ function SessionsTab() {
 function SettingsPage() {
   const t = useKitT();
   const { manifest, user } = useFrame();
-  const config = useMemo3(() => settingsConfig(manifest), [manifest]);
-  const headerRight = user ? /* @__PURE__ */ jsxs4("span", { className: "text-xs text-[var(--color-text-muted)]", children: [
+  const config = useMemo4(() => settingsConfig(manifest), [manifest]);
+  const headerRight = user ? /* @__PURE__ */ jsxs6("span", { className: "text-xs text-[var(--color-text-muted)]", children: [
     t("kit.settings.signedInAs"),
     " ",
-    /* @__PURE__ */ jsx6("span", { className: "font-medium text-[var(--color-text-secondary)]", children: user.username }),
+    /* @__PURE__ */ jsx8("span", { className: "font-medium text-[var(--color-text-secondary)]", children: user.username }),
     " \xB7 ",
-    /* @__PURE__ */ jsx6("span", { className: "text-[11px] font-medium", children: roleLabel(user.role, t) })
+    /* @__PURE__ */ jsx8("span", { className: "text-[11px] font-medium", children: roleLabel(user.role, t) })
   ] }) : void 0;
-  return /* @__PURE__ */ jsx6(
+  return /* @__PURE__ */ jsx8(
     SettingsShell,
     {
       config,
@@ -910,26 +1119,27 @@ function SettingsPage() {
       title: t("settings.title"),
       headerRight,
       panels: {
-        system: /* @__PURE__ */ jsx6(SystemTab, {}),
-        agents: /* @__PURE__ */ jsx6(AgentsTab, {}),
-        konto: /* @__PURE__ */ jsx6(AccountTab, {}),
-        users: /* @__PURE__ */ jsx6(UsersTab, {}),
-        sessions: /* @__PURE__ */ jsx6(SessionsTab, {})
+        system: /* @__PURE__ */ jsx8(SystemTab, {}),
+        agents: /* @__PURE__ */ jsx8(AgentsTab, {}),
+        konto: /* @__PURE__ */ jsx8(AccountTab, {}),
+        users: /* @__PURE__ */ jsx8(UsersTab, {}),
+        sessions: /* @__PURE__ */ jsx8(SessionsTab, {}),
+        web: /* @__PURE__ */ jsx8(WebAccountsTab, {})
       }
     }
   );
 }
 
 // src/templates/nsv-standard/pages/UpdatesPage.tsx
-import { useCallback as useCallback3, useEffect as useEffect5, useState as useState6 } from "react";
+import { useCallback as useCallback3, useEffect as useEffect6, useState as useState7 } from "react";
 import { ReleaseNotes } from "nex-shared";
-import { jsx as jsx7 } from "react/jsx-runtime";
+import { jsx as jsx9 } from "react/jsx-runtime";
 function UpdatesPage() {
   const t = useKitT();
   const { api, manifest } = useFrame();
-  const [notes, setNotes] = useState6([]);
-  const [loading, setLoading] = useState6(true);
-  const [error, setError] = useState6("");
+  const [notes, setNotes] = useState7([]);
+  const [loading, setLoading] = useState7(true);
+  const [error, setError] = useState7("");
   const refresh = useCallback3(async () => {
     setLoading(true);
     setError("");
@@ -941,10 +1151,10 @@ function UpdatesPage() {
       setLoading(false);
     }
   }, [api, t]);
-  useEffect5(() => {
+  useEffect6(() => {
     void refresh();
   }, [refresh]);
-  return /* @__PURE__ */ jsx7(
+  return /* @__PURE__ */ jsx9(
     ReleaseNotes,
     {
       notes,
@@ -965,7 +1175,7 @@ var TEMPLATE_PLACES = {
 };
 
 // src/templates/nsv-standard/Shell.tsx
-import { useEffect as useEffect7 } from "react";
+import { useEffect as useEffect8 } from "react";
 import { Outlet } from "react-router-dom";
 import { useStore as useStore2 } from "zustand";
 import { AppShell } from "nex-shared";
@@ -973,14 +1183,14 @@ import { AppShell } from "nex-shared";
 // src/templates/nsv-standard/PageErrorBoundary.tsx
 import { Component } from "react";
 import { useLocation } from "react-router-dom";
-import { jsx as jsx8, jsxs as jsxs5 } from "react/jsx-runtime";
+import { jsx as jsx10, jsxs as jsxs7 } from "react/jsx-runtime";
 function Crashed({ message }) {
   const t = useKitT();
-  return /* @__PURE__ */ jsxs5("div", { role: "alert", className: "m-4 rounded-xl border border-[var(--color-state-error-fg)]/40 bg-[var(--color-state-error-bg)] p-4", children: [
-    /* @__PURE__ */ jsx8("h2", { className: "text-sm font-semibold text-[var(--color-state-error-fg)]", children: t("kit.error.title") }),
-    /* @__PURE__ */ jsx8("p", { className: "mt-2 text-sm text-[var(--color-text-primary)]", children: t("kit.error.text") }),
-    /* @__PURE__ */ jsx8("p", { className: "mt-1 font-mono text-[11px] text-[var(--color-text-muted)]", children: message }),
-    /* @__PURE__ */ jsx8(
+  return /* @__PURE__ */ jsxs7("div", { role: "alert", className: "m-4 rounded-xl border border-[var(--color-state-error-fg)]/40 bg-[var(--color-state-error-bg)] p-4", children: [
+    /* @__PURE__ */ jsx10("h2", { className: "text-sm font-semibold text-[var(--color-state-error-fg)]", children: t("kit.error.title") }),
+    /* @__PURE__ */ jsx10("p", { className: "mt-2 text-sm text-[var(--color-text-primary)]", children: t("kit.error.text") }),
+    /* @__PURE__ */ jsx10("p", { className: "mt-1 font-mono text-[11px] text-[var(--color-text-muted)]", children: message }),
+    /* @__PURE__ */ jsx10(
       "button",
       {
         type: "button",
@@ -999,12 +1209,12 @@ var Boundary = class extends Component {
   render() {
     const { error } = this.state;
     if (!error) return this.props.children;
-    return /* @__PURE__ */ jsx8(Crashed, { message: error.message });
+    return /* @__PURE__ */ jsx10(Crashed, { message: error.message });
   }
 };
 function PageErrorBoundary({ children }) {
   const { pathname } = useLocation();
-  return /* @__PURE__ */ jsx8(Boundary, { children }, pathname);
+  return /* @__PURE__ */ jsx10(Boundary, { children }, pathname);
 }
 
 // src/templates/nsv-standard/Sidebar.tsx
@@ -1013,7 +1223,7 @@ import { useStore } from "zustand";
 import { Brand as Brand2, NavIcon, NavItem, SectionDivider, Sidebar, UserCard, useShell } from "nex-shared";
 
 // src/frame/version.ts
-import { useEffect as useEffect6, useState as useState7 } from "react";
+import { useEffect as useEffect7, useState as useState8 } from "react";
 function versionLine(backend, frontend) {
   const be = (backend ?? "").trim();
   const fe = (frontend ?? "").trim();
@@ -1022,8 +1232,8 @@ function versionLine(backend, frontend) {
   return `backend v${be} \xB7 frontend v${fe}`;
 }
 function useBackendVersion(api) {
-  const [version, setVersion] = useState7();
-  useEffect6(() => {
+  const [version, setVersion] = useState8();
+  useEffect7(() => {
     let live = true;
     api.health().then((h) => live && setVersion(h.version)).catch(() => void 0);
     return () => {
@@ -1034,7 +1244,7 @@ function useBackendVersion(api) {
 }
 
 // src/templates/nsv-standard/Sidebar.tsx
-import { Fragment, jsx as jsx9, jsxs as jsxs6 } from "react/jsx-runtime";
+import { Fragment, jsx as jsx11, jsxs as jsxs8 } from "react/jsx-runtime";
 function useIsActive() {
   const { pathname } = useLocation2();
   return (path) => path === "/" ? pathname === "/" : pathname === path || pathname.startsWith(`${path}/`);
@@ -1042,10 +1252,10 @@ function useIsActive() {
 function CountedEntry({ entry, active, onClick }) {
   const t = useKitT();
   const count = entry.useCount?.() ?? void 0;
-  return /* @__PURE__ */ jsx9(NavItem, { icon: /* @__PURE__ */ jsx9(NavIcon, { glyph: entry.icon }), label: t(entry.label), active, onClick, count: count ?? void 0 });
+  return /* @__PURE__ */ jsx11(NavItem, { icon: /* @__PURE__ */ jsx11(NavIcon, { glyph: entry.icon }), label: t(entry.label), active, onClick, count: count ?? void 0 });
 }
 function VisibleEntry({ entry, children }) {
-  return entry.useVisible() === true ? /* @__PURE__ */ jsx9(Fragment, { children }) : null;
+  return entry.useVisible() === true ? /* @__PURE__ */ jsx11(Fragment, { children }) : null;
 }
 function NsvSidebar() {
   const t = useKitT();
@@ -1059,7 +1269,7 @@ function NsvSidebar() {
   const railCollapsed = layout?.sidebar_collapsed ?? false;
   const limit = layout?.limits.sidebar_width;
   const name = personName(user) || user?.email || "";
-  const footer = /* @__PURE__ */ jsx9(
+  const footer = /* @__PURE__ */ jsx11(
     UserCard,
     {
       initials: name ? name.slice(0, 1).toUpperCase() : "?",
@@ -1068,10 +1278,10 @@ function NsvSidebar() {
       onLogout
     }
   );
-  const entry = (place) => /* @__PURE__ */ jsx9(
+  const entry = (place) => /* @__PURE__ */ jsx11(
     NavItem,
     {
-      icon: /* @__PURE__ */ jsx9(NavIcon, { glyph: place.icon }),
+      icon: /* @__PURE__ */ jsx11(NavIcon, { glyph: place.icon }),
       label: t(place.label),
       active: isActive(place.path),
       onClick: () => navigate(place.path)
@@ -1080,12 +1290,12 @@ function NsvSidebar() {
   );
   const modules = manifest.modules.flatMap((id) => MODULES[id] ? [MODULES[id]] : []);
   const ownEntries = manifest.nav.filter((e) => !e.adminOnly || isAdmin);
-  return /* @__PURE__ */ jsxs6(
+  return /* @__PURE__ */ jsxs8(
     Sidebar,
     {
       collapsed: railCollapsed && !narrow,
       onToggleCollapse: () => void saveLayout({ sidebar_collapsed: !railCollapsed }),
-      logo: /* @__PURE__ */ jsx9(Brand2, { initials: manifest.initials, name: manifest.name, version: versionLine(backendVersion, frontendVersion) }),
+      logo: /* @__PURE__ */ jsx11(Brand2, { initials: manifest.initials, name: manifest.name, version: versionLine(backendVersion, frontendVersion) }),
       footer,
       dense: true,
       width: layout?.sidebar_width ?? void 0,
@@ -1094,20 +1304,20 @@ function NsvSidebar() {
       maxWidth: limit?.max,
       defaultWidth: limit?.default,
       children: [
-        (!railCollapsed || narrow) && /* @__PURE__ */ jsx9(InstallationCustomer, { className: "px-3 pb-1.5 pt-0.5" }),
+        (!railCollapsed || narrow) && /* @__PURE__ */ jsx11(InstallationCustomer, { className: "px-3 pb-1.5 pt-0.5" }),
         manifest.overviewVisible ? (
           // DEV-368: Prehľad only for those the app says see it — like its own entries.
-          /* @__PURE__ */ jsx9(VisibleEntry, { entry: { ...TEMPLATE_PLACES.overview, useVisible: manifest.overviewVisible }, children: entry(TEMPLATE_PLACES.overview) }, TEMPLATE_PLACES.overview.path)
+          /* @__PURE__ */ jsx11(VisibleEntry, { entry: { ...TEMPLATE_PLACES.overview, useVisible: manifest.overviewVisible }, children: entry(TEMPLATE_PLACES.overview) }, TEMPLATE_PLACES.overview.path)
         ) : entry(TEMPLATE_PLACES.overview),
         entry(TEMPLATE_PLACES.gettingStarted),
         modules.map((m) => entry(m)),
         ownEntries.map((e) => {
-          const shown = e.useCount ? /* @__PURE__ */ jsx9(CountedEntry, { entry: e, active: isActive(e.path), onClick: () => navigate(e.path) }, e.path) : entry(e);
+          const shown = e.useCount ? /* @__PURE__ */ jsx11(CountedEntry, { entry: e, active: isActive(e.path), onClick: () => navigate(e.path) }, e.path) : entry(e);
           const { useVisible } = e;
-          return useVisible ? /* @__PURE__ */ jsx9(VisibleEntry, { entry: { ...e, useVisible }, children: shown }, e.path) : shown;
+          return useVisible ? /* @__PURE__ */ jsx11(VisibleEntry, { entry: { ...e, useVisible }, children: shown }, e.path) : shown;
         }),
         entry(TEMPLATE_PLACES.updates),
-        /* @__PURE__ */ jsx9(SectionDivider, {}),
+        /* @__PURE__ */ jsx11(SectionDivider, {}),
         entry(TEMPLATE_PLACES.settings)
       ]
     }
@@ -1117,7 +1327,7 @@ function NsvSidebar() {
 // src/templates/nsv-standard/Topbar.tsx
 import { useLocation as useLocation3 } from "react-router-dom";
 import { Header, ThemeToggle } from "nex-shared";
-import { jsx as jsx10, jsxs as jsxs7 } from "react/jsx-runtime";
+import { jsx as jsx12, jsxs as jsxs9 } from "react/jsx-runtime";
 function placeLabel(pathname, manifest) {
   const places = [
     ...Object.values(TEMPLATE_PLACES),
@@ -1134,36 +1344,36 @@ function NsvTopbar() {
   const { manifest } = useFrame();
   const { pathname } = useLocation3();
   const { isDark, toggleDark } = useTheme();
-  return /* @__PURE__ */ jsx10(
+  return /* @__PURE__ */ jsx12(
     Header,
     {
-      left: /* @__PURE__ */ jsxs7("div", { className: "flex items-center gap-1.5 flex-1 min-w-0 overflow-hidden text-xs text-[var(--color-text-muted)]", children: [
-        /* @__PURE__ */ jsx10("span", { className: "text-[var(--color-text-muted)]", children: "/" }),
-        /* @__PURE__ */ jsx10("span", { className: "text-[var(--color-text-secondary)] truncate", children: t(placeLabel(pathname, manifest)) })
+      left: /* @__PURE__ */ jsxs9("div", { className: "flex items-center gap-1.5 flex-1 min-w-0 overflow-hidden text-xs text-[var(--color-text-muted)]", children: [
+        /* @__PURE__ */ jsx12("span", { className: "text-[var(--color-text-muted)]", children: "/" }),
+        /* @__PURE__ */ jsx12("span", { className: "text-[var(--color-text-secondary)] truncate", children: t(placeLabel(pathname, manifest)) })
       ] }),
-      right: /* @__PURE__ */ jsx10(ThemeToggle, { theme: isDark ? "dark" : "light", onToggle: toggleDark })
+      right: /* @__PURE__ */ jsx12(ThemeToggle, { theme: isDark ? "dark" : "light", onToggle: toggleDark })
     }
   );
 }
 
 // src/templates/nsv-standard/Shell.tsx
-import { jsx as jsx11 } from "react/jsx-runtime";
+import { jsx as jsx13 } from "react/jsx-runtime";
 function NsvShell() {
   const { user, layout } = useFrame();
   const load = useStore2(layout, (s) => s.load);
   const reset = useStore2(layout, (s) => s.reset);
   const userId = user?.id;
-  useEffect7(() => {
+  useEffect8(() => {
     reset();
     if (userId) void load();
   }, [userId, load, reset]);
-  return /* @__PURE__ */ jsx11(AppShell, { sidebar: /* @__PURE__ */ jsx11(NsvSidebar, {}), header: /* @__PURE__ */ jsx11(NsvTopbar, {}), topBanner: /* @__PURE__ */ jsx11(InstallationBand, {}), children: /* @__PURE__ */ jsx11(PageErrorBoundary, { children: /* @__PURE__ */ jsx11(Outlet, {}) }) });
+  return /* @__PURE__ */ jsx13(AppShell, { sidebar: /* @__PURE__ */ jsx13(NsvSidebar, {}), header: /* @__PURE__ */ jsx13(NsvTopbar, {}), topBanner: /* @__PURE__ */ jsx13(InstallationBand, {}), children: /* @__PURE__ */ jsx13(PageErrorBoundary, { children: /* @__PURE__ */ jsx13(Outlet, {}) }) });
 }
 
 // src/templates/nsv-standard/NsvStandard.tsx
-import { Fragment as Fragment2, jsx as jsx12, jsxs as jsxs8 } from "react/jsx-runtime";
+import { Fragment as Fragment2, jsx as jsx14, jsxs as jsxs10 } from "react/jsx-runtime";
 function Padded({ children }) {
-  return /* @__PURE__ */ jsx12("div", { className: "p-6", children: children ?? /* @__PURE__ */ jsx12(Outlet2, {}) });
+  return /* @__PURE__ */ jsx14("div", { className: "p-6", children: children ?? /* @__PURE__ */ jsx14(Outlet2, {}) });
 }
 var everyone = () => true;
 function firstPlaceWithoutOverview(manifest, isAdmin) {
@@ -1174,22 +1384,22 @@ function OverviewPlace({ overview }) {
   const { manifest, isAdmin } = useFrame();
   const useOverviewVisible = manifest.overviewVisible ?? everyone;
   const answer = useOverviewVisible();
-  if (answer === true) return /* @__PURE__ */ jsx12(Fragment2, { children: overview });
-  if (answer === false) return /* @__PURE__ */ jsx12(Navigate, { to: firstPlaceWithoutOverview(manifest, isAdmin), replace: true });
+  if (answer === true) return /* @__PURE__ */ jsx14(Fragment2, { children: overview });
+  if (answer === false) return /* @__PURE__ */ jsx14(Navigate, { to: firstPlaceWithoutOverview(manifest, isAdmin), replace: true });
   return null;
 }
 function NsvStandard({ overview, children }) {
   const { manifest } = useFrame();
   const modules = manifest.modules.flatMap((id) => MODULES[id] ? [MODULES[id]] : []);
-  return /* @__PURE__ */ jsx12(Routes, { children: /* @__PURE__ */ jsxs8(Route, { element: /* @__PURE__ */ jsx12(NsvShell, {}), children: [
-    /* @__PURE__ */ jsx12(Route, { path: TEMPLATE_PLACES.updates.path, element: /* @__PURE__ */ jsx12(UpdatesPage, {}) }),
-    /* @__PURE__ */ jsx12(Route, { path: TEMPLATE_PLACES.settings.path, element: /* @__PURE__ */ jsx12(SettingsPage, {}) }),
-    /* @__PURE__ */ jsxs8(Route, { element: /* @__PURE__ */ jsx12(Padded, {}), children: [
-      /* @__PURE__ */ jsx12(Route, { index: true, element: /* @__PURE__ */ jsx12(OverviewPlace, { overview }) }),
-      /* @__PURE__ */ jsx12(Route, { path: TEMPLATE_PLACES.gettingStarted.path, element: /* @__PURE__ */ jsx12(GettingStartedPage, {}) }),
-      modules.map((m) => /* @__PURE__ */ jsx12(Route, { path: `${m.path}/*`, element: m.page() }, m.id)),
+  return /* @__PURE__ */ jsx14(Routes, { children: /* @__PURE__ */ jsxs10(Route, { element: /* @__PURE__ */ jsx14(NsvShell, {}), children: [
+    /* @__PURE__ */ jsx14(Route, { path: TEMPLATE_PLACES.updates.path, element: /* @__PURE__ */ jsx14(UpdatesPage, {}) }),
+    /* @__PURE__ */ jsx14(Route, { path: TEMPLATE_PLACES.settings.path, element: /* @__PURE__ */ jsx14(SettingsPage, {}) }),
+    /* @__PURE__ */ jsxs10(Route, { element: /* @__PURE__ */ jsx14(Padded, {}), children: [
+      /* @__PURE__ */ jsx14(Route, { index: true, element: /* @__PURE__ */ jsx14(OverviewPlace, { overview }) }),
+      /* @__PURE__ */ jsx14(Route, { path: TEMPLATE_PLACES.gettingStarted.path, element: /* @__PURE__ */ jsx14(GettingStartedPage, {}) }),
+      modules.map((m) => /* @__PURE__ */ jsx14(Route, { path: `${m.path}/*`, element: m.page() }, m.id)),
       children,
-      /* @__PURE__ */ jsx12(Route, { path: "*", element: /* @__PURE__ */ jsx12(NotFoundPage, {}) })
+      /* @__PURE__ */ jsx14(Route, { path: "*", element: /* @__PURE__ */ jsx14(NotFoundPage, {}) })
     ] })
   ] }) });
 }
@@ -1200,7 +1410,7 @@ var TEMPLATES = Object.freeze({
 });
 
 // src/TemplateApp.tsx
-import { jsx as jsx13 } from "react/jsx-runtime";
+import { jsx as jsx15 } from "react/jsx-runtime";
 var SIGNED_OUT_SENTENCES = {
   managerExpired: "kit.signedOut.managerExpired",
   managerLogout: "kit.signedOut.managerLogout",
@@ -1208,13 +1418,13 @@ var SIGNED_OUT_SENTENCES = {
 };
 function SignedOut({ manifest, api, why, onSignedIn }) {
   const t = useKitT();
-  return manifest.auth === "manager" ? /* @__PURE__ */ jsx13(
+  return manifest.auth === "manager" ? /* @__PURE__ */ jsx15(
     ClosedScreen,
     {
       manifest,
       sentence: t(why === "logout" ? SIGNED_OUT_SENTENCES.managerLogout : SIGNED_OUT_SENTENCES.managerExpired)
     }
-  ) : /* @__PURE__ */ jsx13(
+  ) : /* @__PURE__ */ jsx15(
     LoginScreen,
     {
       manifest,
@@ -1228,11 +1438,11 @@ function sameOriginClient() {
   return createApiClient({ baseUrl: "", apiPrefix: "/api/v1", getToken: () => null });
 }
 function TemplateApp({ manifest, client, frontendVersion, overview, children }) {
-  const api = useMemo4(() => createStandardApi(client ?? sameOriginClient()), [client]);
+  const api = useMemo5(() => createStandardApi(client ?? sameOriginClient()), [client]);
   const installation = useInstallation(api);
   useInstallationWindow(manifest.name, installation);
-  const [layout] = useState8(() => createLayoutStore(api));
-  const [session, setSession] = useState8({ kind: "loading" });
+  const [layout] = useState9(() => createLayoutStore(api));
+  const [session, setSession] = useState9({ kind: "loading" });
   const ask = useCallback4(() => {
     let live = true;
     setSession({ kind: "loading" });
@@ -1244,12 +1454,12 @@ function TemplateApp({ manifest, client, frontendVersion, overview, children }) 
       live = false;
     };
   }, [api]);
-  useEffect8(ask, [ask]);
-  useEffect8(() => {
+  useEffect9(ask, [ask]);
+  useEffect9(() => {
     registerAuthCallback(() => setSession((s) => s.kind === "in" ? { kind: "out", why: "expired" } : s));
   }, []);
   const signedInId = session.kind === "in" ? session.user.id : null;
-  useEffect8(() => {
+  useEffect9(() => {
     if (!signedInId) return;
     return onServerChange(({ path }) => {
       if (path !== "/auth/me" && path !== `/users/${signedInId}` && !path.startsWith(`/users/${signedInId}/`)) return;
@@ -1265,7 +1475,7 @@ function TemplateApp({ manifest, client, frontendVersion, overview, children }) 
   }, [api]);
   const user = session.kind === "in" ? session.user : null;
   const setUser = useCallback4((next) => setSession({ kind: "in", user: next }), []);
-  const frame = useMemo4(
+  const frame = useMemo5(
     () => user && {
       manifest,
       api,
@@ -1281,13 +1491,13 @@ function TemplateApp({ manifest, client, frontendVersion, overview, children }) 
   const Template = TEMPLATES[manifest.template];
   let screen;
   if (session.kind === "loading") {
-    screen = /* @__PURE__ */ jsx13(LoadingScreen, {});
+    screen = /* @__PURE__ */ jsx15(LoadingScreen, {});
   } else if (session.kind === "unavailable") {
-    screen = /* @__PURE__ */ jsx13(UnavailableScreen, { manifest, onRetry: ask });
+    screen = /* @__PURE__ */ jsx15(UnavailableScreen, { manifest, onRetry: ask });
   } else if (session.kind === "out") {
-    screen = /* @__PURE__ */ jsx13(SignedOut, { manifest, api, why: session.why, onSignedIn: setUser });
+    screen = /* @__PURE__ */ jsx15(SignedOut, { manifest, api, why: session.why, onSignedIn: setUser });
   } else if (session.user.must_change_password && manifest.auth === "password") {
-    screen = /* @__PURE__ */ jsx13(
+    screen = /* @__PURE__ */ jsx15(
       ChangePasswordScreen,
       {
         manifest,
@@ -1297,18 +1507,155 @@ function TemplateApp({ manifest, client, frontendVersion, overview, children }) 
       }
     );
   } else {
-    screen = /* @__PURE__ */ jsx13(FrameContext.Provider, { value: frame, children: /* @__PURE__ */ jsx13(Template, { overview, children }) });
+    screen = /* @__PURE__ */ jsx15(FrameContext.Provider, { value: frame, children: /* @__PURE__ */ jsx15(Template, { overview, children }) });
   }
   const language = chooseLanguage(manifest.languages, user?.language, installation?.language);
-  const messages = useMemo4(() => mergeMessages(manifest.messages), [manifest.messages]);
-  useEffect8(() => {
+  const messages = useMemo5(() => mergeMessages(manifest.messages), [manifest.messages]);
+  useEffect9(() => {
     document.documentElement.lang = language;
   }, [language]);
-  return /* @__PURE__ */ jsx13(I18nProvider, { language, messages, children: /* @__PURE__ */ jsx13(ThemeProvider, { username: user?.username, children: /* @__PURE__ */ jsx13(InstallationContext.Provider, { value: installation, children: screen }) }) });
+  return /* @__PURE__ */ jsx15(I18nProvider, { language, messages, children: /* @__PURE__ */ jsx15(ThemeProvider, { username: user?.username, children: /* @__PURE__ */ jsx15(InstallationContext.Provider, { value: installation, children: screen }) }) });
+}
+
+// src/web/WebApp.tsx
+import { createContext as createContext4, useContext as useContext4, useEffect as useEffect10, useMemo as useMemo6, useState as useState10 } from "react";
+import { Link as Link2, Route as Route2, Routes as Routes2 } from "react-router-dom";
+import {
+  Button as Button3,
+  Card as Card4,
+  createApiClient as createApiClient2,
+  FormField,
+  I18nProvider as I18nProvider2,
+  Input,
+  PasswordInput as PasswordInput2
+} from "nex-shared";
+import { jsx as jsx16, jsxs as jsxs11 } from "react/jsx-runtime";
+var WebFrameContext = createContext4(null);
+function useWebAccount() {
+  const frame = useContext4(WebFrameContext);
+  if (!frame) throw new Error("useWebAccount works inside <WebApp> only");
+  return frame;
+}
+function defaultClient() {
+  return createApiClient2({ baseUrl: "", apiPrefix: "/api/v1", getToken: () => null });
+}
+function WebApp({ manifest, client, home, children }) {
+  const api = useMemo6(() => createStandardApi(client ?? defaultClient()), [client]);
+  const messages = useMemo6(() => mergeMessages(manifest.messages), [manifest]);
+  const [account, setAccount] = useState10(void 0);
+  useEffect10(() => {
+    let alive = true;
+    api.webMe().then((found) => alive && setAccount(found)).catch(() => alive && setAccount(null));
+    return () => {
+      alive = false;
+    };
+  }, [api]);
+  return /* @__PURE__ */ jsx16(I18nProvider2, { language: manifest.languages[0] ?? "sk", messages, children: /* @__PURE__ */ jsx16("div", { className: "min-h-full bg-[var(--color-canvas)] text-[var(--color-text-primary)]", children: account === void 0 ? null : account === null ? /* @__PURE__ */ jsxs11(Routes2, { children: [
+    /* @__PURE__ */ jsx16(Route2, { path: "/register", element: /* @__PURE__ */ jsx16(RegisterPage, { manifest, api }) }),
+    /* @__PURE__ */ jsx16(Route2, { path: "*", element: /* @__PURE__ */ jsx16(SignInPage, { manifest, api, onSignedIn: setAccount }) })
+  ] }) : /* @__PURE__ */ jsxs11(WebFrameContext.Provider, { value: { account, api }, children: [
+    /* @__PURE__ */ jsx16(TopBar, { manifest, account, onSignedOut: () => setAccount(null) }),
+    /* @__PURE__ */ jsx16("main", { className: "mx-auto w-full max-w-5xl px-4 py-6", children: /* @__PURE__ */ jsxs11(Routes2, { children: [
+      /* @__PURE__ */ jsx16(Route2, { path: "/", element: home }),
+      children
+    ] }) })
+  ] }) }) });
+}
+function TopBar({ manifest, account, onSignedOut }) {
+  const t = useKitT();
+  const { api } = useWebAccount();
+  const name = [account.first_name, account.last_name].filter(Boolean).join(" ") || account.email;
+  return /* @__PURE__ */ jsxs11("header", { className: "flex items-center justify-between gap-4 border-b border-[var(--color-border-default)] px-4 py-3", children: [
+    /* @__PURE__ */ jsx16("span", { className: "font-semibold", children: manifest.name }),
+    /* @__PURE__ */ jsxs11("span", { className: "flex items-center gap-3 text-sm", children: [
+      /* @__PURE__ */ jsx16("span", { className: "text-[var(--color-text-secondary)]", children: name }),
+      /* @__PURE__ */ jsx16(
+        Button3,
+        {
+          size: "sm",
+          variant: "secondary",
+          onClick: () => {
+            void api.webLogout().finally(onSignedOut);
+          },
+          children: t("kit.web.signOut")
+        }
+      )
+    ] })
+  ] });
+}
+function Centered2({ title, children }) {
+  return /* @__PURE__ */ jsx16("div", { className: "flex min-h-full items-start justify-center px-4 py-12", children: /* @__PURE__ */ jsxs11(Card4, { className: "w-full max-w-sm p-6", children: [
+    /* @__PURE__ */ jsx16("h1", { className: "mb-4 text-lg font-semibold", children: title }),
+    children
+  ] }) });
+}
+function SignInPage({ manifest, api, onSignedIn }) {
+  const t = useKitT();
+  const [email, setEmail] = useState10("");
+  const [password, setPassword] = useState10("");
+  const [busy, setBusy] = useState10(false);
+  const [error, setError] = useState10("");
+  async function submit(event) {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      onSignedIn(await api.webLogin(email.trim(), password));
+    } catch (e) {
+      setError(errorText(e, t("kit.web.signIn.failed")));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return /* @__PURE__ */ jsxs11(Centered2, { title: `${manifest.name} \u2014 ${t("kit.web.signIn.title")}`, children: [
+    /* @__PURE__ */ jsxs11("form", { onSubmit: (e) => void submit(e), className: "space-y-3", children: [
+      /* @__PURE__ */ jsx16(FormField, { label: t("kit.web.signIn.email"), htmlFor: "web-email", children: /* @__PURE__ */ jsx16(Input, { id: "web-email", type: "email", autoComplete: "email", value: email, onChange: (e) => setEmail(e.target.value) }) }),
+      /* @__PURE__ */ jsx16(FormField, { label: t("kit.web.signIn.password"), htmlFor: "web-password", children: /* @__PURE__ */ jsx16(PasswordInput2, { id: "web-password", autoComplete: "current-password", value: password, onChange: (e) => setPassword(e.target.value) }) }),
+      error && /* @__PURE__ */ jsx16("p", { role: "alert", className: "text-sm text-[var(--color-state-error-fg)]", children: error }),
+      /* @__PURE__ */ jsx16(Button3, { type: "submit", disabled: busy || !email.trim() || !password, children: t("kit.web.signIn.submit") })
+    ] }),
+    /* @__PURE__ */ jsxs11("p", { className: "mt-4 text-sm text-[var(--color-text-secondary)]", children: [
+      t("kit.web.signIn.noAccount"),
+      " ",
+      /* @__PURE__ */ jsx16(Link2, { to: "/register", className: "underline", children: t("kit.web.signIn.toRegister") })
+    ] })
+  ] });
+}
+function RegisterPage({ manifest, api }) {
+  const t = useKitT();
+  const [form, setForm] = useState10({ first_name: "", last_name: "", email: "", password: "" });
+  const [busy, setBusy] = useState10(false);
+  const [error, setError] = useState10("");
+  const [sent, setSent] = useState10(false);
+  const set = (field) => (value) => setForm((prev) => ({ ...prev, [field]: value }));
+  async function submit(event) {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      await api.webRegister({ ...form, email: form.email.trim() });
+      setSent(true);
+    } catch (e) {
+      setError(errorText(e, t("kit.web.register.failed")));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return /* @__PURE__ */ jsxs11(Centered2, { title: `${manifest.name} \u2014 ${t("kit.web.register.title")}`, children: [
+    sent ? /* @__PURE__ */ jsx16("p", { role: "status", className: "text-sm", children: t("kit.web.register.sent") }) : /* @__PURE__ */ jsxs11("form", { onSubmit: (e) => void submit(e), className: "space-y-3", children: [
+      /* @__PURE__ */ jsx16(FormField, { label: t("kit.web.register.firstName"), htmlFor: "web-first", children: /* @__PURE__ */ jsx16(Input, { id: "web-first", autoComplete: "given-name", value: form.first_name, onChange: (e) => set("first_name")(e.target.value) }) }),
+      /* @__PURE__ */ jsx16(FormField, { label: t("kit.web.register.lastName"), htmlFor: "web-last", children: /* @__PURE__ */ jsx16(Input, { id: "web-last", autoComplete: "family-name", value: form.last_name, onChange: (e) => set("last_name")(e.target.value) }) }),
+      /* @__PURE__ */ jsx16(FormField, { label: t("kit.web.signIn.email"), htmlFor: "web-reg-email", children: /* @__PURE__ */ jsx16(Input, { id: "web-reg-email", type: "email", autoComplete: "email", value: form.email, onChange: (e) => set("email")(e.target.value) }) }),
+      /* @__PURE__ */ jsx16(FormField, { label: t("kit.web.signIn.password"), htmlFor: "web-reg-password", children: /* @__PURE__ */ jsx16(PasswordInput2, { id: "web-reg-password", autoComplete: "new-password", reveal: true, value: form.password, onChange: (e) => set("password")(e.target.value) }) }),
+      error && /* @__PURE__ */ jsx16("p", { role: "alert", className: "text-sm text-[var(--color-state-error-fg)]", children: error }),
+      /* @__PURE__ */ jsx16(Button3, { type: "submit", disabled: busy || !form.email.trim() || !form.password, children: t("kit.web.register.submit") })
+    ] }),
+    /* @__PURE__ */ jsx16("p", { className: "mt-4 text-sm", children: /* @__PURE__ */ jsx16(Link2, { to: "/", className: "underline", children: t("kit.web.register.toSignIn") }) })
+  ] });
 }
 
 // src/screens/KitPage.tsx
-import { useEffect as useEffect9, useMemo as useMemo5 } from "react";
+import { useEffect as useEffect11, useMemo as useMemo7 } from "react";
 import { useLocation as useLocation4, useNavigate as useNavigate2 } from "react-router-dom";
 import { Page as Page3 } from "nex-shared";
 
@@ -1325,7 +1672,7 @@ var useNavHistory = create((set) => ({
 }));
 
 // src/screens/KitPage.tsx
-import { Fragment as Fragment3, jsx as jsx14, jsxs as jsxs9 } from "react/jsx-runtime";
+import { Fragment as Fragment3, jsx as jsx17, jsxs as jsxs12 } from "react/jsx-runtime";
 function KitBackLink({ label }) {
   const t = useKitT();
   const { manifest } = useFrame();
@@ -1333,17 +1680,17 @@ function KitBackLink({ label }) {
   const navigate = useNavigate2();
   const { stack, visit } = useNavHistory();
   const path = `${location.pathname}${location.search}`;
-  const starts = useMemo5(
+  const starts = useMemo7(
     () => /* @__PURE__ */ new Set([...TEMPLATE_PATHS, ...manifest.nav.map((entry) => entry.path)]),
     [manifest.nav]
   );
-  useEffect9(() => {
+  useEffect11(() => {
     visit({ pathname: location.pathname, path, label }, starts.has(location.pathname));
   }, [location.pathname, path, label, starts, visit]);
   const at = stack.findIndex((s) => s.pathname === location.pathname);
   const previous = at > 0 ? stack[at - 1] : null;
   if (!previous) return null;
-  return /* @__PURE__ */ jsxs9(
+  return /* @__PURE__ */ jsxs12(
     "button",
     {
       type: "button",
@@ -1351,31 +1698,17 @@ function KitBackLink({ label }) {
       className: "mb-2 flex items-center gap-1 text-sm text-[var(--color-accent,#2563eb)] hover:underline",
       "aria-label": t("kit.back.to", { screen: previous.label }),
       children: [
-        /* @__PURE__ */ jsx14("span", { "aria-hidden": "true", children: "\u2190" }),
-        /* @__PURE__ */ jsx14("span", { children: previous.label })
+        /* @__PURE__ */ jsx17("span", { "aria-hidden": "true", children: "\u2190" }),
+        /* @__PURE__ */ jsx17("span", { children: previous.label })
       ]
     }
   );
 }
 function KitPage({ title, crumb, subtitle, actions, width, children }) {
-  return /* @__PURE__ */ jsxs9(Fragment3, { children: [
-    /* @__PURE__ */ jsx14(KitBackLink, { label: crumb ?? (typeof title === "string" ? title : "") }),
-    /* @__PURE__ */ jsx14(Page3, { title, subtitle, actions, width, children })
+  return /* @__PURE__ */ jsxs12(Fragment3, { children: [
+    /* @__PURE__ */ jsx17(KitBackLink, { label: crumb ?? (typeof title === "string" ? title : "") }),
+    /* @__PURE__ */ jsx17(Page3, { title, subtitle, actions, width, children })
   ] });
-}
-
-// src/screens/KitTable.tsx
-import { DataTable } from "nex-shared";
-import { jsx as jsx15, jsxs as jsxs10 } from "react/jsx-runtime";
-var TIGHT_ROWS = "[&_th]:px-2 [&_th]:py-1 [&_td]:px-2 [&_td]:py-0.5 [&_td]:leading-tight [&_td_button]:py-0.5 [&_td_input]:py-0.5 [&_td_select]:py-0.5";
-function KitTable({ className = "", ...props }) {
-  return /* @__PURE__ */ jsx15(DataTable, { ...props, className: `${TIGHT_ROWS} ${className}`.trim() });
-}
-function KitFields({ rows }) {
-  return /* @__PURE__ */ jsx15("dl", { className: "grid grid-cols-1 gap-x-8 text-sm leading-tight sm:grid-cols-2 xl:grid-cols-3", children: rows.map((row, i) => /* @__PURE__ */ jsxs10("div", { className: "flex justify-between gap-4 border-b border-[var(--color-border,#e5e7eb)] py-0.5", children: [
-    /* @__PURE__ */ jsx15("dt", { className: "text-[var(--color-text-secondary)]", children: row.label }),
-    /* @__PURE__ */ jsx15("dd", { className: "text-right", children: row.value })
-  ] }, i)) });
 }
 export {
   ADMIN_ROLE,
@@ -1395,6 +1728,7 @@ export {
   TEMPLATE_PATHS,
   TIGHT_ROWS,
   TemplateApp,
+  WebApp,
   chooseLanguage,
   createStandardApi,
   defineApp,
@@ -1402,5 +1736,6 @@ export {
   personName,
   roleLabel,
   useFrame,
-  useKitT
+  useKitT,
+  useWebAccount
 };

@@ -30,6 +30,7 @@ describe("defineApp", () => {
       settings: { categories: [] },
       languages: ["sk"],
       messages: {},
+      web: false, // DEV-523: an app that says nothing has no web
     });
     expect(Object.isFrozen(app)).toBe(true);
   });
