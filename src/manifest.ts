@@ -6,6 +6,7 @@
 import type { ReactNode } from "react";
 import { createTranslator, LANGUAGES, type AppMessages, type Language, type SettingsCategory, type UserRead } from "nex-shared";
 
+import { catalogProblems, type GuideCatalog } from "./guide/catalog";
 import { MODULES } from "./modules";
 import { TEMPLATE_IDS, type TemplateId } from "./templates/ids";
 
@@ -53,6 +54,8 @@ export interface AppManifestInput {
   languages?: string[];
   /** DEV-523 — the app has a web (web/) beside its administration: own accounts, sign-in by e-mail. */
   web?: boolean;
+  /** DEV-535 — Sprievodca; on unless `false` (the cockpit switches it off for a special app). */
+  guide?: boolean;
 }
 
 export interface AppManifest {
@@ -74,6 +77,10 @@ export interface AppManifest {
   readonly messages: AppMessages;
   /** DEV-523 — the app has a web (web/): Nastavenia show its accounts and the requests to decide. */
   readonly web: boolean;
+  /** DEV-535 — Sprievodca is on: „Ako urobiť“ with its chat, its button in the top bar, its tab in Nastavenia. */
+  readonly guide: boolean;
+  /** DEV-535 — the steps Sprievodca guides through (the app's `guide` in `defineApp`); empty: it says it has none. */
+  readonly guideCatalog: GuideCatalog;
 }
 
 /** The template's own pages — an app's entry never takes their path. */
@@ -94,6 +101,8 @@ export interface AppExtras {
   userActions?: (user: UserRead) => ReactNode;
   /** DEV-394 — the app's own texts per language (`src/locales`); a label of the left panel may be one of their keys. */
   messages?: AppMessages;
+  /** DEV-535 — the catalog of steps Sprievodca guides through (`guide/catalog.ts`); checked when the app starts. */
+  guide?: GuideCatalog;
 }
 
 export class ManifestError extends Error {
@@ -186,6 +195,10 @@ export function defineApp(input: AppManifestInput, extras: AppExtras = {}): AppM
   else if (web && input.auth === "manager") {
     problems.push("Webový frontend (web) má len aplikácia s vlastným heslom (auth „password“) — web sa prihlasuje e-mailom.");
   }
+  const guide: unknown = input.guide ?? true;
+  if (typeof guide !== "boolean") problems.push("Sprievodca (guide) je true alebo false.");
+  const guideCatalog: GuideCatalog = extras.guide ?? { steps: [] };
+  if (guide === true) problems.push(...catalogProblems(guideCatalog));
   const messages = extras.messages ?? {};
   const main = languages[0] as Language | undefined;
   for (const key of Object.keys((main && messages[main]) ?? {})) {
@@ -210,6 +223,8 @@ export function defineApp(input: AppManifestInput, extras: AppExtras = {}): AppM
     languages: Object.freeze([...languages]) as Language[],
     messages,
     web: web === true,
+    guide: guide !== false,
+    guideCatalog: Object.freeze({ steps: Object.freeze([...guideCatalog.steps]), subjects: { ...guideCatalog.subjects } }) as GuideCatalog,
   });
 }
 

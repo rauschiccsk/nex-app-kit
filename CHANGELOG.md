@@ -7,6 +7,19 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 
 ---
 
+## v0.24.0
+- `[nové]` **Sprievodca.** Aplikácia na šablóne má Sprievodcu, kým manifest nepovie `"guide": false`. „Ako začať“ je
+  „Ako urobiť“: človek napíše, čo chce urobiť, Sprievodca pozrie stav aplikácie, opýta sa, krátko povie kroky
+  a ponúkne vedenie krok za krokom — otvorí obrazovku kroku, zvýrazní tlačidlo, povie vetu a sám pokračuje, keď je
+  krok hotový; kliká vždy človek. Otvorí sa aj z hornej lišty na každej obrazovke a vedenie prežije prechod medzi
+  obrazovkami aj obnovenie stránky. Cestu skladá Claude len z katalógu krokov, ktorý dáva aplikácia
+  (`defineApp(…, { guide })`, `guideTarget`); chybný katalóg zastaví aplikáciu pri štarte. Spätná väzba — chýbajúci
+  krok, blúdenie, tlačidlo mimo obrazovky, nespoznaný hotový krok, prerušené vedenie, hodnotenie, nápad, poznámka
+  Sprievodcu — je v Nastaveniach → Sprievodca pre správcu. Server: tabuľky `kit_guide_sessions`, `kit_guide_events`
+  (migrácia `kit_0005`), cesty `/guide/*` (KONTRAKT.md → Sprievodca). Na nex-shared v0.44.0 (záložka „Sprievodca“).
+  Director 28.11.2026: „…aby človek ktorý nikdy nevidel a ani nevie načo slúži sadol si k naším aplikáciám a začal
+  používať.“ (DEV-535)
+
 ## v0.23.0
 - `[nové]` **Aplikácia môže mať web.** Okrem administrácie (`frontend/`, prihlásenie menom) môže mať aplikácia na
   šablóne aj web (`web/`) na tom istom serveri — manifest `"web": true`, len s vlastným heslom. Web má vlastné kontá:

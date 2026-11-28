@@ -55,6 +55,11 @@ nej — cesta, ktorá chýba alebo pribudla len na jednej strane, je červená.
 | `POST /web-accounts/{id}/reject` | web | Správca zamietne čakajúcu žiadosť. |
 | `POST /web-accounts/{id}/disable` | web | Správca vypne aktívne konto — odhlási ho vo všetkých prehliadačoch. |
 | `POST /web-accounts/{id}/enable` | web | Správca znova zapne vypnuté konto. |
+| `POST /guide/plan` | Sprievodca | Cesta k cieľu: `message` (cieľ alebo odpoveď na otázku Sprievodcu), `session_id` pri odpovedi, `language`, `catalog` (kroky katalógu so stavom, ktorý obrazovka zmerala) a `subjects` (objekty, na ktoré sa kroky vzťahujú). Odpoveď `kind`: `plan` s krokmi len z katalógu, `question` alebo `missing` (cieľ, na ktorý katalóg krok nemá — zapíše sa do spätnej väzby). |
+| `POST /guide/sessions/{id}/progress` | Sprievodca | Priebeh vedenia: `status` `guiding` / `done` / `stopped`, `current_step`, pri ukončení `reason` (`unclear`, `did_otherwise`, `not_needed`). |
+| `POST /guide/sessions/{id}/rating` | Sprievodca | Hodnotenie na konci: `rating` `up` / `down`, voliteľne `comment`. |
+| `POST /guide/events` | Sprievodca | Čo hlási obrazovka počas vedenia: `kind` `stuck` (človek dlho stojí na kroku), `not_detected` (aplikácia nespoznala hotový krok), `no_target` (tlačidlo kroku na obrazovke nie je), `skipped`, `idea` (nápad na zlepšenie, aj bez rozhovoru). |
+| `GET /guide/feedback` | Sprievodca | Správca: ako Sprievodca funguje — súčty rozhovorov (dokončené, ukončené, chýba krok, hodnotenia), posledné rozhovory a udalosti spätnej väzby s cieľom. |
 
 
 ## Web (DEV-523)
@@ -65,6 +70,35 @@ menom) aj web (`web/`). Web má **vlastné kontá**: prihlasujú sa e-mailom, kt
 kontách (DEV-310). Registrácia je **žiadosť**: konto vznikne v stave `pending` a prihlásiť sa dá, až keď ho správca
 v administrácii schváli. Relácia webu má vlastné cookie (`nex_web_session`), rovnaký čas nečinnosti a najdlhší čas ako
 administrácia a do administrácie neprihlási — ani naopak. Vlastné cesty webu aplikácie sa pýtajú `kit.web_account`.
+
+## Sprievodca (DEV-535)
+
+Aplikácia má Sprievodcu, kým manifest nepovie `"guide": false` (kokpit ho tak vypne pri špeciálnej aplikácii). Človek
+v „Ako urobiť“ (namiesto „Ako začať“) alebo v paneli z hornej lišty napíše, čo chce urobiť; Sprievodca pozrie stav
+aplikácie, opýta sa, keď cieľ nie je jasný, krátko povie kroky a ponúkne vedenie krok za krokom — otvorí obrazovku
+kroku, zvýrazní jeho tlačidlo, povie vetu, čo urobiť, a sám pokračuje, keď je krok hotový. **Kliká vždy človek.**
+
+Cestu skladá Claude **výhradne z katalógu krokov**, ktorý dáva aplikácia v `defineApp(manifest, { guide: katalóg })`
+(typy `GuideCatalog`, `GuideStep` z `nex-app-kit`); server krok mimo katalógu, neexistujúci objekt aj poradie, ktoré
+preskočí potrebný krok, odmietne. Každý krok:
+
+- `id` (malé písmená, číslice, bodky — `etalon.upload`), `title`, `hint` (jedna veta, čo človek urobí), `screen`
+  (kde, slovami) — kľúče textov aplikácie alebo text;
+- `path(subject)` — adresa obrazovky kroku; tlačidlo kroku nesie `data-guide` s jeho `id` (`{...guideTarget(id)}`),
+  inak ho krok menuje v `target`;
+- `subject` — druh objektu, na ktorý sa krok vzťahuje (kľúč `subjects` katalógu s `list()` objektov), `requires` —
+  kroky, ktoré musia byť hotové predtým;
+- `isAvailable(subject)` (nepovinné) a `isDone(subject)` — kontroly nad rozhraním aplikácie; vedenie pokračuje, keď
+  `isDone` povie áno.
+
+Chybný katalóg (dvakrát to isté `id`, `requires` na krok, ktorý nie je, `subject`, ktorý katalóg nemá) zastaví
+aplikáciu pri štarte, každý problém jednou vetou. Každá dôležitá akcia aplikácie má mať v katalógu krok — inak ju
+Sprievodca nevie ukázať a cieľ zapíše ako chýbajúci krok.
+
+**Spätná väzba** (`/guide/feedback`, Nastavenia → Sprievodca pre správcu): cieľ, na ktorý katalóg krok nemá, cesta,
+ktorú sa nepodarilo poskladať, človek dlho stojaci na kroku, tlačidlo, ktoré na obrazovke nie je, krok, ktorý aplikácia
+nespoznala ako hotový, preskočený krok, prerušené vedenie (a prečo), dosiahnutý cieľ, hodnotenie, nápad na zlepšenie
+a poznámka Sprievodcu, čo by pomohlo. Sprievodca volá Clauda cez predplatné inštalácie (`claude.ask`).
 
 ## Prihlásenie a relácia
 

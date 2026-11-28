@@ -12,9 +12,10 @@ describe("pages of the template", () => {
     expect(await screen.findByText("Obsah prehľadu")).toBeInTheDocument();
   });
 
-  it("Ako začať shows the guide the server holds", async () => {
+  it("Ako začať shows the guide the server holds (an app without Sprievodca)", async () => {
     renderApp({
       path: "/getting-started",
+      manifest: { guide: false },
       answers: { "GET /getting-started": { markdown: "## Prvé kroky\n\nOtvor **Oblasti** a založ prvú." } },
     });
 
@@ -24,13 +25,17 @@ describe("pages of the template", () => {
   });
 
   it("Ako začať without a guide says so", async () => {
-    renderApp({ path: "/getting-started" });
+    renderApp({ path: "/getting-started", manifest: { guide: false } });
 
     expect(await screen.findByText("Návod k aplikácii ešte nie je napísaný.")).toBeInTheDocument();
   });
 
   it("Ako začať that cannot be read says why", async () => {
-    renderApp({ path: "/getting-started", answers: { "GET /getting-started": new Error("Server neodpovedá.") } });
+    renderApp({
+      path: "/getting-started",
+      manifest: { guide: false },
+      answers: { "GET /getting-started": new Error("Server neodpovedá.") },
+    });
 
     expect(await screen.findByText("Návod sa nepodarilo načítať: Server neodpovedá.")).toBeInTheDocument();
   });

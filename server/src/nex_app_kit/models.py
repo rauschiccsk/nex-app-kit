@@ -18,7 +18,7 @@ from sqlalchemy import (
     Text,
     func,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from .layout import SIDEBAR_WIDTH
@@ -191,3 +191,62 @@ class UserLayout(KitBase):
     sidebar_width: Mapped[int | None] = mapped_column(Integer)
     sidebar_collapsed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     updated_at: Mapped[datetime] = _now_column()
+
+
+class GuideSession(KitBase):
+    """DEV-535 — one goal a person brought to Sprievodca: what they wrote, the path composed from the app's catalog of
+    steps, how far the guiding got and how it ended. The Director 28.11.2026: a person who has never seen the app
+    „sadol si k naším aplikáciám a začal používať“ — Sprievodca leads them step by step; they always click."""
+
+    __tablename__ = "kit_guide_sessions"
+    __table_args__ = (
+        CheckConstraint("status IN ('asking', 'planned', 'missing', 'guiding', 'done', 'stopped')", name="status"),
+        CheckConstraint("rating IS NULL OR rating IN ('up', 'down')", name="rating"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("kit_users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    goal: Mapped[str] = mapped_column(Text, nullable=False)
+    language: Mapped[str] = mapped_column(String(8), nullable=False)
+    #: ``asking`` (Sprievodca asked back) · ``planned`` · ``missing`` (no path in the catalog) · ``guiding`` · ``done``
+    #: · ``stopped``.
+    status: Mapped[str] = mapped_column(String(10), nullable=False)
+    #: The conversation: ``[{"by": "person" | "guide", "text": …}]``.
+    transcript: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    #: The composed path: ``[{"id": <step>, "subject": <object id> | null}]``.
+    steps: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    current_step: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    stop_reason: Mapped[str | None] = mapped_column(String(20))
+    rating: Mapped[str | None] = mapped_column(String(4))
+    comment: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = _now_column()
+    updated_at: Mapped[datetime] = _now_column()
+
+
+class GuideEvent(KitBase):
+    """DEV-535 — what tells how well Sprievodca works: a step missing in the catalog, a person stuck on a step, a step
+    the app did not see done, a guiding stopped or finished, an idea, Sprievodca's own note. The Director 28.11.2026:
+    „…niečo čo by nám dával spätnú väzbu o tom do akej miery funguje táto vrstva dobre.“"""
+
+    __tablename__ = "kit_guide_events"
+    __table_args__ = (
+        CheckConstraint(
+            "kind IN ('missing_step', 'invalid_plan', 'stuck', 'not_detected', 'no_target', 'skipped', 'stopped', "
+            "'finished', 'idea', 'note')",
+            name="kind",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    session_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("kit_guide_sessions.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("kit_users.id", ondelete="SET NULL")
+    )
+    kind: Mapped[str] = mapped_column(String(14), nullable=False)
+    step_id: Mapped[str | None] = mapped_column(String(80))
+    detail: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = _now_column()

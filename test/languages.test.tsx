@@ -17,7 +17,7 @@ describe("the person's language (DEV-394)", () => {
     renderApp({ manifest: BOTH, user: { ...ADMIN, language: "hu" } });
 
     await frame();
-    await waitFor(() => expect(panelEntries()).toEqual(["Áttekintés", "Első lépések", "Frissítések", "—", "Beállítások"]));
+    await waitFor(() => expect(panelEntries()).toEqual(["Áttekintés", "Hogyan csináljam", "Frissítések", "—", "Beállítások"]));
   });
 
   it("whoever chose none gets the installation's language — already on the sign-in", async () => {
@@ -35,7 +35,7 @@ describe("the person's language (DEV-394)", () => {
     renderApp({ manifest: { languages: ["sk", "hu", "en"] }, user: { ...ADMIN, language: "en" } });
 
     await frame();
-    await waitFor(() => expect(panelEntries()).toEqual(["Overview", "Getting started", "Updates", "—", "Settings"]));
+    await waitFor(() => expect(panelEntries()).toEqual(["Overview", "How to", "Updates", "—", "Settings"]));
   });
 
   it("the template's own texts exist in every language it speaks, none missing (DEV-398)", () => {
@@ -50,7 +50,7 @@ describe("the person's language (DEV-394)", () => {
     renderApp({ user: { ...ADMIN, language: "hu" } });
 
     await frame();
-    expect(panelEntries()).toEqual(["Prehľad", "Ako začať", "Aktualizácie", "—", "Nastavenia"]);
+    expect(panelEntries()).toEqual(["Prehľad", "Ako urobiť", "Aktualizácie", "—", "Nastavenia"]);
   });
 
   it("Moje konto keeps the choice with the person and the frame changes at once", async () => {

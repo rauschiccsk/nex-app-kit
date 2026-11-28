@@ -31,6 +31,8 @@ describe("defineApp", () => {
       languages: ["sk"],
       messages: {},
       web: false, // DEV-523: an app that says nothing has no web
+      guide: true, // DEV-535: Sprievodca is on unless the app says false
+      guideCatalog: { steps: [], subjects: {} },
     });
     expect(Object.isFrozen(app)).toBe(true);
   });

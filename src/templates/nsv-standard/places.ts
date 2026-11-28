@@ -6,3 +6,8 @@ export const TEMPLATE_PLACES = {
   updates: { path: "/updates", label: "kit.place.updates", icon: "✨" },
   settings: { path: "/settings", label: "kit.place.settings", icon: "⚙️" },
 } as const;
+
+/** DEV-535 — with Sprievodca, „Ako začať“ is „Ako urobiť“: the conversation in place of a guide to read. */
+export function gettingStartedPlace(guide: boolean): { path: string; label: string; icon: string } {
+  return guide ? { ...TEMPLATE_PLACES.gettingStarted, label: "kit.place.howTo" } : TEMPLATE_PLACES.gettingStarted;
+}

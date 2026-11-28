@@ -9,18 +9,26 @@ const AREAS = { label: "Oblasti", path: "/areas", icon: "🗂️" };
 const SEARCH = { label: "Hľadanie", path: "/search", icon: "🔎" };
 
 describe("left panel", () => {
-  it("reads as the cockpit's: Prehľad, Ako začať, the app's entries, Aktualizácie, a line, Nastavenia", async () => {
+  // DEV-535: with Sprievodca (on unless the app says false) the cockpit's „Ako začať“ is „Ako urobiť“.
+  it("reads as the cockpit's: Prehľad, Ako urobiť, the app's entries, Aktualizácie, a line, Nastavenia", async () => {
     renderApp({ manifest: { nav: [AREAS, SEARCH] } });
 
     await screen.findByText("v0.1.0");
-    expect(panelEntries()).toEqual(["Prehľad", "Ako začať", "Oblasti", "Hľadanie", "Aktualizácie", "—", "Nastavenia"]);
+    expect(panelEntries()).toEqual(["Prehľad", "Ako urobiť", "Oblasti", "Hľadanie", "Aktualizácie", "—", "Nastavenia"]);
+  });
+
+  it("an app that switched Sprievodca off still has Ako začať", async () => {
+    renderApp({ manifest: { guide: false } });
+
+    await screen.findByText("v0.1.0");
+    expect(panelEntries()).toEqual(["Prehľad", "Ako začať", "Aktualizácie", "—", "Nastavenia"]);
   });
 
   it("an app without entries of its own still has the template's", async () => {
     renderApp();
 
     await screen.findByText("v0.1.0");
-    expect(panelEntries()).toEqual(["Prehľad", "Ako začať", "Aktualizácie", "—", "Nastavenia"]);
+    expect(panelEntries()).toEqual(["Prehľad", "Ako urobiť", "Aktualizácie", "—", "Nastavenia"]);
   });
 
   it("an entry for the admin is there for the admin only", async () => {
@@ -167,7 +175,7 @@ describe("layout kept on the server for each person", () => {
 describe("top bar", () => {
   it.each([
     ["/", "Prehľad"],
-    ["/getting-started", "Ako začať"],
+    ["/getting-started", "Ako urobiť"],
     ["/updates", "Aktualizácie"],
     ["/settings", "Nastavenia"],
     ["/areas", "Oblasti"],
@@ -178,6 +186,13 @@ describe("top bar", () => {
 
     const { header } = await frame();
     expect(await within(header).findByText(label)).toBeInTheDocument();
+  });
+
+  it("without Sprievodca, on /getting-started says Ako začať", async () => {
+    renderApp({ path: "/getting-started", manifest: { guide: false } });
+
+    const { header } = await frame();
+    expect(await within(header).findByText("Ako začať")).toBeInTheDocument();
   });
 
   it("switches the theme and remembers it for the person", async () => {

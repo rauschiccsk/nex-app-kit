@@ -28,7 +28,8 @@ describe("the page says its language", () => {
     renderApp({ manifest: THREE, user: null, answers: { "GET /installation": INSTALLATION_HU } });
 
     await screen.findByRole("button", { name: "Bejelentkezés" });
-    expect(document.documentElement.lang).toBe("hu");
+    // Set by the frame once it knows the language — waited for as in the test above (it raced the effect, DEV-535).
+    await waitFor(() => expect(document.documentElement.lang).toBe("hu"));
   });
 
   it("it changes with the language chosen in Moje konto", async () => {

@@ -7,13 +7,14 @@ import { useFrame } from "../../frame/FrameContext";
 import { useTheme } from "../../frame/theme";
 import type { AppManifest } from "../../manifest";
 import { MODULES } from "../../modules";
-import { TEMPLATE_PLACES } from "./places";
+import { GuideButton } from "../../guide/GuidePanel";
+import { gettingStartedPlace, TEMPLATE_PLACES } from "./places";
 import { useKitT } from "../../i18n";
 
 /** The place's name: exact first, then the entry the address lies under (/areas/12 → Oblasti), else the app's name. */
 export function placeLabel(pathname: string, manifest: AppManifest): string {
   const places = [
-    ...Object.values(TEMPLATE_PLACES),
+    ...Object.values({ ...TEMPLATE_PLACES, gettingStarted: gettingStartedPlace(manifest.guide) }),
     ...manifest.modules.flatMap((id) => (MODULES[id] ? [MODULES[id]] : [])),
     ...manifest.nav,
   ];
@@ -39,7 +40,12 @@ export function NsvTopbar() {
           <span className="text-[var(--color-text-secondary)] truncate">{t(placeLabel(pathname, manifest))}</span>
         </div>
       }
-      right={<ThemeToggle theme={isDark ? "dark" : "light"} onToggle={toggleDark} />}
+      right={
+        <div className="flex items-center gap-2">
+          {manifest.guide && <GuideButton />}
+          <ThemeToggle theme={isDark ? "dark" : "light"} onToggle={toggleDark} />
+        </div>
+      }
     />
   );
 }

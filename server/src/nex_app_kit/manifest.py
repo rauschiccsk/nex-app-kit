@@ -37,6 +37,8 @@ class Manifest:
     languages: tuple[str, ...] = ("sk",)
     #: DEV-523 — the app has a web (``web/``) beside its administration: own accounts, sign-in by e-mail.
     web: bool = False
+    #: DEV-535 — Sprievodca: on unless the app says ``"guide": false`` (the cockpit switches it off for a special app).
+    guide: bool = True
 
     @property
     def ai(self) -> bool:
@@ -103,10 +105,19 @@ def manifest_from_data(data: Any) -> Manifest:
         problems.append(
             "Webový frontend (web) má len aplikácia s vlastným heslom (auth „password“) — web sa prihlasuje e-mailom."
         )
+    guide = data.get("guide", True)
+    if not isinstance(guide, bool):
+        problems.append("Sprievodca (guide) je true alebo false.")
     if problems:
         raise ManifestError(problems)
     return Manifest(
-        template=template, name=name, auth=auth, ai_roles=tuple(roles), languages=tuple(languages), web=web is True
+        template=template,
+        name=name,
+        auth=auth,
+        ai_roles=tuple(roles),
+        languages=tuple(languages),
+        web=web is True,
+        guide=guide is not False,
     )
 
 

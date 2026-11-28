@@ -22,6 +22,9 @@ import {
   type AgentSettingRead,
   type CurrentUser,
   type EndpointId,
+  type GuidePathStep,
+  type GuidePlanBody,
+  type GuideSessionRead,
   type SessionRead,
   type UserLayout,
   type WebAccountAction,
@@ -178,6 +181,18 @@ export function previewHandlers(options: PreviewOptions): HttpHandler[] {
     return json(webAccounts.find((a) => a.id === id));
   };
 
+  let guideSession: GuideSessionRead = {
+    id: "preview-guide",
+    goal: "",
+    status: "planned",
+    steps: [],
+    current_step: 0,
+    stop_reason: null,
+    rating: null,
+    comment: null,
+    created_at: NOW,
+  };
+
   const answers: Record<EndpointId, Answer | null> = {
     // The browser comes to these from NEX Manager — never inside the preview.
     launch: null,
@@ -256,6 +271,54 @@ export function previewHandlers(options: PreviewOptions): HttpHandler[] {
     rejectWebAccount: ({ params }) => decideWeb(String(params.id), "reject"),
     disableWebAccount: ({ params }) => decideWeb(String(params.id), "disable"),
     enableWebAccount: ({ params }) => decideWeb(String(params.id), "enable"),
+    // DEV-535 — Sprievodca in the preview: no Claude; the path is the catalog's first steps not done yet.
+    guidePlan: ({ body }) => {
+      const sent = (body ?? {}) as GuidePlanBody;
+      const steps: GuidePathStep[] = [];
+      for (const step of sent.catalog ?? []) {
+        const subject = step.subject_kind ? (sent.subjects?.[step.subject_kind]?.[0]?.id ?? null) : null;
+        if (step.subject_kind && subject === null) continue;
+        if (step.state?.[subject ?? ""]?.done) continue;
+        steps.push({ id: step.id, subject, title: step.title });
+        if (steps.length === 4) break;
+      }
+      guideSession = {
+        id: "preview-guide",
+        goal: sent.message ?? "",
+        status: steps.length ? "planned" : "missing",
+        steps,
+        current_step: 0,
+        stop_reason: null,
+        rating: null,
+        comment: null,
+        created_at: NOW,
+      };
+      return json({
+        session_id: guideSession.id,
+        kind: steps.length ? "plan" : "missing",
+        text: saidAs("kit.server.guide.preview", sent.language ?? me.language, main),
+        steps,
+        invalid: false,
+        empty_catalog: (sent.catalog ?? []).length === 0,
+      });
+    },
+    guideProgress: ({ body }) => {
+      const sent = (body ?? {}) as { status: GuideSessionRead["status"]; current_step: number; reason?: GuideSessionRead["stop_reason"] };
+      guideSession = { ...guideSession, status: sent.status, current_step: sent.current_step, stop_reason: sent.reason ?? null };
+      return json(guideSession);
+    },
+    guideRate: ({ body }) => {
+      const sent = (body ?? {}) as { rating: "up" | "down"; comment?: string };
+      guideSession = { ...guideSession, rating: sent.rating, comment: sent.comment ?? null };
+      return json(guideSession);
+    },
+    guideEvent: ({ body }) => json({ recorded: (body as { kind?: string } | null)?.kind ?? "" }, 201),
+    guideFeedback: () =>
+      json({
+        totals: { sessions: 0, done: 0, stopped: 0, missing: 0, guiding: 0, rated_up: 0, rated_down: 0 },
+        sessions: [],
+        events: [],
+      }),
   };
 
   const allowed = new Set([
@@ -263,6 +326,7 @@ export function previewHandlers(options: PreviewOptions): HttpHandler[] {
     manifest.auth === "password" ? "password" : "manager",
     ...(manifest.ai ? ["ai"] : []),
     ...(manifest.web ? ["web"] : []),
+    ...(manifest.guide ? ["guide"] : []),
   ]);
   return STANDARD_ENDPOINTS.filter((e) => allowed.has(e.scope)).flatMap((e) => {
     const answer = answers[e.id];

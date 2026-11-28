@@ -5,13 +5,14 @@ import { useStore } from "zustand";
 import { AppShell } from "nex-shared";
 
 import { useFrame } from "../../frame/FrameContext";
+import { GuideLayer } from "../../guide/GuidePanel";
 import { InstallationBand } from "../../frame/installation";
 import { PageErrorBoundary } from "./PageErrorBoundary";
 import { NsvSidebar } from "./Sidebar";
 import { NsvTopbar } from "./Topbar";
 
 export function NsvShell() {
-  const { user, layout } = useFrame();
+  const { user, layout, manifest } = useFrame();
   const load = useStore(layout, (s) => s.load);
   const reset = useStore(layout, (s) => s.reset);
   const userId = user?.id;
@@ -27,6 +28,8 @@ export function NsvShell() {
       <PageErrorBoundary>
         <Outlet />
       </PageErrorBoundary>
+      {/* DEV-535: Sprievodca beside any screen — its panel and the card that leads step by step. */}
+      {manifest.guide && <GuideLayer />}
     </AppShell>
   );
 }

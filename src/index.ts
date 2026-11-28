@@ -29,6 +29,9 @@ export type {
 export { TemplateApp } from "./TemplateApp";
 // DEV-523: the frame of an app's web (web/) — own accounts signed in by e-mail, a registration the admin decides.
 export { WebApp, useWebAccount } from "./web/WebApp";
+// DEV-535 — Sprievodca: the catalog of steps an app gives in defineApp, and the mark of a step's button.
+export { guideTarget } from "./guide/catalog";
+export type { GuideCatalog, GuideStep, GuideSubjectKind } from "./guide/catalog";
 export type { WebAppProps } from "./web/WebApp";
 export { KitBackLink, KitPage } from "./screens/KitPage";
 export type { KitPageProps } from "./screens/KitPage";

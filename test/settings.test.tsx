@@ -19,7 +19,7 @@ describe("settings tabs", () => {
   it("own password, AI, admin: all five, in the cockpit's order", async () => {
     renderApp({ path: "/settings", manifest: { auth: "password", ai: AI }, user: ADMIN });
 
-    expect(await tabs()).toEqual(["Systém", "Agenti", "Moje konto", "Používatelia", "Relácie"]);
+    expect(await tabs()).toEqual(["Systém", "Agenti", "Moje konto", "Používatelia", "Relácie", "Sprievodca"]);
   });
 
   it("a user sees neither Používatelia nor Agenti", async () => {
@@ -31,13 +31,13 @@ describe("settings tabs", () => {
   it("an app without AI has no Agenti", async () => {
     renderApp({ path: "/settings", manifest: { auth: "password" }, user: ADMIN });
 
-    expect(await tabs()).toEqual(["Systém", "Moje konto", "Používatelia", "Relácie"]);
+    expect(await tabs()).toEqual(["Systém", "Moje konto", "Používatelia", "Relácie", "Sprievodca"]);
   });
 
   it("launched from NEX Manager: no Používatelia — they live in NEX Manager", async () => {
     renderApp({ path: "/settings", manifest: { auth: "manager", ai: AI }, user: ADMIN });
 
-    expect(await tabs()).toEqual(["Systém", "Agenti", "Moje konto", "Relácie"]);
+    expect(await tabs()).toEqual(["Systém", "Agenti", "Moje konto", "Relácie", "Sprievodca"]);
   });
 });
 
@@ -236,7 +236,8 @@ describe("the frame asks only what the app has (KONTRAKT.md, column „kedy“)"
       fireEvent.click(screen.getByRole("tab", { name }));
       await screen.findByRole("tab", { name, selected: true });
     }
-    for (const entry of ["Prehľad", "Ako začať", "Aktualizácie"]) {
+    // DEV-535: with Sprievodca (on by default) the template's second place is „Ako urobiť“.
+    for (const entry of ["Prehľad", "Ako urobiť", "Aktualizácie"]) {
       fireEvent.click(screen.getByRole("button", { name: entry }));
     }
     await waitFor(() => expect(calls.some((c) => c.path === "/release-notes")).toBe(true));
@@ -247,14 +248,14 @@ describe("the frame asks only what the app has (KONTRAKT.md, column „kedy“)"
     const calls = await visitEverything({ auth: "manager" });
 
     const scopes = calls.map((c) => endpointOf(c)?.scope ?? `mimo rozhrania: ${c.method} ${c.path}`);
-    expect(new Set(scopes)).toEqual(new Set(["always"]));
+    expect(new Set(scopes)).toEqual(new Set(["always", "guide"]));
   });
 
   it("with its own password and AI: every call is in the standard interface", async () => {
     const calls = await visitEverything({ auth: "password", ai: AI });
 
     expect(calls.filter((c) => !endpointOf(c))).toEqual([]);
-    expect(new Set(calls.map((c) => endpointOf(c)?.scope))).toEqual(new Set(["always", "password", "ai"]));
+    expect(new Set(calls.map((c) => endpointOf(c)?.scope))).toEqual(new Set(["always", "password", "ai", "guide"]));
   });
 });
 

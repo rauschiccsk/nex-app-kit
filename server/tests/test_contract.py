@@ -1,6 +1,6 @@
 """DEV-252 — the server answers exactly the routes KONTRAKT.md names, each only where its column „kedy“ says:
 „vždy“ in every app, „heslo“ with its own password, „NEX Manager“ when launched from it, „AI“ with agents, „web“
-with a web (DEV-523)."""
+with a web (DEV-523), „Sprievodca“ unless the app switched it off (DEV-535)."""
 
 from __future__ import annotations
 
@@ -38,11 +38,14 @@ def routes(kit: AppKit) -> set[str]:
 LINK = ManagerLink(signing_key="k", module_slug="m", base_url="https://manager.invalid", api_key="a")
 
 
-@pytest.mark.parametrize(("auth", "web"), [("password", False), ("password", True), ("manager", False)])
+@pytest.mark.parametrize(
+    ("auth", "web", "guide"),
+    [("password", False, True), ("password", True, True), ("manager", False, True), ("password", False, False)],
+)
 @pytest.mark.parametrize("ai", [False, True])
-def test_the_server_answers_what_the_contract_names_and_nothing_else(factory, auth, ai, web):
+def test_the_server_answers_what_the_contract_names_and_nothing_else(factory, auth, ai, web, guide):
     kit = AppKit(
-        manifest=manifest(auth, ai, web=web),
+        manifest=manifest(auth, ai, web=web, guide=guide),
         version="1",
         session_factory=factory,
         manager=LINK if auth == "manager" else None,
@@ -52,10 +55,11 @@ def test_the_server_answers_what_the_contract_names_and_nothing_else(factory, au
         | ({"heslo"} if auth == "password" else {"NEX Manager"})
         | ({"AI"} if ai else set())
         | ({"web"} if web else set())
+        | ({"Sprievodca"} if guide else set())
     )
 
     assert routes(kit) == {route for route, when in contract().items() if when in wanted}
 
 
 def test_every_row_says_when_in_a_known_word():
-    assert set(contract().values()) <= {"vždy", "heslo", "NEX Manager", "AI", "web"}
+    assert set(contract().values()) <= {"vždy", "heslo", "NEX Manager", "AI", "web", "Sprievodca"}

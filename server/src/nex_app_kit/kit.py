@@ -144,6 +144,10 @@ class AppKit:
             from .web import build_web_router
 
             self.router.include_router(build_web_router(self))
+        if manifest.guide:
+            from .guide import build_guide_router
+
+            self.router.include_router(build_guide_router(self))
 
     # ── who is asking ──────────────────────────────────────────────────────────────────────────────
     def _signed_in(self, request: Request, db: Db, *, password_change_allowed: bool) -> User:

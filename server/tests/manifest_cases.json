@@ -154,5 +154,29 @@
     "problems": [
       "Webový frontend (web) je true alebo false."
     ]
+  },
+  {
+    "why": "DEV-535: guide (Sprievodca) is true or false",
+    "input": {
+      "template": "nsv-standard",
+      "name": "Orthodox Hermenia",
+      "initials": "OH",
+      "auth": "password",
+      "guide": "áno"
+    },
+    "problems": [
+      "Sprievodca (guide) je true alebo false."
+    ]
+  },
+  {
+    "why": "DEV-535: an app may switch Sprievodca off",
+    "input": {
+      "template": "nsv-standard",
+      "name": "Orthodox Hermenia",
+      "initials": "OH",
+      "auth": "password",
+      "guide": false
+    },
+    "problems": []
   }
 ]

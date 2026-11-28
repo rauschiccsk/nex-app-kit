@@ -1,7 +1,7 @@
 /**
  * Answers for the „Vizuál“ preview, which runs WITHOUT a server (MSW, ICCINT-94).
  *
- * The frame's own routes — sign-in, „Moje konto“, „Nastavenia“, „Aktualizácie“, „Ako začať“, layout — are answered
+ * The frame's own routes — sign-in, „Moje konto“, „Nastavenia“, „Aktualizácie“, „Ako urobiť“ (Sprievodca), layout — are answered
  * by the template (nex-app-kit/preview): the preview opens signed in, with the whole frame. Add answers for the app's
  * OWN screens after them, with representative example data:
  *

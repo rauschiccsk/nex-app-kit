@@ -3,6 +3,8 @@
 // them), and the server package (phase 2) implements the same table.
 import type { ApiClient, ReleaseNote, SystemSettingRead, UserRead, UserSessionRead } from "nex-shared";
 
+import type { MeasuredCatalog } from "./guide/catalog";
+
 /** The two roles of an app on a template; the server refuses everything else. */
 export const STANDARD_ROLES = [
   // DEV-394: the label is a key of the template's catalogs — shown in the person's language.
@@ -18,7 +20,7 @@ export const PASSWORD_MIN_LENGTH = 1;
 
 /** When an app has the endpoint: always, with its own password (users live in the app), launched from NEX Manager,
  *  with AI agents, or with a web (DEV-523) — the column „kedy“ of KONTRAKT.md. */
-export type EndpointScope = "always" | "password" | "manager" | "ai" | "web";
+export type EndpointScope = "always" | "password" | "manager" | "ai" | "web" | "guide";
 
 export const STANDARD_ENDPOINTS = [
   { id: "login", method: "POST", path: "/auth/login", scope: "password" },
@@ -62,6 +64,12 @@ export const STANDARD_ENDPOINTS = [
   { id: "rejectWebAccount", method: "POST", path: "/web-accounts/{id}/reject", scope: "web" },
   { id: "disableWebAccount", method: "POST", path: "/web-accounts/{id}/disable", scope: "web" },
   { id: "enableWebAccount", method: "POST", path: "/web-accounts/{id}/enable", scope: "web" },
+  // DEV-535 — Sprievodca.
+  { id: "guidePlan", method: "POST", path: "/guide/plan", scope: "guide" },
+  { id: "guideProgress", method: "POST", path: "/guide/sessions/{id}/progress", scope: "guide" },
+  { id: "guideRate", method: "POST", path: "/guide/sessions/{id}/rating", scope: "guide" },
+  { id: "guideEvent", method: "POST", path: "/guide/events", scope: "guide" },
+  { id: "guideFeedback", method: "GET", path: "/guide/feedback", scope: "guide" },
 ] as const satisfies readonly { id: string; method: string; path: string; scope: EndpointScope }[];
 
 export type EndpointId = (typeof STANDARD_ENDPOINTS)[number]["id"];
@@ -213,6 +221,61 @@ export interface StandardApi {
   webLogout(): Promise<void>;
   listWebAccounts(): Promise<WebAccountRead[]>;
   decideWebAccount(id: string, action: WebAccountAction): Promise<WebAccountRead>;
+  guidePlan(body: GuidePlanBody): Promise<GuidePlanRead>;
+  guideProgress(sessionId: string, status: "guiding" | "done" | "stopped", currentStep: number, reason?: GuideStopReason): Promise<GuideSessionRead>;
+  guideRate(sessionId: string, rating: "up" | "down", comment?: string): Promise<GuideSessionRead>;
+  guideEvent(event: GuideEventBody): Promise<{ recorded: string }>;
+  guideFeedback(): Promise<GuideFeedbackRead>;
+}
+
+// ── DEV-535 — Sprievodca ──────────────────────────────────────────────────────
+export type GuideStopReason = "unclear" | "did_otherwise" | "not_needed";
+export type GuideEventKind = "stuck" | "not_detected" | "no_target" | "skipped" | "idea";
+
+export interface GuidePathStep {
+  id: string;
+  subject: string | null;
+  title: string;
+}
+
+export interface GuidePlanBody extends MeasuredCatalog {
+  message: string;
+  session_id?: string;
+  language?: string;
+}
+
+export interface GuidePlanRead {
+  session_id: string;
+  kind: "plan" | "question" | "missing";
+  text: string;
+  steps: GuidePathStep[];
+  invalid: boolean;
+  empty_catalog: boolean;
+}
+
+export interface GuideSessionRead {
+  id: string;
+  goal: string;
+  status: "asking" | "planned" | "missing" | "guiding" | "done" | "stopped";
+  steps: GuidePathStep[];
+  current_step: number;
+  stop_reason: GuideStopReason | null;
+  rating: "up" | "down" | null;
+  comment: string | null;
+  created_at: string | null;
+}
+
+export interface GuideEventBody {
+  kind: GuideEventKind;
+  session_id?: string;
+  step_id?: string;
+  detail?: string;
+}
+
+export interface GuideFeedbackRead {
+  totals: { sessions: number; done: number; stopped: number; missing: number; guiding: number; rated_up: number; rated_down: number };
+  sessions: GuideSessionRead[];
+  events: { kind: string; step_id: string | null; detail: string | null; goal: string | null; created_at: string | null }[];
 }
 
 const WEB_ACTION_ENDPOINT: Record<WebAccountAction, EndpointId> = {
@@ -278,5 +341,11 @@ export function createStandardApi(client: ApiClient): StandardApi {
     webLogout: () => call("webLogout"),
     listWebAccounts: () => call("listWebAccounts"),
     decideWebAccount: (id, action) => call(WEB_ACTION_ENDPOINT[action], { id }),
+    guidePlan: (body) => call("guidePlan", {}, body),
+    guideProgress: (id, status, currentStep, reason) =>
+      call("guideProgress", { id }, { status, current_step: currentStep, ...(reason ? { reason } : {}) }),
+    guideRate: (id, rating, comment) => call("guideRate", { id }, { rating, ...(comment ? { comment } : {}) }),
+    guideEvent: (event) => call("guideEvent", {}, event),
+    guideFeedback: () => call("guideFeedback"),
   };
 }

@@ -7,4 +7,7 @@ import data from "../app.manifest.json";
 import { messages } from "./locales";
 
 // DEV-394: the app's own texts (src/locales) — every text a person reads; the frame says them in the person's language.
-export const manifest = defineApp(data, { messages });
+// DEV-535: the catalog of steps Sprievodca leads a person through — every important action of the app, with its screen,
+// its button (data-guide) and the checks whether it can be done and is done (KONTRAKT.md → Sprievodca):
+//   defineApp(data, { messages, guide: { steps: [...], subjects: { ... } } })
+export const manifest = defineApp(data, { messages, guide: { steps: [] } });

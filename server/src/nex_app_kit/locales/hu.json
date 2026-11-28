@@ -73,5 +73,11 @@
   "kit.setting.idle.unit": "perc",
   "kit.setting.maxHours.description": "Legkésőbb hány óra után kell újra bejelentkezni, akkor is, ha a felhasználó dolgozik.",
   "kit.setting.maxHours.label": "Leghosszabb bejelentkezés",
-  "kit.setting.maxHours.unit": "óra"
+  "kit.setting.maxHours.unit": "óra",
+  "kit.server.guide.empty": "Írja meg, mit szeretne tenni.",
+  "kit.server.guide.sessionNotFound": "Ilyen beszélgetés a Kalauzzal nem létezik.",
+  "kit.server.guide.notGuiding": "Ez a beszélgetés a Kalauzzal már véget ért.",
+  "kit.server.guide.reason": "Válassza ki, miért fejezi be a vezetést.",
+  "kit.server.guide.event": "A Kalauz nem ismeri ezt az eseményt.",
+  "kit.server.guide.preview": "Az előnézetben a Kalauz a katalógus első, még el nem végzett lépéseit mutatja — az alkalmazásban a céljához igazítja őket."
 }

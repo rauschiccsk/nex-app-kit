@@ -73,5 +73,11 @@
   "kit.setting.idle.unit": "minutes",
   "kit.setting.maxHours.description": "After how many hours at most a person must sign in again, even while working.",
   "kit.setting.maxHours.label": "Longest sign-in",
-  "kit.setting.maxHours.unit": "hours"
+  "kit.setting.maxHours.unit": "hours",
+  "kit.server.guide.empty": "Write what you want to do.",
+  "kit.server.guide.sessionNotFound": "There is no such conversation with Sprievodca.",
+  "kit.server.guide.notGuiding": "This conversation with Sprievodca has ended.",
+  "kit.server.guide.reason": "Choose why you are ending the guidance.",
+  "kit.server.guide.event": "Sprievodca does not know this event.",
+  "kit.server.guide.preview": "In the preview, Sprievodca shows the catalog's first steps not yet done — in the app it composes them for your goal."
 }

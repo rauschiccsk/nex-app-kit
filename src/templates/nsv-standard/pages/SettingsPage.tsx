@@ -38,6 +38,7 @@ import {
 } from "../../../standard-api";
 import { chooseLanguage, useKitT } from "../../../i18n";
 import { useInstallationIdentity } from "../../../frame/installation";
+import { GuideFeedbackTab } from "./GuideFeedbackTab";
 import { WebAccountsTab } from "./WebAccountsTab";
 
 
@@ -65,11 +66,13 @@ export function settingsConfig(manifest: AppManifest): SettingsKitConfig {
   if (manifest.auth === "password") tabs.push("users");
   tabs.push("sessions");
   if (manifest.web) tabs.push("web");
+  if (manifest.guide) tabs.push("guide");
   return {
     tabs,
     // DEV-394: the tabs are named by nex-shared, in the person's language.
     labels: {},
-    tabVisibleForRole: (tab, role) => (tab === "users" || tab === "agents" || tab === "web" ? role === ADMIN_ROLE : true),
+    tabVisibleForRole: (tab, role) =>
+      tab === "users" || tab === "agents" || tab === "web" || tab === "guide" ? role === ADMIN_ROLE : true,
   };
 }
 
@@ -356,6 +359,7 @@ export function SettingsPage() {
         users: <UsersTab />,
         sessions: <SessionsTab />,
         web: <WebAccountsTab />,
+        guide: <GuideFeedbackTab />,
       }}
     />
   );

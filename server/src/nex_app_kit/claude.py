@@ -75,6 +75,11 @@ class ClaudeFailure(Exception):
         """What the person reads, in their language."""
         return tr(language, _SENTENCES[self.code], self.params)
 
+    @property
+    def key(self) -> str:
+        """DEV-535 — the key of that sentence, for a refusal said in the language of the request (``KitError``)."""
+        return _SENTENCES[self.code]
+
 
 @dataclass(frozen=True)
 class Image:

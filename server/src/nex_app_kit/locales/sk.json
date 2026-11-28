@@ -73,5 +73,11 @@
   "kit.setting.idle.unit": "minút",
   "kit.setting.maxHours.description": "Najneskôr po koľkých hodinách sa treba prihlásiť znova, aj keď človek pracuje.",
   "kit.setting.maxHours.label": "Najdlhšie prihlásenie",
-  "kit.setting.maxHours.unit": "hodín"
+  "kit.setting.maxHours.unit": "hodín",
+  "kit.server.guide.empty": "Napíšte, čo chcete urobiť.",
+  "kit.server.guide.sessionNotFound": "Takýto rozhovor so Sprievodcom neexistuje.",
+  "kit.server.guide.notGuiding": "Tento rozhovor so Sprievodcom už skončil.",
+  "kit.server.guide.reason": "Vyberte, prečo vedenie končíte.",
+  "kit.server.guide.event": "Sprievodca túto udalosť nepozná.",
+  "kit.server.guide.preview": "V náhľade Sprievodca ukazuje prvé kroky katalógu, ktoré ešte nie sú hotové — v aplikácii ich poskladá podľa vášho cieľa."
 }
