@@ -1,6 +1,6 @@
 import {
   STANDARD_ENDPOINTS
-} from "./chunk-6TJAI7LP.js";
+} from "./chunk-ED5ZK2DU.js";
 
 // src/preview.ts
 import { HttpResponse, http } from "msw";
@@ -105,7 +105,13 @@ var en_default = {
   "kit.setting.idle.unit": "minutes",
   "kit.setting.maxHours.description": "After how many hours at most a person must sign in again, even while working.",
   "kit.setting.maxHours.label": "Longest sign-in",
-  "kit.setting.maxHours.unit": "hours"
+  "kit.setting.maxHours.unit": "hours",
+  "kit.server.guide.empty": "Write what you want to do.",
+  "kit.server.guide.sessionNotFound": "There is no such conversation with Sprievodca.",
+  "kit.server.guide.notGuiding": "This conversation with Sprievodca has ended.",
+  "kit.server.guide.reason": "Choose why you are ending the guidance.",
+  "kit.server.guide.event": "Sprievodca does not know this event.",
+  "kit.server.guide.preview": "In the preview, Sprievodca shows the catalog's first steps not yet done \u2014 in the app it composes them for your goal."
 };
 
 // server/src/nex_app_kit/locales/hu.json
@@ -184,7 +190,13 @@ var hu_default = {
   "kit.setting.idle.unit": "perc",
   "kit.setting.maxHours.description": "Legk\xE9s\u0151bb h\xE1ny \xF3ra ut\xE1n kell \xFAjra bejelentkezni, akkor is, ha a felhaszn\xE1l\xF3 dolgozik.",
   "kit.setting.maxHours.label": "Leghosszabb bejelentkez\xE9s",
-  "kit.setting.maxHours.unit": "\xF3ra"
+  "kit.setting.maxHours.unit": "\xF3ra",
+  "kit.server.guide.empty": "\xCDrja meg, mit szeretne tenni.",
+  "kit.server.guide.sessionNotFound": "Ilyen besz\xE9lget\xE9s a Kalauzzal nem l\xE9tezik.",
+  "kit.server.guide.notGuiding": "Ez a besz\xE9lget\xE9s a Kalauzzal m\xE1r v\xE9get \xE9rt.",
+  "kit.server.guide.reason": "V\xE1lassza ki, mi\xE9rt fejezi be a vezet\xE9st.",
+  "kit.server.guide.event": "A Kalauz nem ismeri ezt az esem\xE9nyt.",
+  "kit.server.guide.preview": "Az el\u0151n\xE9zetben a Kalauz a katal\xF3gus els\u0151, m\xE9g el nem v\xE9gzett l\xE9p\xE9seit mutatja \u2014 az alkalmaz\xE1sban a c\xE9lj\xE1hoz igaz\xEDtja \u0151ket."
 };
 
 // server/src/nex_app_kit/locales/sk.json
@@ -263,7 +275,13 @@ var sk_default = {
   "kit.setting.idle.unit": "min\xFAt",
   "kit.setting.maxHours.description": "Najnesk\xF4r po ko\u013Ek\xFDch hodin\xE1ch sa treba prihl\xE1si\u0165 znova, aj ke\u010F \u010Dlovek pracuje.",
   "kit.setting.maxHours.label": "Najdlh\u0161ie prihl\xE1senie",
-  "kit.setting.maxHours.unit": "hod\xEDn"
+  "kit.setting.maxHours.unit": "hod\xEDn",
+  "kit.server.guide.empty": "Nap\xED\u0161te, \u010Do chcete urobi\u0165.",
+  "kit.server.guide.sessionNotFound": "Tak\xFDto rozhovor so Sprievodcom neexistuje.",
+  "kit.server.guide.notGuiding": "Tento rozhovor so Sprievodcom u\u017E skon\u010Dil.",
+  "kit.server.guide.reason": "Vyberte, pre\u010Do vedenie kon\u010D\xEDte.",
+  "kit.server.guide.event": "Sprievodca t\xFAto udalos\u0165 nepozn\xE1.",
+  "kit.server.guide.preview": "V n\xE1h\u013Eade Sprievodca ukazuje prv\xE9 kroky katal\xF3gu, ktor\xE9 e\u0161te nie s\xFA hotov\xE9 \u2014 v aplik\xE1cii ich posklad\xE1 pod\u013Ea v\xE1\u0161ho cie\u013Ea."
 };
 
 // src/preview.ts
@@ -380,6 +398,17 @@ function previewHandlers(options) {
     webAccounts = webAccounts.map((a) => a.id === id ? { ...a, status: WEB_DECISION[action], decided_at: NOW } : a);
     return json(webAccounts.find((a) => a.id === id));
   };
+  let guideSession = {
+    id: "preview-guide",
+    goal: "",
+    status: "planned",
+    steps: [],
+    current_step: 0,
+    stop_reason: null,
+    rating: null,
+    comment: null,
+    created_at: NOW
+  };
   const answers = {
     // The browser comes to these from NEX Manager — never inside the preview.
     launch: null,
@@ -453,13 +482,61 @@ function previewHandlers(options) {
     approveWebAccount: ({ params }) => decideWeb(String(params.id), "approve"),
     rejectWebAccount: ({ params }) => decideWeb(String(params.id), "reject"),
     disableWebAccount: ({ params }) => decideWeb(String(params.id), "disable"),
-    enableWebAccount: ({ params }) => decideWeb(String(params.id), "enable")
+    enableWebAccount: ({ params }) => decideWeb(String(params.id), "enable"),
+    // DEV-535 — Sprievodca in the preview: no Claude; the path is the catalog's first steps not done yet.
+    guidePlan: ({ body }) => {
+      const sent = body ?? {};
+      const steps = [];
+      for (const step of sent.catalog ?? []) {
+        const subject = step.subject_kind ? sent.subjects?.[step.subject_kind]?.[0]?.id ?? null : null;
+        if (step.subject_kind && subject === null) continue;
+        if (step.state?.[subject ?? ""]?.done) continue;
+        steps.push({ id: step.id, subject, title: step.title });
+        if (steps.length === 4) break;
+      }
+      guideSession = {
+        id: "preview-guide",
+        goal: sent.message ?? "",
+        status: steps.length ? "planned" : "missing",
+        steps,
+        current_step: 0,
+        stop_reason: null,
+        rating: null,
+        comment: null,
+        created_at: NOW
+      };
+      return json({
+        session_id: guideSession.id,
+        kind: steps.length ? "plan" : "missing",
+        text: saidAs("kit.server.guide.preview", sent.language ?? me.language, main),
+        steps,
+        invalid: false,
+        empty_catalog: (sent.catalog ?? []).length === 0
+      });
+    },
+    guideProgress: ({ body }) => {
+      const sent = body ?? {};
+      guideSession = { ...guideSession, status: sent.status, current_step: sent.current_step, stop_reason: sent.reason ?? null };
+      return json(guideSession);
+    },
+    guideRate: ({ body }) => {
+      const sent = body ?? {};
+      guideSession = { ...guideSession, rating: sent.rating, comment: sent.comment ?? null };
+      return json(guideSession);
+    },
+    guideEvent: ({ body }) => json({ recorded: body?.kind ?? "" }, 201),
+    guideFeedback: () => json({
+      totals: { sessions: 0, done: 0, stopped: 0, missing: 0, guiding: 0, rated_up: 0, rated_down: 0 },
+      sessions: [],
+      events: []
+    })
   };
   const allowed = /* @__PURE__ */ new Set([
     "always",
     manifest.auth === "password" ? "password" : "manager",
     ...manifest.ai ? ["ai"] : [],
-    ...manifest.web ? ["web"] : []
+    ...manifest.web ? ["web"] : [],
+    ...manifest.guide ? ["guide"] : []
   ]);
   return STANDARD_ENDPOINTS.filter((e) => allowed.has(e.scope)).flatMap((e) => {
     const answer = answers[e.id];

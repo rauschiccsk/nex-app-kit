@@ -47,7 +47,13 @@ var STANDARD_ENDPOINTS = [
   { id: "approveWebAccount", method: "POST", path: "/web-accounts/{id}/approve", scope: "web" },
   { id: "rejectWebAccount", method: "POST", path: "/web-accounts/{id}/reject", scope: "web" },
   { id: "disableWebAccount", method: "POST", path: "/web-accounts/{id}/disable", scope: "web" },
-  { id: "enableWebAccount", method: "POST", path: "/web-accounts/{id}/enable", scope: "web" }
+  { id: "enableWebAccount", method: "POST", path: "/web-accounts/{id}/enable", scope: "web" },
+  // DEV-535 — Sprievodca.
+  { id: "guidePlan", method: "POST", path: "/guide/plan", scope: "guide" },
+  { id: "guideProgress", method: "POST", path: "/guide/sessions/{id}/progress", scope: "guide" },
+  { id: "guideRate", method: "POST", path: "/guide/sessions/{id}/rating", scope: "guide" },
+  { id: "guideEvent", method: "POST", path: "/guide/events", scope: "guide" },
+  { id: "guideFeedback", method: "GET", path: "/guide/feedback", scope: "guide" }
 ];
 var WEB_ACTION_ENDPOINT = {
   approve: "approveWebAccount",
@@ -107,7 +113,12 @@ function createStandardApi(client) {
     webMe: () => call("webMe"),
     webLogout: () => call("webLogout"),
     listWebAccounts: () => call("listWebAccounts"),
-    decideWebAccount: (id, action) => call(WEB_ACTION_ENDPOINT[action], { id })
+    decideWebAccount: (id, action) => call(WEB_ACTION_ENDPOINT[action], { id }),
+    guidePlan: (body) => call("guidePlan", {}, body),
+    guideProgress: (id, status, currentStep, reason) => call("guideProgress", { id }, { status, current_step: currentStep, ...reason ? { reason } : {} }),
+    guideRate: (id, rating, comment) => call("guideRate", { id }, { rating, ...comment ? { comment } : {} }),
+    guideEvent: (event) => call("guideEvent", {}, event),
+    guideFeedback: () => call("guideFeedback")
   };
 }
 

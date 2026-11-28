@@ -1,6 +1,63 @@
 import { ReactNode } from 'react';
 import { SettingsCategory, UserRead, Language, AppMessages, UserSessionRead, SystemSettingRead, ReleaseNote, ApiClient } from 'nex-shared';
 
+/** One step of the catalog. Texts are keys of the app's own texts (or plain text). */
+interface GuideStep {
+    /** Unique, e.g. `etalon.upload`; the button on the screen carries it as `data-guide` unless `target` says otherwise. */
+    id: string;
+    title: string;
+    /** One sentence: what the person does now („Kliknite Nahrať súbory a vyberte preklad aj predlohu“). */
+    hint: string;
+    /** Where it is done, in words („Etalón → celok → Súbory“). */
+    screen: string;
+    /** The address of the screen — for the object when the step applies to one. */
+    path: (subject?: string) => string;
+    /** The `data-guide` of the button, when it is not the step's id. */
+    target?: string;
+    /** The kind of object the step applies to (a key of the catalog's `subjects`). */
+    subject?: string;
+    /** Steps that must be done first (for the same object when they apply to the same kind). */
+    requires?: string[];
+    /** Whether it can be done now; by default yes. */
+    isAvailable?: (subject?: string) => boolean | Promise<boolean>;
+    /** Whether it is done — the guiding moves on when this says yes. */
+    isDone: (subject?: string) => boolean | Promise<boolean>;
+}
+/** A kind of object steps apply to — the objects there are, by the app's interface. */
+interface GuideSubjectKind {
+    list: () => Promise<{
+        id: string;
+        label: string;
+    }[]>;
+}
+interface GuideCatalog {
+    steps: GuideStep[];
+    subjects?: Record<string, GuideSubjectKind>;
+}
+/** The attribute marking a step's button on its screen: `<Button {...guideTarget("etalon.upload")}>`. */
+declare function guideTarget(id: string): {
+    "data-guide": string;
+};
+/** What the server is sent: the steps with what the screen measured, and the objects there are. */
+interface MeasuredCatalog {
+    catalog: {
+        id: string;
+        title: string;
+        hint: string;
+        screen: string;
+        subject_kind: string | null;
+        requires: string[];
+        state: Record<string, {
+            available: boolean;
+            done: boolean;
+        }>;
+    }[];
+    subjects: Record<string, {
+        id: string;
+        label: string;
+    }[]>;
+}
+
 declare const TEMPLATE_IDS: readonly ["nsv-standard"];
 type TemplateId = (typeof TEMPLATE_IDS)[number];
 
@@ -46,6 +103,8 @@ interface AppManifestInput {
     languages?: string[];
     /** DEV-523 — the app has a web (web/) beside its administration: own accounts, sign-in by e-mail. */
     web?: boolean;
+    /** DEV-535 — Sprievodca; on unless `false` (the cockpit switches it off for a special app). */
+    guide?: boolean;
 }
 interface AppManifest {
     readonly template: TemplateId;
@@ -68,6 +127,10 @@ interface AppManifest {
     readonly messages: AppMessages;
     /** DEV-523 — the app has a web (web/): Nastavenia show its accounts and the requests to decide. */
     readonly web: boolean;
+    /** DEV-535 — Sprievodca is on: „Ako urobiť“ with its chat, its button in the top bar, its tab in Nastavenia. */
+    readonly guide: boolean;
+    /** DEV-535 — the steps Sprievodca guides through (the app's `guide` in `defineApp`); empty: it says it has none. */
+    readonly guideCatalog: GuideCatalog;
 }
 /** The template's own pages — an app's entry never takes their path. */
 declare const TEMPLATE_PATHS: readonly ["/", "/getting-started", "/updates", "/settings"];
@@ -85,6 +148,8 @@ interface AppExtras {
     userActions?: (user: UserRead) => ReactNode;
     /** DEV-394 — the app's own texts per language (`src/locales`); a label of the left panel may be one of their keys. */
     messages?: AppMessages;
+    /** DEV-535 — the catalog of steps Sprievodca guides through (`guide/catalog.ts`); checked when the app starts. */
+    guide?: GuideCatalog;
 }
 declare class ManifestError extends Error {
     readonly problems: string[];
@@ -106,7 +171,7 @@ declare const ADMIN_ROLE = "admin";
 declare const PASSWORD_MIN_LENGTH = 1;
 /** When an app has the endpoint: always, with its own password (users live in the app), launched from NEX Manager,
  *  with AI agents, or with a web (DEV-523) — the column „kedy“ of KONTRAKT.md. */
-type EndpointScope = "always" | "password" | "manager" | "ai" | "web";
+type EndpointScope = "always" | "password" | "manager" | "ai" | "web" | "guide";
 declare const STANDARD_ENDPOINTS: readonly [{
     readonly id: "login";
     readonly method: "POST";
@@ -287,6 +352,31 @@ declare const STANDARD_ENDPOINTS: readonly [{
     readonly method: "POST";
     readonly path: "/web-accounts/{id}/enable";
     readonly scope: "web";
+}, {
+    readonly id: "guidePlan";
+    readonly method: "POST";
+    readonly path: "/guide/plan";
+    readonly scope: "guide";
+}, {
+    readonly id: "guideProgress";
+    readonly method: "POST";
+    readonly path: "/guide/sessions/{id}/progress";
+    readonly scope: "guide";
+}, {
+    readonly id: "guideRate";
+    readonly method: "POST";
+    readonly path: "/guide/sessions/{id}/rating";
+    readonly scope: "guide";
+}, {
+    readonly id: "guideEvent";
+    readonly method: "POST";
+    readonly path: "/guide/events";
+    readonly scope: "guide";
+}, {
+    readonly id: "guideFeedback";
+    readonly method: "GET";
+    readonly path: "/guide/feedback";
+    readonly scope: "guide";
 }];
 type EndpointId = (typeof STANDARD_ENDPOINTS)[number]["id"];
 interface HealthRead {
@@ -424,8 +514,71 @@ interface StandardApi {
     webLogout(): Promise<void>;
     listWebAccounts(): Promise<WebAccountRead[]>;
     decideWebAccount(id: string, action: WebAccountAction): Promise<WebAccountRead>;
+    guidePlan(body: GuidePlanBody): Promise<GuidePlanRead>;
+    guideProgress(sessionId: string, status: "guiding" | "done" | "stopped", currentStep: number, reason?: GuideStopReason): Promise<GuideSessionRead>;
+    guideRate(sessionId: string, rating: "up" | "down", comment?: string): Promise<GuideSessionRead>;
+    guideEvent(event: GuideEventBody): Promise<{
+        recorded: string;
+    }>;
+    guideFeedback(): Promise<GuideFeedbackRead>;
+}
+type GuideStopReason = "unclear" | "did_otherwise" | "not_needed";
+type GuideEventKind = "stuck" | "not_detected" | "no_target" | "skipped" | "idea";
+interface GuidePathStep {
+    id: string;
+    subject: string | null;
+    title: string;
+}
+interface GuidePlanBody extends MeasuredCatalog {
+    message: string;
+    session_id?: string;
+    language?: string;
+}
+interface GuidePlanRead {
+    session_id: string;
+    kind: "plan" | "question" | "missing";
+    text: string;
+    steps: GuidePathStep[];
+    invalid: boolean;
+    empty_catalog: boolean;
+}
+interface GuideSessionRead {
+    id: string;
+    goal: string;
+    status: "asking" | "planned" | "missing" | "guiding" | "done" | "stopped";
+    steps: GuidePathStep[];
+    current_step: number;
+    stop_reason: GuideStopReason | null;
+    rating: "up" | "down" | null;
+    comment: string | null;
+    created_at: string | null;
+}
+interface GuideEventBody {
+    kind: GuideEventKind;
+    session_id?: string;
+    step_id?: string;
+    detail?: string;
+}
+interface GuideFeedbackRead {
+    totals: {
+        sessions: number;
+        done: number;
+        stopped: number;
+        missing: number;
+        guiding: number;
+        rated_up: number;
+        rated_down: number;
+    };
+    sessions: GuideSessionRead[];
+    events: {
+        kind: string;
+        step_id: string | null;
+        detail: string | null;
+        goal: string | null;
+        created_at: string | null;
+    }[];
 }
 /** The frame's calls, each to the path and method its row in {@link STANDARD_ENDPOINTS} names. */
 declare function createStandardApi(client: ApiClient): StandardApi;
 
-export { type AppManifest as A, type CurrentUser as C, type EndpointId as E, type GettingStartedRead as G, type HealthRead as H, type LayoutLimit as L, ManifestError as M, NAV_LABEL_MAX as N, PASSWORD_MIN_LENGTH as P, type StandardApi as S, type TemplateId as T, type UserLayout as U, type WebAccountRead as W, type UserLayoutChanges as a, ADMIN_ROLE as b, type AgentModelOption as c, type AgentRole as d, type AgentSettingRead as e, type AiConfig as f, type AppAuthMode as g, type AppManifestInput as h, type EndpointScope as i, type NavEntry as j, type NewUser as k, type ProfileChanges as l, STANDARD_ENDPOINTS as m, STANDARD_ROLES as n, TEMPLATE_IDS as o, TEMPLATE_PATHS as p, type UserChanges as q, type WebAccountAction as r, type WebAccountStatus as s, type WebRegistration as t, createStandardApi as u, defineApp as v };
+export { type AppManifest as A, type CurrentUser as C, type EndpointId as E, type GettingStartedRead as G, type HealthRead as H, type LayoutLimit as L, ManifestError as M, NAV_LABEL_MAX as N, PASSWORD_MIN_LENGTH as P, type StandardApi as S, type TemplateId as T, type UserLayout as U, type WebAccountRead as W, type UserLayoutChanges as a, ADMIN_ROLE as b, type AgentModelOption as c, type AgentRole as d, type AgentSettingRead as e, type AiConfig as f, type AppAuthMode as g, type AppManifestInput as h, type EndpointScope as i, type GuideCatalog as j, type GuideStep as k, type GuideSubjectKind as l, type NavEntry as m, type NewUser as n, type ProfileChanges as o, STANDARD_ENDPOINTS as p, STANDARD_ROLES as q, TEMPLATE_IDS as r, TEMPLATE_PATHS as s, type UserChanges as t, type WebAccountAction as u, type WebAccountStatus as v, type WebRegistration as w, createStandardApi as x, defineApp as y, guideTarget as z };
