@@ -130,3 +130,9 @@ export function catalogProblems(catalog: GuideCatalog): string[] {
   }
   return problems;
 }
+
+/** Whether the app shows Sprievodca: switched on (the default) and with at least one step to lead through. An app
+ *  without steps keeps „Ako začať“ as it was — after an upgrade of the template nothing it had disappears. */
+export function guided(manifest: { guide: boolean; guideCatalog: GuideCatalog }): boolean {
+  return manifest.guide && manifest.guideCatalog.steps.length > 0;
+}

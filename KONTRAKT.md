@@ -73,7 +73,8 @@ administrácia a do administrácie neprihlási — ani naopak. Vlastné cesty we
 
 ## Sprievodca (DEV-535)
 
-Aplikácia má Sprievodcu, kým manifest nepovie `"guide": false` (kokpit ho tak vypne pri špeciálnej aplikácii). Človek
+Aplikácia má Sprievodcu, kým manifest nepovie `"guide": false` (kokpit ho tak vypne pri špeciálnej aplikácii)
+a jej katalóg má aspoň jeden krok — dovtedy ostáva „Ako začať“ s písanou príručkou ako pred Sprievodcom. Človek
 v „Ako urobiť“ (namiesto „Ako začať“) alebo v paneli z hornej lišty napíše, čo chce urobiť; Sprievodca pozrie stav
 aplikácie, opýta sa, keď cieľ nie je jasný, krátko povie kroky a ponúkne vedenie krok za krokom — otvorí obrazovku
 kroku, zvýrazní jeho tlačidlo, povie vetu, čo urobiť, a sám pokračuje, keď je krok hotový. **Kliká vždy človek.**

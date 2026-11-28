@@ -32,7 +32,7 @@ describe("Prehľad only for some (DEV-368)", () => {
     await screen.findByText("Obsah knihy");
     expect(panelEntries().includes("Prehľad")).toBe(shown);
     expect(panelEntries()).toEqual(
-      [...(shown ? ["Prehľad"] : []), "Ako urobiť", "Kniha DF", "Aktualizácie", "—", "Nastavenia"],
+      [...(shown ? ["Prehľad"] : []), "Ako začať", "Kniha DF", "Aktualizácie", "—", "Nastavenia"],
     );
   });
 
@@ -54,9 +54,9 @@ describe("Prehľad only for some (DEV-368)", () => {
     expect(screen.queryByText("Obsah prehľadu")).toBeNull();
   });
 
-  it("with no entry of the app to see, the first screen is Ako začať (an app without Sprievodca)", async () => {
+  it("with no entry of the app to see, the first screen is Ako začať", async () => {
     renderApp({
-      manifest: { nav: [SECRET], guide: false },
+      manifest: { nav: [SECRET] },
       extras: { visible: { "/": () => false, "/codes": () => false } },
       answers: { "GET /getting-started": { markdown: "# Návod aplikácie" } },
     });

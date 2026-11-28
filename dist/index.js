@@ -79,6 +79,9 @@ function catalogProblems(catalog) {
   }
   return problems;
 }
+function guided(manifest) {
+  return manifest.guide && manifest.guideCatalog.steps.length > 0;
+}
 
 // src/modules.ts
 var MODULES = Object.freeze({});
@@ -1363,7 +1366,7 @@ var PROSE = `prose prose-base dark:prose-invert max-w-none prose-headings:font-s
   prose-li:text-[var(--color-text-secondary)] prose-li:marker:text-primary-500`;
 function GettingStartedPage() {
   const { manifest } = useFrame();
-  return manifest.guide ? /* @__PURE__ */ jsx7(HowToPage, {}) : /* @__PURE__ */ jsx7(WrittenGuide, {});
+  return guided(manifest) ? /* @__PURE__ */ jsx7(HowToPage, {}) : /* @__PURE__ */ jsx7(WrittenGuide, {});
 }
 function WrittenGuide() {
   const t = useKitT();
@@ -1573,7 +1576,7 @@ function settingsConfig(manifest) {
   if (manifest.auth === "password") tabs.push("users");
   tabs.push("sessions");
   if (manifest.web) tabs.push("web");
-  if (manifest.guide) tabs.push("guide");
+  if (guided(manifest)) tabs.push("guide");
   return {
     tabs,
     // DEV-394: the tabs are named by nex-shared, in the person's language.
@@ -2012,7 +2015,7 @@ function NsvSidebar() {
           // DEV-368: Prehľad only for those the app says see it — like its own entries.
           /* @__PURE__ */ jsx15(VisibleEntry, { entry: { ...TEMPLATE_PLACES.overview, useVisible: manifest.overviewVisible }, children: entry(TEMPLATE_PLACES.overview) }, TEMPLATE_PLACES.overview.path)
         ) : entry(TEMPLATE_PLACES.overview),
-        entry(gettingStartedPlace(manifest.guide)),
+        entry(gettingStartedPlace(guided(manifest))),
         modules.map((m) => entry(m)),
         ownEntries.map((e) => {
           const shown = e.useCount ? /* @__PURE__ */ jsx15(CountedEntry, { entry: e, active: isActive(e.path), onClick: () => navigate(e.path) }, e.path) : entry(e);
@@ -2033,7 +2036,7 @@ import { Header, ThemeToggle } from "nex-shared";
 import { jsx as jsx16, jsxs as jsxs13 } from "react/jsx-runtime";
 function placeLabel(pathname, manifest) {
   const places = [
-    ...Object.values({ ...TEMPLATE_PLACES, gettingStarted: gettingStartedPlace(manifest.guide) }),
+    ...Object.values({ ...TEMPLATE_PLACES, gettingStarted: gettingStartedPlace(guided(manifest)) }),
     ...manifest.modules.flatMap((id) => MODULES[id] ? [MODULES[id]] : []),
     ...manifest.nav
   ];
@@ -2055,7 +2058,7 @@ function NsvTopbar() {
         /* @__PURE__ */ jsx16("span", { className: "text-[var(--color-text-secondary)] truncate", children: t(placeLabel(pathname, manifest)) })
       ] }),
       right: /* @__PURE__ */ jsxs13("div", { className: "flex items-center gap-2", children: [
-        manifest.guide && /* @__PURE__ */ jsx16(GuideButton, {}),
+        guided(manifest) && /* @__PURE__ */ jsx16(GuideButton, {}),
         /* @__PURE__ */ jsx16(ThemeToggle, { theme: isDark ? "dark" : "light", onToggle: toggleDark })
       ] })
     }
@@ -2075,7 +2078,7 @@ function NsvShell() {
   }, [userId, load, reset]);
   return /* @__PURE__ */ jsxs14(AppShell, { sidebar: /* @__PURE__ */ jsx17(NsvSidebar, {}), header: /* @__PURE__ */ jsx17(NsvTopbar, {}), topBanner: /* @__PURE__ */ jsx17(InstallationBand, {}), children: [
     /* @__PURE__ */ jsx17(PageErrorBoundary, { children: /* @__PURE__ */ jsx17(Outlet, {}) }),
-    manifest.guide && /* @__PURE__ */ jsx17(GuideLayer, {})
+    guided(manifest) && /* @__PURE__ */ jsx17(GuideLayer, {})
   ] });
 }
 

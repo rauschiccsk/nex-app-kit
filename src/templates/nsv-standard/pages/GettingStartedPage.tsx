@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 import { Page } from "nex-shared";
 
 import { useFrame } from "../../../frame/FrameContext";
+import { guided } from "../../../guide/catalog";
 import { HowToPage } from "../../../guide/GuidePanel";
 import { errorText } from "../../../frame/people";
 import { useKitT } from "../../../i18n";
@@ -19,7 +20,7 @@ const PROSE = `prose prose-base dark:prose-invert max-w-none prose-headings:font
 export function GettingStartedPage() {
   const { manifest } = useFrame();
   // DEV-535: with Sprievodca the place is „Ako urobiť“ — the conversation, not a guide to read.
-  return manifest.guide ? <HowToPage /> : <WrittenGuide />;
+  return guided(manifest) ? <HowToPage /> : <WrittenGuide />;
 }
 
 function WrittenGuide() {

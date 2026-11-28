@@ -5,6 +5,7 @@ import { useStore } from "zustand";
 import { AppShell } from "nex-shared";
 
 import { useFrame } from "../../frame/FrameContext";
+import { guided } from "../../guide/catalog";
 import { GuideLayer } from "../../guide/GuidePanel";
 import { InstallationBand } from "../../frame/installation";
 import { PageErrorBoundary } from "./PageErrorBoundary";
@@ -29,7 +30,7 @@ export function NsvShell() {
         <Outlet />
       </PageErrorBoundary>
       {/* DEV-535: Sprievodca beside any screen — its panel and the card that leads step by step. */}
-      {manifest.guide && <GuideLayer />}
+      {guided(manifest) && <GuideLayer />}
     </AppShell>
   );
 }

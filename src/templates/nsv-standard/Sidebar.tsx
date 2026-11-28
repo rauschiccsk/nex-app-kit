@@ -12,6 +12,7 @@ import { personName, roleLabel } from "../../frame/people";
 import { useBackendVersion, versionLine } from "../../frame/version";
 import type { NavEntry } from "../../manifest";
 import { MODULES } from "../../modules";
+import { guided } from "../../guide/catalog";
 import { gettingStartedPlace, TEMPLATE_PLACES } from "./places";
 import { useKitT } from "../../i18n";
 
@@ -90,7 +91,7 @@ export function NsvSidebar() {
       ) : (
         entry(TEMPLATE_PLACES.overview)
       )}
-      {entry(gettingStartedPlace(manifest.guide))}
+      {entry(gettingStartedPlace(guided(manifest)))}
       {modules.map((m) => entry(m))}
       {ownEntries.map((e) => {
         const shown = e.useCount ? (

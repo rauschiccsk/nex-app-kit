@@ -15,7 +15,7 @@ import { createStandardApi } from "../src/standard-api";
 import type { GuideCatalog, GuideStep } from "../src/guide/catalog";
 import { STUCK_AFTER_MS, TARGET_WAIT_MS } from "../src/guide/GuideRunner";
 import { useGuide } from "../src/guide/store";
-import { BASE, frame, PLAIN_USER, renderApp, type Call } from "./helpers";
+import { BASE, frame, panelEntries, PLAIN_USER, renderApp, type Call } from "./helpers";
 
 let uploaded = false;
 let confirmed = false;
@@ -156,8 +156,8 @@ describe("Ako urobiť (DEV-535)", () => {
     expect(screen.getByText("Zapísal som, čo chýba — pomôže to aplikáciu vylepšiť.")).toBeInTheDocument();
   });
 
-  it("an app without steps says so", async () => {
-    app({ "POST /guide/plan": { session_id: "s1", kind: "missing", text: "", steps: [], invalid: false, empty_catalog: true } }, "/getting-started", { steps: [] });
+  it("a catalog the server finds empty is said so", async () => {
+    app({ "POST /guide/plan": { session_id: "s1", kind: "missing", text: "", steps: [], invalid: false, empty_catalog: true } });
     await ask();
     expect(await screen.findByText("Táto aplikácia zatiaľ nemá kroky, cez ktoré by som vás viedol. Zapísal som to.")).toBeInTheDocument();
   });
@@ -286,16 +286,35 @@ describe("Sprievodca in the frame (DEV-535)", () => {
     expect(within(panel).getByRole("textbox", { name: "Čo chcete urobiť?" })).toBeInTheDocument();
   });
 
-  it("an app that switched it off has neither the button nor the conversation", async () => {
-    renderApp({ path: "/getting-started", manifest: { guide: false } });
-    const { header } = await frame();
-    expect(within(header).queryByRole("button", { name: /Sprievodca/ })).toBeNull();
-    expect(screen.queryByTestId("guide-chat")).toBeNull();
+  it("with steps, the template's place is „Ako urobiť“ and Nastavenia has the tab Sprievodca", async () => {
+    app({}, "/settings");
+    await frame();
+    expect(panelEntries()).toEqual(["Prehľad", "Ako urobiť", "Aktualizácie", "—", "Nastavenia"]);
+    expect(await screen.findByRole("tab", { name: "Sprievodca" })).toBeInTheDocument();
   });
+
+  // An app that switched it off — or has no step yet — keeps „Ako začať“ with the written guide, as before the upgrade.
+  const kept: [string, { guide?: boolean }, GuideCatalog][] = [
+    ["switched off", { guide: false }, CATALOG],
+    ["without steps", {}, { steps: [] }],
+  ];
+  for (const [why, manifest, catalog] of kept) {
+    it(`an app ${why} has neither the button, the conversation nor the tab — and keeps Ako začať`, async () => {
+      renderApp({ path: "/settings", manifest, extras: { guide: catalog }, routes: ROUTES });
+      const { header } = await frame();
+      expect(panelEntries()).toEqual(["Prehľad", "Ako začať", "Aktualizácie", "—", "Nastavenia"]);
+      expect(within(header).queryByRole("button", { name: /Sprievodca/ })).toBeNull();
+      expect(await screen.findByRole("tab", { name: "Systém" })).toBeInTheDocument();
+      expect(screen.queryByRole("tab", { name: "Sprievodca" })).toBeNull();
+      expect(screen.queryByTestId("guide-chat")).toBeNull();
+    });
+  }
 
   it("the admin sees in Nastavenia how it works", async () => {
     renderApp({
       path: "/settings",
+      extras: { guide: CATALOG },
+      routes: ROUTES,
       answers: {
         "GET /guide/feedback": {
           totals: { sessions: 3, done: 1, stopped: 1, missing: 1, guiding: 0, rated_up: 1, rated_down: 0 },

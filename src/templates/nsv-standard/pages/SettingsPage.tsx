@@ -38,6 +38,7 @@ import {
 } from "../../../standard-api";
 import { chooseLanguage, useKitT } from "../../../i18n";
 import { useInstallationIdentity } from "../../../frame/installation";
+import { guided } from "../../../guide/catalog";
 import { GuideFeedbackTab } from "./GuideFeedbackTab";
 import { WebAccountsTab } from "./WebAccountsTab";
 
@@ -66,7 +67,7 @@ export function settingsConfig(manifest: AppManifest): SettingsKitConfig {
   if (manifest.auth === "password") tabs.push("users");
   tabs.push("sessions");
   if (manifest.web) tabs.push("web");
-  if (manifest.guide) tabs.push("guide");
+  if (guided(manifest)) tabs.push("guide");
   return {
     tabs,
     // DEV-394: the tabs are named by nex-shared, in the person's language.

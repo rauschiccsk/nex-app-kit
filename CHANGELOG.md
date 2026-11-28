@@ -8,7 +8,8 @@ pripínajú na konkrétnu verziu. Značky pri zmenách ako v nex-shared: `[vzhľ
 ---
 
 ## v0.24.0
-- `[nové]` **Sprievodca.** Aplikácia na šablóne má Sprievodcu, kým manifest nepovie `"guide": false`. „Ako začať“ je
+- `[nové]` **Sprievodca.** Aplikácia na šablóne má Sprievodcu, kým manifest nepovie `"guide": false`, a ukáže ho, keď
+  jej katalóg má aspoň jeden krok (bez krokov ostáva „Ako začať“ s písanou príručkou). „Ako začať“ je potom
   „Ako urobiť“: človek napíše, čo chce urobiť, Sprievodca pozrie stav aplikácie, opýta sa, krátko povie kroky
   a ponúkne vedenie krok za krokom — otvorí obrazovku kroku, zvýrazní tlačidlo, povie vetu a sám pokračuje, keď je
   krok hotový; kliká vždy človek. Otvorí sa aj z hornej lišty na každej obrazovke a vedenie prežije prechod medzi
